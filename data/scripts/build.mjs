@@ -57,6 +57,61 @@ function sameName(a, b) {
   return shared / Math.min(A.size, B.size) >= 0.75;
 }
 
+// Locals pass: a Google result counts only when its title is the spot locals named.
+// "Getty Villa" matches "The Getty Villa"; "Indian" does not match "Vaisakhi Indian Kitchen".
+const norm = (s) => clean(String(s ?? "").replace(/['’`]/g, "")).replace(/^the /, "");
+const meaningfulTokens = (s) => norm(s).split(" ").filter((t) => t.length >= 3 && !GENERIC.has(t) && t !== "restaurant");
+function titleMatches(title, candidate) {
+  const t = norm(title), c = norm(candidate);
+  if (!t || !c) return false;
+  if (t === c) return true;
+  const T = new Set(meaningfulTokens(title)), C = new Set(meaningfulTokens(candidate));
+  if (!T.size || !C.size) return false;
+  const shared = [...C].filter((x) => T.has(x)).length;
+  const within = (small, big) => ` ${big} `.includes(` ${small} `);
+  // The candidate line carried extra words around the real name ("Milano Market Italian Restaurant").
+  if (within(t, c) && (t.split(" ").length >= 2 || !DICTIONARY.has(t))) return true;
+  // The candidate is a shortened name ("Getty Villa") covering most of the title.
+  if (within(c, t) && shared / T.size >= 0.6) return true;
+  return shared / Math.max(T.size, C.size) >= 0.6;
+}
+
+// Google's category for a locals pick, mapped onto our 10 categories. Kinds that are not
+// somewhere to spend an afternoon (hotels, offices, clinics, neighborhoods) map to null.
+const CATEGORY_RULES = [
+  [null, /hotel|motel|hostel|apartment|condominium|office|company|consultant|publisher|clinic|doctor|dentist|hospital|cannabis|adult|school district|church|parking|post office|city hall|station|ferry|bank|real estate|salon|spa\b|massage|tattoo|non-profit|association|organization|manufacturer|storage|car |auto |gas station|insurance|lawyer|attorney|university|college|grocery|supermarket|convenience|pharmacy|building$|cottage|residential|county|locality|neighborhood/],
+  ["courts", /pickleball|tennis court|basketball court|tennis club|racquet/],
+  ["sweets", /coffee|cafe|café|bakery|dessert|ice cream|gelato|tea house|tea store|bubble tea|boba|donut|doughnut|patisserie|pastry|chocolate|bagel|creamery|frozen yogurt/],
+  ["food", /restaurant|food|pizza|taqueria|diner|deli|sandwich|bbq|barbecue|grill|bistro|eatery|noodle|ramen|sushi|dumpling|hot pot|steak|buffet|izakaya|brunch|kitchen|chicken|burger|taco/],
+  ["night", /\bbar\b|pub|night club|nightclub|lounge|brewery|brewpub|winery|wine bar|cocktail|karaoke|comedy|jazz|live music|music venue|speakeasy|beer hall|beer garden|dance club|event venue/],
+  ["games", /bowling|arcade|escape room|miniature golf|mini golf|go-kart|go kart|axe|billiard|pool hall|board game|trampoline|batting|skating|amusement|ferris wheel|laser tag|game center|bingo|casino|photo booth/],
+  ["classes", /class|workshop|pottery|ceramic|cooking school|dance school|dance studio|art studio|paint/],
+  ["active", /climbing|bouldering|hiking|trail|kayak|canoe|paddle|bike|bicycle|surf|\bski|skate|rowing|boat rental|sports club|recreation center|golf course|swimming|pool$/],
+  ["culture", /museum|gallery|aquarium|zoo|planetarium|theater|theatre|cinema|movie|art center|historical|landmark|monument|library|performing arts|concert hall|opera|memorial|historic site|cultural|\btours?\b|temple|shrine|stadium|arena/],
+  ["views", /park|beach|scenic|viewpoint|vista|observation|garden|nature preserve|lake|island|bridge|pier|harbor|harbour|waterfront|lookout|tourist attraction|notable street|plaza|square|forest|falls|canyon|national|state park|wildlife|seashore|mountain|peak|hill/],
+  ["shops", /store|shop|market|mall|boutique|book|record|vintage|thrift|antique|flea|hobby|toy|comic|gift|florist|outlet|emporium/],
+];
+function categoryFor(g) {
+  if (!g.categoryName) return null;
+  // Google's main category decides; the extra categories only break a tie.
+  for (const text of [g.categoryName, (g.categories ?? []).join(" | ")]) {
+    for (const [id, re] of CATEGORY_RULES) if (re.test(String(text).toLowerCase())) return id;
+  }
+  return null;
+}
+
+// A TikTok location tag names this exact place (stricter than titleMatches: a tag of
+// "Castro" is the neighborhood, not The Castro Theatre).
+function sameTag(name, tag) {
+  const a = norm(name), b = norm(tag);
+  if (a === b) return true;
+  const A = a.split(" "), B = b.split(" ");
+  if (A.length === B.length && A.every((w) => B.includes(w))) return true;
+  // The tag may add a city or address after the name ("Le Marais Bakery (1138 Sutter Street)"),
+  // but a place whose name merely contains the tag sits in that area ("North Beach Gyros").
+  return A.length >= 2 && meaningfulTokens(name).length >= 1 && ` ${b} `.includes(` ${a} `);
+}
+
 // Percentile rank of each value within its list (0 = lowest, 1 = highest).
 function percentiles(values) {
   const sorted = [...values].sort((a, b) => a - b);
@@ -97,16 +152,37 @@ function clusterCourts(elements) {
 
 async function buildCity(city, categoryOf) {
   const dir = join(root, "raw", city.slug);
-  const [google, yelp, trip, tiktok, reddit, osm] = await Promise.all(["google", "yelp", "tripadvisor", "tiktok", "reddit", "osm"].map((s) => load(join(dir, `${s}.json`))));
+  const [google, yelp, trip, tiktok, reddit, osm, googleLocals, candidates] = await Promise.all(
+    ["google", "yelp", "tripadvisor", "tiktok", "reddit", "osm", "google_locals", "locals_candidates"].map((s) => load(join(dir, `${s}.json`)))
+  );
   if (!google.length) return console.warn(`${city.slug}: no Google data yet, skipping`);
 
-  const places = google
+  // Locals pass: spots locals named on Reddit and TikTok, looked up on Google Maps.
+  // Keep a result only when its title is the named spot and it maps onto one of our categories.
+  const candidateNames = new Set(candidates.map((c) => norm(c.name)));
+  const known = new Set(google.map((g) => g.placeId));
+  let localsKept = 0;
+  const locals = [];
+  for (const g of googleLocals) {
+    if (!g.location || g.permanentlyClosed || known.has(g.placeId)) continue;
+    if (!candidateNames.has(norm(g.searchString)) || !titleMatches(g.title, g.searchString)) continue;
+    const category = categoryFor(g);
+    if (!category) continue;
+    known.add(g.placeId);
+    locals.push({ ...g, _category: category, _localPick: true });
+    localsKept += 1;
+  }
+
+  const places = [...google, ...locals]
     .filter((g) => g.location && !g.permanentlyClosed)
     .map((g) => ({
       id: g.placeId,
       name: g.title,
-      category: categoryOf.get(clean(g.searchString)) ?? "other",
+      category: g._category ?? categoryOf.get(clean(g.searchString)) ?? "other",
       kind: g.categoryName ?? null,
+      kinds: (g.categories ?? []).slice(0, 4),
+      description: g.description ?? null,
+      localPick: Boolean(g._localPick),
       lat: g.location.lat,
       lng: g.location.lng,
       address: g.address ?? null,
@@ -135,11 +211,27 @@ async function buildCity(city, categoryOf) {
     for (const r of rows) {
       const at = { lat: Number(r.latitude), lng: Number(r.longitude) };
       if (!at.lat || !at.lng) continue;
-      const match = places.find((p) => metersBetween(p, at) < 200 && sameName(p.name, r.name));
+      const match = places.find((p) => metersBetween(p, at) < 200 && titleMatches(r.name, p.name));
       if (match && !match.ratings[key]) match.ratings[key] = pick(r);
     }
   };
-  attach(yelp, "yelp", (y) => ({ rating: y.avg_rating, count: y.review_count ?? 0, url: y.alias ? `https://www.yelp.com/biz/${y.alias}` : null }));
+  attach(yelp, "yelp", (y) => ({
+    rating: y.unrounded_avg_rating ?? y.avg_rating,
+    count: y.review_count ?? 0,
+    url: y.alias ? `https://www.yelp.com/biz/${y.alias}` : null,
+    price: y.price ?? null,
+    categories: (y.categories ?? []).map((c) => c.name),
+    photos: (y.photos ?? []).filter((ph) => ph.url_prefix).slice(0, 4).map((ph) => ({ url: `${ph.url_prefix}l${ph.url_suffix ?? ".jpg"}`, caption: ph.caption ?? null })),
+  }));
+  // Yelp's price level (1 to 4) and photos live on the place itself.
+  for (const p of places) {
+    const y = p.ratings.yelp;
+    if (!y) continue;
+    p.priceLevel = y.price;
+    p.photos = y.photos;
+    p.kinds = [...new Set([...p.kinds, ...y.categories])].slice(0, 6);
+    delete y.price; delete y.photos; delete y.categories;
+  }
   attach(trip, "tripadvisor", (t) => ({ rating: Number(t.rating) || null, count: t.numberOfReviews ?? 0, rank: t.rankingString ?? null }));
 
   // Find places locals mention by name on Reddit and TikTok.
@@ -157,6 +249,27 @@ async function buildCity(city, categoryOf) {
       if (!t.promo && p.quotes.length < 4) p.quotes.push({ source: t.source, text: snippet(t.text, p.name), url: t.url, weight: t.weight });
     }
   }
+  // Spot Moments: public TikTok videos whose location tag is this place, shown through
+  // TikTok's official embed and credited to the creator.
+  for (const t of tiktok) {
+    const tag = t.poi?.poiName;
+    if (!tag || !t.id || !t.channel?.username) continue;
+    const match = places.find((p) => sameTag(p.name, tag));
+    if (!match) continue;
+    (match.moments ??= []).push({
+      id: String(t.id),
+      url: t.postPage ?? `https://www.tiktok.com/@${t.channel.username}/video/${t.id}`,
+      creator: t.channel.username,
+      views: Number(t.views ?? 0),
+      likes: Number(t.likes ?? 0),
+      postedAt: t.uploadedAtFormatted ?? null,
+      caption: tidyCaption(t.title ?? "").slice(0, 140),
+      duration: t.video?.duration ?? null,
+      tag,
+    });
+  }
+  for (const p of places) p.moments?.sort((a, b) => b.likes - a.likes);
+
   // Best-supported quotes first: Reddit upvotes, then TikTok views.
   for (const p of places) p.quotes.sort((a, b) => (a.source === b.source ? b.weight - a.weight : a.source === "reddit" ? -1 : 1));
 
@@ -206,7 +319,8 @@ async function buildCity(city, categoryOf) {
   await writeFile(join(root, "out", `${city.slug}.json`), JSON.stringify(out));
   const gems = places.filter((p) => p.hiddenGem).length;
   const mentioned = places.filter((p) => p.mentions.reddit + p.mentions.tiktok > 0).length;
-  console.log(`${city.slug}: ${places.length} places (${mentioned} mentioned by locals, ${gems} hidden gems), ${courts.length} court spots, ${out.viewpoints.length} named viewpoints`);
+  const withMoments = places.filter((p) => p.moments?.length).length;
+  console.log(`${city.slug}: ${places.length} places (${localsKept} locals picks, ${mentioned} mentioned by locals, ${gems} hidden gems, ${withMoments} with Spot Moments), ${courts.length} court spots, ${out.viewpoints.length} named viewpoints`);
 }
 
 const cities = JSON.parse(await readFile(join(root, "config/cities.json"), "utf8"));

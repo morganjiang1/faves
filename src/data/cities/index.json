@@ -1,0 +1,112 @@
+[
+ {
+  "slug": "new-york",
+  "name": "New York",
+  "center": [
+   40.75636,
+   -73.95526
+  ],
+  "places": 1270,
+  "courts": 2375,
+  "utcOffset": -5
+ },
+ {
+  "slug": "los-angeles",
+  "name": "Los Angeles",
+  "center": [
+   34.09543,
+   -118.44293
+  ],
+  "places": 1207,
+  "courts": 2406,
+  "utcOffset": -8
+ },
+ {
+  "slug": "san-francisco",
+  "name": "San Francisco",
+  "center": [
+   37.78447,
+   -122.43013
+  ],
+  "places": 1202,
+  "courts": 602,
+  "utcOffset": -8
+ },
+ {
+  "slug": "chicago",
+  "name": "Chicago",
+  "center": [
+   41.88847,
+   -87.6372
+  ],
+  "places": 1181,
+  "courts": 936,
+  "utcOffset": -6
+ },
+ {
+  "slug": "seattle",
+  "name": "Seattle",
+  "center": [
+   47.61404,
+   -122.33989
+  ],
+  "places": 1101,
+  "courts": 371,
+  "utcOffset": -8
+ },
+ {
+  "slug": "boston",
+  "name": "Boston",
+  "center": [
+   42.3522,
+   -71.06244
+  ],
+  "places": 1050,
+  "courts": 495,
+  "utcOffset": -5
+ },
+ {
+  "slug": "austin",
+  "name": "Austin",
+  "center": [
+   30.26578,
+   -97.74455
+  ],
+  "places": 1162,
+  "courts": 946,
+  "utcOffset": -6
+ },
+ {
+  "slug": "miami",
+  "name": "Miami",
+  "center": [
+   25.78156,
+   -80.19429
+  ],
+  "places": 956,
+  "courts": 217,
+  "utcOffset": -5
+ },
+ {
+  "slug": "washington-dc",
+  "name": "Washington, DC",
+  "center": [
+   38.90211,
+   -77.03003
+  ],
+  "places": 1074,
+  "courts": 692,
+  "utcOffset": -5
+ },
+ {
+  "slug": "san-diego",
+  "name": "San Diego",
+  "center": [
+   32.75888,
+   -117.1609
+  ],
+  "places": 1165,
+  "courts": 1385,
+  "utcOffset": -8
+ }
+]
