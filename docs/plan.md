@@ -60,6 +60,21 @@ Every screen is built from a captured reference (see `docs/design_references.md`
 - End-of-day thumbs up and down feed back into the rankings.
 - Friends' rankings, Beli-style.
 
+## Spot Moments: see what a place is really like
+
+Before you go somewhere, watch clips people took there.
+
+- **Post from the spot.** The in-app camera only posts a clip to a place when your phone is actually there (within about 150 m, during opening hours), so every clip carries "Taken here". Funny moments with friends: tag them and the clip also lands in your group's day recap.
+- **Moments on every place page.** A vertical reel at the top of the place page: Highlights (most liked) and Right now (clips from the last few hours, so you can see if it's busy or dead tonight). Tap through like stories.
+- **Seeded before we have users.** Public TikTok videos already tagged at the place (in San Francisco, 429 of 600 scraped videos carry a location tag) show through TikTok's official embed, credited to the creator, until our own clips take over.
+- **Feeds the rest of the app.** Fresh clips count toward the Locals Score's local love, and clips that lead to verified visits earn spot rewards.
+- **Moderation.** Report and hide, automatic checks for unsafe content, and Right now clips expire after a day.
+- **References to capture before building:** TikTok location pages, Instagram location pages and Snap Map stories (Yelp's photo and video grid is already in the catalog).
+
+## Logistics on every place
+
+Already in the scraped data for each place: price level and a cost-per-person estimate, opening hours with "open now", phone number, website, address and directions, reservation link where there is one, and how busy it usually is by hour.
+
 ## Spot rewards: get paid for not gatekeeping
 
 People earn real money when their spots and days help others.
