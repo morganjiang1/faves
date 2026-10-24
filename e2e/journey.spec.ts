@@ -43,7 +43,10 @@ test("onboarding to Home to a planned day to a place page", async ({ page }) => 
   await page.getByTestId("stop-0-open").click();
   await expect(page.getByTestId("place-page")).toBeVisible();
   await expect(page.getByTestId("locals-score-row")).toBeVisible();
+  await expect(page.getByTestId("open-status")).toBeVisible();
+  await page.getByTestId("place-caption").click();
   await expect(page.getByTestId("details-section")).toBeVisible();
+  await page.getByTestId("details-close").click();
   await page.getByTestId("place-back").click();
   await expect(page.getByTestId("itinerary")).toBeVisible();
 

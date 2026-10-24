@@ -52,20 +52,22 @@ export interface RawCity {
   views: RawView[];
 }
 
+// A post at a spot: a Faves user's clip (bundled with the app) or one you posted on this phone.
 export interface Moment {
-  id: string; // TikTok video id, or a local id for clips posted in the app
-  source: "tiktok" | "faves";
-  creator: string;
-  views: number;
+  id: string;
+  source: "faves";
+  creator: string; // the poster's username, without the @
+  views: number; // play count (0 when unknown)
   likes: number;
   postedAt: string | null;
   caption: string;
   duration: number | null;
-  uri?: string; // local clip file for moments posted in the app
-  cover?: string | null; // TikTok cover image (signed link, may expire; the tile falls back to the place photo)
+  uri?: string; // local clip file for moments posted on this phone
+  asset?: { video: number; poster: number | null }; // a bundled clip
   kind?: "video" | "photo";
   takenHere?: boolean;
   demo?: boolean; // posted in demo mode: location not verified
+  mine?: boolean;
 }
 
 export interface Quote { source: "reddit" | "tiktok"; text: string; url: string }

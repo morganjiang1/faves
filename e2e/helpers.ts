@@ -7,7 +7,7 @@ const IGNORE = [/tile\.openstreetmap\.org/, /Failed to load resource/, /tiktok\.
 export function watchConsole(page: Page) {
   const problems: string[] = [];
   page.on("console", (m) => {
-    // Messages from third-party frames (TikTok's embedded player) are not ours.
+    // Messages from third-party frames are not ours.
     const from = m.location()?.url ?? "";
     if (from && !from.startsWith("http://localhost")) return;
     if ((m.type() === "error" || m.type() === "warning") && !IGNORE.some((re) => re.test(m.text()))) problems.push(`${m.type()}: ${m.text()}`);

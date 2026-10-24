@@ -67,7 +67,7 @@ export function NotesLine({ post, subreddit, testID }: { post: DayPost; subreddi
   }
   const q = post.quote;
   if (!q) return null;
-  const source = q.quote.source === "reddit" ? `r/${subreddit}` : "TikTok";
+  const source = `r/${subreddit}`;
   return (
     <Pressable testID={testID} accessibilityRole="link" accessibilityLabel={`Quote from ${source} about ${q.placeName}`} onPress={() => openUrl(q.quote.url)}>
       <Text style={styles.notes} numberOfLines={4}>

@@ -26,18 +26,37 @@ test("switch city and search", async ({ page }) => {
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("Spot Moments: the reel, the viewer, and the be-here-to-post rule", async ({ page, context }) => {
+test("a spot plays full screen: its clips, Spot Moments, details, and the be-here-to-post rule", async ({ page, context }) => {
   const problems = watchConsole(page);
   // Far from the bridge: posting must be blocked.
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.7599, longitude: -122.4148 });
   await startOnboarded(page, `/place/${GOLDEN_GATE}`);
-  await expect(page.getByTestId("moments-section")).toBeVisible();
+  await expect(page.getByTestId("place-page")).toBeVisible();
+  await expect(page.getByTestId("place-name")).toContainText("Golden Gate Bridge");
+  await expect(page.getByTestId("spot-clip").first()).toBeVisible();
+  // Every clip reads as a Faves post: a username, never a platform name.
+  await expect(page.getByTestId("place-page")).not.toContainText(/tiktok/i);
+
+  // Details open in the dark comments-style sheet, with the score sources.
+  await page.getByTestId("place-caption").click();
+  await expect(page.getByTestId("details-sheet")).toBeVisible();
+  await expect(page.getByTestId("details-section")).toBeVisible();
+  await page.getByTestId("details-tab-scores").click();
+  await expect(page.getByTestId("src-tiktok")).toBeVisible();
+  await page.getByTestId("details-close").click();
+  await expect(page.getByTestId("details-sheet")).toBeHidden();
+
+  // The Spot Moments anchor opens the place's grid; a tile opens the player at that post.
+  await page.getByTestId("moments-anchor").click();
+  await expect(page.getByTestId("moments-page")).toBeVisible();
   await expect(page.getByTestId("moment-tile-0")).toBeVisible();
-  await page.getByTestId("moment-tile-0").click();
-  await expect(page.getByTestId("moments-viewer")).toBeVisible();
-  await expect(page.getByTestId("tiktok-player")).toBeVisible();
-  await page.getByTestId("moments-close").click();
+  await expect(page.getByTestId("moments-page")).not.toContainText(/tiktok/i);
+  await page.getByTestId("moment-tile-1").click();
+  // The player opens on its own screen over the grid (the first player stays under it).
+  await expect(page.getByTestId("place-counter").filter({ visible: true })).toContainText("2/");
+  await page.getByTestId("place-back").filter({ visible: true }).click();
+  await expect(page.getByTestId("moments-page")).toBeVisible();
 
   await page.getByTestId("post-moment").click();
   await expect(page.getByTestId("post-blocked")).toBeVisible();

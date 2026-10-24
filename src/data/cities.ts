@@ -1,7 +1,8 @@
 // Loads one city at a time. Each city is its own JSON module behind a dynamic import, so the
 // web build splits it into its own chunk and the app only pays for the city you pick.
 import index from "./cities/index.json";
-import type { City, CityIndexRow, Place, RawCity, RawCourt, RawPlace } from "./types";
+import type { City, CityIndexRow, Moment, Place, RawCity, RawCourt, RawPlace } from "./types";
+import { CLIPS, MORE_CLIPS } from "./videos";
 import { metersBetween } from "@/lib/geo";
 
 export const CITY_INDEX = index as CityIndexRow[];
@@ -19,6 +20,16 @@ const loaders: Record<string, () => Promise<{ default: unknown }>> = {
   "washington-dc": () => import("./cities/washington-dc.json"),
   "san-diego": () => import("./cities/san-diego.json"),
 };
+
+// A spot's posts: its clips, shown as Faves posts taken there (src/data/videos.ts).
+export function spotMoments(placeId: string): Moment[] {
+  const first = CLIPS[placeId];
+  if (!first) return [];
+  return [first, ...(MORE_CLIPS[placeId] ?? [])].map((c, i) => ({
+    id: `clip-${placeId}-${i}`, source: "faves" as const, creator: (c.creator ?? "").replace(/^@/, ""), views: c.plays ?? 0, likes: 0, postedAt: c.postedAt,
+    caption: "", duration: c.seconds, asset: { video: c.video, poster: c.poster }, kind: "video" as const, takenHere: true,
+  }));
+}
 
 export function toPlace(r: RawPlace): Place {
   return {
@@ -46,7 +57,9 @@ export function toPlace(r: RawPlace): Place {
     tripadvisor: r.rt.ta ? { rating: r.rt.ta[0], count: r.rt.ta[1] } : null,
     reddit: { mentions: r.me[0], votes: r.me[1] },
     tiktok: { mentions: r.me[2], views: r.me[3] },
-    quotes: r.q.map((q) => ({ source: q.s, text: q.t, url: q.u })),
+    // What locals say: Reddit comments, with their thread. (TikTok shows up in the Locals Score as
+    // mentions and views; its captions aren't shown as quotes.)
+    quotes: r.q.filter((q) => q.s === "reddit").map((q) => ({ source: q.s, text: q.t, url: q.u })),
     locals: r.sc[0],
     quality: r.sc[1],
     localLove: r.sc[2],
@@ -55,9 +68,7 @@ export function toPlace(r: RawPlace): Place {
     localPick: Boolean(r.lp),
     tiktokPick: Boolean(r.tp),
     description: r.d,
-    moments: (r.mo ?? []).map((m) => ({
-      id: m.id, source: "tiktok", creator: m.u, views: m.v, likes: m.l, postedAt: m.at, caption: m.cap, duration: m.dur, cover: m.cv ?? null, kind: "video",
-    })),
+    moments: spotMoments(r.id),
   };
 }
 
