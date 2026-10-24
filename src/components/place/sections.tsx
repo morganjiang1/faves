@@ -1,7 +1,7 @@
 // Place page sections.
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Moment, Place } from "@/data/types";
 import { dayHoursText, statusAt, weekLines } from "@/lib/hours";
 import { openUrl } from "@/lib/links";
@@ -19,6 +19,10 @@ export function MomentsSection({ place, mine, canPost, onPost }: { place: Place;
   const now = mine.filter((m) => m.postedAt && new Date(m.postedAt).getTime() > dayAgo);
   const list = tab === "highlights" ? highlights : now;
   const open = (i: number) => router.push(`/moments/${encodeURIComponent(place.id)}?tab=${tab}&i=${i}`);
+  // Three square tiles per row, edge to edge, 1.6 pt gutters (sized in points: percentage
+  // widths with an aspect ratio don't lay out inside a wrapping row on iPhone).
+  const { width } = useWindowDimensions();
+  const tile = Math.floor((Math.min(width, 520) - 3.2) / 3);
   return (
     <View testID="moments-section" style={{ marginTop: 8 }}>
       <View style={styles.sectionTitleRow}>
@@ -36,7 +40,7 @@ export function MomentsSection({ place, mine, canPost, onPost }: { place: Place;
       {list.length ? (
         <View style={styles.grid}>
           {list.slice(0, 9).map((m, i) => (
-            <Pressable key={`${m.source}-${m.id}`} testID={`moment-tile-${i}`} accessibilityLabel={`Moment by ${m.creator}`} onPress={() => open(i)} style={styles.tile}>
+            <Pressable key={`${m.source}-${m.id}`} testID={`moment-tile-${i}`} accessibilityLabel={`Moment by ${m.creator}`} onPress={() => open(i)} style={[styles.tile, { width: tile, height: tile }]}>
               <PlaceImage uri={m.uri && m.kind === "photo" ? m.uri : m.cover ?? place.photos[i % Math.max(1, place.photos.length)] ?? place.image} category={place.category} style={StyleSheet.absoluteFill} />
               <View style={styles.tileGlyph}><Icon name={m.kind === "photo" ? "image" : "play"} size={18} tint="#fff" /></View>
               {m.source === "faves" ? <View style={styles.tileHere}><Icon name="navigate" size={10} tint="#fff" /><Text style={styles.tileHereText}>Taken here</Text></View> : null}
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   tabTextOn: { color: "#000", fontWeight: "600" },
   tabLine: { width: 78, height: 2.4, backgroundColor: "#1B181E", borderRadius: 1 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 1.6, marginTop: 1 },
-  tile: { width: "33.0%", aspectRatio: 1, overflow: "hidden", backgroundColor: "#EEE" },
+  tile: { overflow: "hidden", backgroundColor: "#EEE" },
   tileGlyph: { position: "absolute", top: 6, right: 6 },
   tileHere: { position: "absolute", left: 6, bottom: 6, flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "rgba(24,24,28,0.75)", borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
   tileHereText: { fontFamily: font.sans, color: "#fff", fontSize: 10, fontWeight: "700" },

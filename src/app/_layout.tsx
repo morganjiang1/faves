@@ -37,10 +37,11 @@ export default function RootLayout() {
           <View style={styles.page}>
             <View style={styles.column}>
               <StatusBar style="dark" />
+              {/* iOS full-screen modals keep their default slide: a custom animation there drops the safe-area insets. */}
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#fff" } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ animation: "fade", gestureEnabled: false }} />
-                <Stack.Screen name="builder" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+                <Stack.Screen name="builder" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="plan/[id]" />
                 <Stack.Screen name="place/[id]" />
                 <Stack.Screen name="explore" />
@@ -51,11 +52,11 @@ export default function RootLayout() {
                 <Stack.Screen name="group/[id]" />
                 <Stack.Screen name="rank" options={{ presentation: "transparentModal", animation: "fade" }} />
                 <Stack.Screen name="rankings" />
-                <Stack.Screen name="moments/[id]" options={{ presentation: "fullScreenModal", animation: "fade" }} />
+                <Stack.Screen name="moments/[id]" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="post-moment/[id]" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="wallet" />
                 <Stack.Screen name="payout" options={{ presentation: "modal" }} />
-                <Stack.Screen name="plus" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+                <Stack.Screen name="plus" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="settings" />
               </Stack>
             </View>
