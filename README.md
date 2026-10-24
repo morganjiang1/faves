@@ -2,6 +2,7 @@
 
 Never know what to do? Tell Faves who's coming and what you're into. It finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
 
+- **Video first.** Home opens on the Top 10 spots this week in your city, each playing a short clip, then what's open tonight, this weekend, the most-done days and hidden gems. Every day and itinerary shows each stop's clip, and you can swipe through a whole day full screen. Clips are credited to the TikTok creators who shot them.
 - **Locals Score** for every spot, built from Google, Yelp, TripAdvisor, Reddit and TikTok, with a hidden-gem flag for places locals rate highly that tourists haven't found.
 - **A planner agent** that turns "me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus" into a full day: stops picked by Locals Score, kind and opening hours, ordered by time and travel, a view timed to sunset, a Plan B for every stop and a reason for every pick. It re-plans live: "it's raining", "we're running 30 min late", "swap the sushi spot".
 - **Spot Moments**: clips taken at a place (public TikTok videos tagged there, played through TikTok's embed and credited to the creator) and clips you post, which carry "Taken here" only when your phone is at the spot while it's open.
@@ -49,7 +50,11 @@ npx expo export --platform web  # writes dist/
 node scripts/serve-web.mjs 8090 # http://localhost:8090
 ```
 
-`dist/` is a static single-page app; any static host works if it serves `index.html` for unknown paths. The web map is Leaflet on OpenStreetMap tiles, so it needs no key.
+`dist/` is a static single-page app; any static host works if it serves `index.html` for unknown paths. The web map is Leaflet on OpenStreetMap tiles, so it needs no key. `/?city=san-francisco` opens Home in a given city.
+
+### Spot clips
+
+Clips live in `assets/videos/<city>/` (480 x 854 H.264, muted, 3 to 5 seconds, with a poster JPG) and are listed in that folder's `manifest.json`: `{ "<placeId>": { "video", "poster", "creator", "sourceUrl" } }`. After adding or replacing clips, run `node scripts/make-video-index.mjs` to regenerate `src/data/videos.ts` (the app bundles every clip listed there). Spots without a clip show their photo in the same frame.
 
 ## Environment variables
 
@@ -77,8 +82,8 @@ maestro test maestro/                 # iPhone flows in Expo Go (see maestro/REA
 ## How it's built
 
 - `src/app/`: screens (expo-router). `src/components/`: shared UI. `src/lib/`: the planner agent (`parser.ts`, `planner.ts`), scores, hours, sunset, travel legs, community days, rewards, optional adapters. `src/state/`: on-device storage and the current city.
-- `src/data/cities/`: one slim JSON file per city, loaded only when you pick that city (a separate chunk on the web).
-- `data/scripts/`: the data pipeline. `scrape.mjs` and `osm.mjs` collect Google Maps, Yelp, TripAdvisor, Reddit, TikTok and OpenStreetMap data; `locals.mjs` looks up the spots locals name; `build.mjs` merges and scores them; `export.mjs` writes the app's city files. Raw and built data stay out of git.
+- `src/data/cities/`: one slim JSON file per city, loaded only when you pick that city (a separate chunk on the web). `src/data/videos.ts`: the bundled spot clips.
+- `data/scripts/`: the data pipeline. `scrape.mjs` and `osm.mjs` collect Google Maps, Yelp, TripAdvisor, Reddit, TikTok and OpenStreetMap data; `locals.mjs` looks up the spots locals name; `build.mjs` merges and scores them (including spots found through TikTok location tags in `data/raw/<city>/tiktok_spots.json`); `export.mjs` writes the app's city files. Raw and built data stay out of git.
 - Every screen copies a named screen from a popular app. The catalog with measured values is `docs/design_references.md`, the token and component map is `docs/design_system.md`, and `docs/screen_audit.md` records each screen next to its reference.
 - The full product plan is in `docs/plan.md`.
 
