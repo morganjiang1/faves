@@ -3,6 +3,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import type { LatLng } from "@/lib/geo";
 import { cityClock, type CityClock } from "@/lib/time";
 
@@ -10,6 +11,14 @@ export function useOnline(): boolean {
   const [online, setOnline] = useState(true);
   useEffect(() => {
     const unsub = NetInfo.addEventListener((s) => setOnline(s.isConnected !== false && s.isInternetReachable !== false));
+    // On the web, the browser's own online and offline events are the reliable signal.
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const on = () => setOnline(true), off = () => setOnline(false);
+      setOnline(navigator.onLine !== false);
+      window.addEventListener("online", on);
+      window.addEventListener("offline", off);
+      return () => { unsub(); window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+    }
     return () => unsub();
   }, []);
   return online;

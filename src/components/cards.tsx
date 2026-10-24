@@ -182,7 +182,7 @@ export function CornerCard({ place, onPress, testID, savedCount }: { place: Plac
           </View>
         )}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
-          <View style={cornerStyles.savedPill}><Text style={cornerStyles.savedPillText}>{savedCount != null ? `saved ${savedCount} times` : `${compact(signalCount(place))} ratings`}</Text></View>
+          <View style={cornerStyles.savedPill}><Text style={cornerStyles.savedPillText}>{savedCount != null ? `saved ${savedCount} times` : `${compact(signalCount(place))} ${signalCount(place) === 1 ? "rating" : "ratings"}`}</Text></View>
           <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)} style={cornerStyles.cornerBookmark}>
             <Icon name={saved ? "bookmark" : "bookmark-outline"} size={17} tint="#0077FF" />
           </Pressable>
