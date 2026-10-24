@@ -20,6 +20,7 @@ import { formatClock, formatPillTime } from "@/lib/time";
 import { color, font } from "@/theme/tokens";
 import { Sheet } from "../Sheet";
 import { ActionPill, Icon, PlaceImage, type IconName } from "../ui";
+import { StopClip } from "../video/StopClip";
 
 const MODE_ICON: Record<Mode, IconName> = { walk: "walk", transit: "bus", drive: "car", bike: "bicycle" };
 
@@ -48,19 +49,20 @@ export function LegRow({ leg, loading, onModes, onDirections, testID }: { leg: L
   );
 }
 
-export function StopCard({ stop, place, index, live, onOpen, onSwap, onPlanB, onDirections, onReserve, planBName, testID }: {
-  stop: PlanStop; place: Place; index: number; live?: "now" | "next" | null; onOpen: () => void; onSwap: () => void; onPlanB: () => void; onDirections: () => void; onReserve: () => void; planBName: string | null; testID?: string;
+export function StopCard({ stop, place, index, live, onOpen, onSwap, onPlanB, onDirections, onReserve, planBName, reel, testID }: {
+  stop: PlanStop; place: Place; index: number; live?: "now" | "next" | null; onOpen: () => void; onSwap: () => void; onPlanB: () => void; onDirections: () => void; onReserve: () => void; planBName: string | null; reel: string; testID?: string;
 }) {
   const cost = costOf(place);
   const role = stop.slot.label === "something to do" ? (place.kind ?? "").toLowerCase() || stop.slot.label : stop.slot.label;
   return (
     <View testID={testID} style={{ gap: 8 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={place.name} onPress={onOpen} style={[styles.card, live === "now" && styles.cardLive]}>
+      <View style={[styles.card, live === "now" && styles.cardLive]}>
+        {/* The stop's clip (4:5) plays while on screen; tap it for the full-screen viewer. */}
         <View>
-          <PlaceImage uri={place.image} category={place.category} style={styles.thumb} emojiSize={30} />
-          <View style={styles.thumbNum}><Text style={styles.thumbNumText}>{index + 1}</Text></View>
+          <StopClip testID={`${testID}-clip`} place={place} reel={reel} width={76} height={95} radius={14} />
+          <View style={styles.thumbNum} pointerEvents="none"><Text style={styles.thumbNumText}>{index + 1}</Text></View>
         </View>
-        <View style={{ flex: 1, gap: 3 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={place.name} onPress={onOpen} style={{ flex: 1, gap: 3 }}>
           {live ? <Text style={[styles.livePill, live === "next" && { backgroundColor: color.wanderPill, color: color.wanderBlue }]}>{live === "now" ? "Now" : "Up next"}</Text> : null}
           <Text style={styles.cardTitle} numberOfLines={2}>{place.name}</Text>
           <Text style={styles.cardSub} numberOfLines={1}>{formatClock(stop.start)} to {formatClock(stop.end)} · {role}</Text>
@@ -69,8 +71,8 @@ export function StopCard({ stop, place, index, live, onOpen, onSwap, onPlanB, on
             {!place.unrated ? <Text style={styles.score}>{scoreOutOf10(place.locals)}</Text> : null}
             <Text style={styles.cardMeta} numberOfLines={1}>{[cost.dollars ?? (cost.perPerson === 0 && !cost.estimated ? "Free" : null), place.hiddenGem ? "Hidden gem" : null].filter(Boolean).join(" · ")}</Text>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </View>
       <Text style={styles.why}>{stop.why}</Text>
       {stop.warnings.map((w) => (
         <View key={w} style={styles.warning}><Icon name="alert-circle-outline" size={15} tint={color.closed} /><Text style={styles.warningText}>{w}</Text></View>

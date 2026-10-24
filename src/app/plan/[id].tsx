@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import FavesMap from "@/components/map/FavesMap";
 import type { MapPin, RouteSegment } from "@/components/map/types";
 import { DateBadge, LegModeSheet, LegRow, StopCard, SwapSheet } from "@/components/plan/parts";
+import { ViewportProvider, useViewport } from "@/components/video/viewport";
 import { Sheet } from "@/components/Sheet";
 import { ShareSheet } from "@/components/ShareSheet";
 import { Chip, CircleButton, EmptyState, ErrorState, Grabber, Icon, OfflineBanner, Skeleton, SkeletonRows, Toast } from "@/components/ui";
@@ -55,6 +56,7 @@ export default function Itinerary() {
   const [toast, setToast] = useState<string | null>(null);
   const [weather, setWeather] = useState<DayWeather | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const view = useViewport();
   const [realLegs, setRealLegs] = useState<Record<string, RouteLeg>>({});
   const [events, setEvents] = useState<LiveEvent[]>([]);
 
@@ -174,7 +176,8 @@ export default function Itinerary() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.sheet}>
         {!online ? <OfflineBanner /> : null}
         <Grabber />
-        <ScrollView testID="plan-scroll" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        <ScrollView testID="plan-scroll" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" onScroll={view.onScroll} scrollEventThrottle={64} onLayout={view.onLayout}>
+          <ViewportProvider vp={view.vp}>
           <Text style={styles.title} testID="plan-title">{plan.title}</Text>
           <Text style={styles.meta}>{plan.dayLabel} · {formatClock(plan.stops[0]?.start ?? plan.start)} to {formatClock(plan.stops[plan.stops.length - 1]?.end ?? plan.end)} · {plan.stops.length} stops</Text>
           <Text style={styles.meta}>
@@ -237,6 +240,7 @@ export default function Itinerary() {
                       onDirections={() => openDirections({ lat: p.lat, lng: p.lng, name: p.name }, plan.transport)}
                       onReserve={() => openUrl(p.reserveUrl ?? p.website)}
                       planBName={planB?.name ?? null}
+                      reel={`/reel?plan=${encodeURIComponent(plan.id)}&i=${i}`}
                     />
                   </View>
                 );
@@ -255,6 +259,7 @@ export default function Itinerary() {
               ))}
             </View>
           ) : null}
+          </ViewportProvider>
           <Text style={styles.footnote}>{Object.keys(realLegs).length ? "Travel times and route lines from Google Routes." : "Travel times are estimates from distance and typical speeds. Lines on the map are straight; tap Directions for the real route."}</Text>
         </ScrollView>
 

@@ -105,6 +105,7 @@ function slimPlace(p) {
     sc: [p.scores.locals, p.scores.quality, p.scores.localLove, p.scores.exposure],
     gem: p.hiddenGem || undefined,
     lp: p.localPick || undefined,
+    tp: p.tiktokPick || undefined,
     d: short(p.description, 180),
     mo: p.moments?.length
       ? p.moments.slice(0, 12).map((m) => ({ id: m.id, u: m.creator, v: m.views, l: m.likes, at: m.postedAt, cap: m.caption, dur: m.duration, cv: m.cover ?? undefined }))
@@ -119,7 +120,7 @@ async function exportCity(city) {
   // Keep what the app can recommend: decent scores, anything locals talk about, hidden gems,
   // locals picks and every court. The long tail of low-scored, never-mentioned places is dropped.
   const places = data.places.filter((p) => p.category !== "other" && p.lat && p.lng && (
-    p.scores.locals >= 20 || p.mentions.reddit + p.mentions.tiktok > 0 || p.localPick || p.hiddenGem || p.category === "courts"
+    p.scores.locals >= 20 || p.mentions.reddit + p.mentions.tiktok > 0 || p.localPick || p.tiktokPick || p.hiddenGem || p.category === "courts"
   ));
   // City center: the median of the best-scored places (robust to far-off day-trip spots).
   const top = [...places].sort((a, b) => b.scores.locals - a.scores.locals).slice(0, 200);

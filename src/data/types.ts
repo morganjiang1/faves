@@ -30,6 +30,7 @@ export interface RawPlace {
   sc: [number, number, number, number];
   gem?: boolean;
   lp?: boolean;
+  tp?: boolean;
   d: string | null;
   mo?: { id: string; u: string; v: number; l: number; at: string | null; cap: string; dur: number | null; cv?: string }[];
 }
@@ -101,6 +102,7 @@ export interface Place {
   exposure: number;
   hiddenGem: boolean;
   localPick: boolean;
+  tiktokPick: boolean;
   description: string | null;
   moments: Moment[];
   unrated?: boolean; // OpenStreetMap courts and viewpoints with no ratings anywhere

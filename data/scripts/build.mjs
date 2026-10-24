@@ -152,8 +152,8 @@ function clusterCourts(elements) {
 
 async function buildCity(city, categoryOf) {
   const dir = join(root, "raw", city.slug);
-  const [google, yelp, trip, tiktok, reddit, osm, googleLocals, candidates] = await Promise.all(
-    ["google", "yelp", "tripadvisor", "tiktok", "reddit", "osm", "google_locals", "locals_candidates"].map((s) => load(join(dir, `${s}.json`)))
+  const [google, yelp, trip, tiktok, reddit, osm, googleLocals, candidates, tiktokSpots] = await Promise.all(
+    ["google", "yelp", "tripadvisor", "tiktok", "reddit", "osm", "google_locals", "locals_candidates", "tiktok_spots"].map((s) => load(join(dir, `${s}.json`)))
   );
   if (!google.length) return console.warn(`${city.slug}: no Google data yet, skipping`);
 
@@ -173,6 +173,20 @@ async function buildCity(city, categoryOf) {
     localsKept += 1;
   }
 
+  // TikTok picks: spots creators tagged in "best view in <city>" style videos, looked up on
+  // Google Maps. Same checks as the locals pass (the title is the tagged spot, it maps onto
+  // one of our categories, it is new).
+  let tiktokKept = 0;
+  for (const g of tiktokSpots) {
+    if (!g.location || g.permanentlyClosed || known.has(g.placeId)) continue;
+    if (g.searchString && !titleMatches(g.title, g.searchString)) continue;
+    const category = categoryFor(g);
+    if (!category) continue;
+    known.add(g.placeId);
+    locals.push({ ...g, _category: category, _tiktokPick: true });
+    tiktokKept += 1;
+  }
+
   const places = [...google, ...locals]
     .filter((g) => g.location && !g.permanentlyClosed)
     .map((g) => ({
@@ -185,6 +199,7 @@ async function buildCity(city, categoryOf) {
       kinds: (g.categories ?? []).slice(0, 4),
       description: g.description ?? null,
       localPick: Boolean(g._localPick),
+      tiktokPick: Boolean(g._tiktokPick),
       lat: g.location.lat,
       lng: g.location.lng,
       address: g.address ?? null,
@@ -284,6 +299,9 @@ async function buildCity(city, categoryOf) {
   }
   for (const p of places) p.moments?.sort((a, b) => b.likes - a.likes);
 
+  // A TikTok pick was tagged in at least one creator's video.
+  for (const p of places) if (p.tiktokPick && p.mentions.tiktok === 0) { p.mentions.tiktok = 1; p.mentions.tiktokViews = Number(p._tiktokViews ?? 0); }
+
   // Best-supported quotes first: Reddit upvotes, then TikTok views.
   for (const p of places) p.quotes.sort((a, b) => (a.source === b.source ? b.weight - a.weight : a.source === "reddit" ? -1 : 1));
 
@@ -334,7 +352,7 @@ async function buildCity(city, categoryOf) {
   const gems = places.filter((p) => p.hiddenGem).length;
   const mentioned = places.filter((p) => p.mentions.reddit + p.mentions.tiktok > 0).length;
   const withMoments = places.filter((p) => p.moments?.length).length;
-  console.log(`${city.slug}: ${places.length} places (${localsKept} locals picks, ${mentioned} mentioned by locals, ${gems} hidden gems, ${withMoments} with Spot Moments), ${courts.length} court spots, ${out.viewpoints.length} named viewpoints`);
+  console.log(`${city.slug}: ${places.length} places (${localsKept} locals picks, ${tiktokKept} TikTok picks, ${mentioned} mentioned by locals, ${gems} hidden gems, ${withMoments} with Spot Moments), ${courts.length} court spots, ${out.viewpoints.length} named viewpoints`);
 }
 
 const cities = JSON.parse(await readFile(join(root, "config/cities.json"), "utf8"));

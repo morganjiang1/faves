@@ -4,7 +4,7 @@
 // 42 pt action pills with the first one filled, photo collage); the section order after the
 // actions follows Beli's place page (tag line, Scores, photos).
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useIsFocused, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +18,7 @@ import { compact, costOf, gemLine, scoreOutOf10, signalCount } from "@/lib/score
 import { services } from "@/lib/adapters";
 import { livePlace, type LivePlace } from "@/lib/adapters/places";
 import { liveYelp, type LiveYelp } from "@/lib/adapters/yelp";
+import { SpotMedia, clipFor } from "@/components/video/SpotMedia";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
@@ -42,6 +43,7 @@ export default function PlacePage() {
   const hidden = useStore((s) => s.hidden);
   const transport = useStore((s) => s.profile.transport);
   const [share, setShare] = useState(false);
+  const isFocused = useIsFocused();
   const [toast, setToast] = useState<string | null>(null);
 
   const place = city?.byId.get(placeId) ?? null;
@@ -85,11 +87,22 @@ export default function PlacePage() {
   const url = shareUrl(`/place/${encodeURIComponent(place.id)}`);
   const ringCover = visible.moments[0]?.cover ?? myMoments[0]?.uri ?? place.image;
   const hasMoments = visible.moments.length + myMoments.length > 0;
+  const hero = clipFor(place.id);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }} testID="place-page">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
-        {/* Instagram location header: map + the place's story ring */}
+        {hero ? (
+          // Video hero (references/video): the spot's clip plays muted and loops; tap for full screen.
+          <View style={styles.hero} testID="place-hero">
+            <SpotMedia place={place} active={isFocused} style={StyleSheet.absoluteFill} onPress={() => router.push(`/reel?place=${encodeURIComponent(place.id)}`)} />
+            <View style={[styles.headerButtons, { top: insets.top + 8 }]} pointerEvents="box-none">
+              <CircleButton testID="place-back" icon="chevron-back" label="Back" light size={40} onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
+              <CircleButton testID="place-directions-fab" icon="navigate" label="Directions" light size={40} onPress={() => openDirections({ ...place }, transport)} />
+            </View>
+          </View>
+        ) : (
+        /* Instagram location header: map + the place's story ring */
         <View style={styles.header}>
           <FavesMap style={StyleSheet.absoluteFill} center={{ lat: place.lat + 0.0012, lng: place.lng }} span={0.012} pins={[{ id: place.id, lat: place.lat, lng: place.lng, kind: "spot", emoji: categoryInfo(place.category).emoji }]} showLabels={false} />
           <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.0)"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
@@ -104,6 +117,7 @@ export default function PlacePage() {
             </View>
           </Pressable>
         </View>
+        )}
 
         {/* Google Maps sheet */}
         <View style={styles.sheet}>
@@ -156,7 +170,7 @@ export default function PlacePage() {
         <MomentsSection place={visible} mine={myMoments} canPost={near} onPost={() => router.push(`/post-moment/${encodeURIComponent(place.id)}`)} />
         <ScoresSection place={place} subreddit={city.subreddit} />
         <QuotesSection place={place} subreddit={city.subreddit} />
-        <PhotoCollage place={place} />
+        {hero ? null : <PhotoCollage place={place} />}
         <DetailsSection place={place} day={clock.day} minute={clock.minutes} onDirections={() => openDirections({ ...place }, transport)} onCall={() => callNumber(place.phone)} onReserve={() => openUrl(place.reserveUrl)} />
         <Text style={styles.sourceNote}>Ratings from Google, Yelp and TripAdvisor; local mentions from r/{city.subreddit} and TikTok; courts from OpenStreetMap. Updated {new Date(city.builtAt).toLocaleDateString()}.</Text>
       </ScrollView>
@@ -168,6 +182,7 @@ export default function PlacePage() {
 
 const styles = StyleSheet.create({
   header: { height: 250, backgroundColor: color.cornerLand },
+  hero: { height: 460, backgroundColor: "#000" },
   headerButtons: { position: "absolute", left: 14, right: 14, flexDirection: "row", justifyContent: "space-between" },
   ringWrap: { position: "absolute", alignSelf: "center", width: 108, height: 108, alignItems: "center", justifyContent: "center" },
   ring: { position: "absolute", width: 108, height: 108, borderRadius: 54 },

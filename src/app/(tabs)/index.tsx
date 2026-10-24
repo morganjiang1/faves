@@ -1,52 +1,52 @@
-// Home. Layout copies DoorDash's home feed (appstore2025_02): location row with icons,
-// search pill + round map button, category icon row, chips, a promo banner, then titled
-// carousels with a grey arrow button, split by 6 pt bands (appstore2025_04).
-import { LinearGradient } from "expo-linear-gradient";
+// Home, video first, in the order people want on open ("what is there to do this week"):
+// Netflix's Top 10 row with outlined rank numerals and 9:16 cards that play a muted clip
+// while on screen, the "What are we doing?" plan prompt (DoorDash's search pill with its
+// rotating examples, kept from the first Home), plain text occasion chips (Uber Eats),
+// then Netflix-style rows of video cards: Tonight, This weekend, the most-done days as
+// vertical story cards (YouTube Shorts / Reels), and hidden gems. References:
+// references/video/* and docs/design_references.md "Video-first Home and itinerary".
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { DayCard, PlaceCard } from "@/components/cards";
-import { Band, Chip, ErrorState, FilterChip, Icon, SampleTag, SectionHeader, Skeleton, T } from "@/components/ui";
+import { Chip, ErrorState, Icon, SampleTag, Skeleton } from "@/components/ui";
+import { CARD, DayStoryCard, RankCard, STORY, VideoCard, VideoRow } from "@/components/video/cards";
+import { ViewportProvider, useViewport } from "@/components/video/viewport";
 import { CITY_INDEX } from "@/data/cities";
 import type { Place } from "@/data/types";
 import { communityDays, type CommunityDay } from "@/lib/community";
-import { metersBetween } from "@/lib/geo";
-import { isOpenAt } from "@/lib/hours";
-import { sunTimes } from "@/lib/sunset";
-import { formatClock, offsetHours } from "@/lib/time";
+import { hiddenGems, thisWeekend, tonight, topTen } from "@/lib/home";
+import { closesAt } from "@/lib/hours";
+import { formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
-import { useCityClock, useKnownLocation } from "@/state/device";
+import { useCityClock } from "@/state/device";
 import { useStore } from "@/state/store";
-import { CATEGORIES, color, font, logo, shadow } from "@/theme/tokens";
+import { color, font, shadow } from "@/theme/tokens";
 
 const PROMPTS = ["What are we doing?", "first date in the Mission", "pickleball then hot pot", "rainy day with the kids", "sunset and tacos", "my friend loves Gundam"];
 export const OCCASIONS = [
-  { id: "date", label: "Date", emoji: "💘", prompt: "date day: something fun, dinner and a view" },
-  { id: "friends", label: "Friends", emoji: "👯", prompt: "me and 3 friends: something fun, food and drinks" },
-  { id: "sports", label: "Sports", emoji: "🏀", prompt: "with friends: pickleball then food" },
-  { id: "night", label: "Night", emoji: "🌃", prompt: "tonight: dinner and drinks with a view" },
-  { id: "daytrip", label: "Day trip", emoji: "🚗", prompt: "all day by car: a hike, lunch and a view" },
-  { id: "rainy", label: "Rainy day", emoji: "🌧️", prompt: "rainy day: a museum, coffee and something fun" },
-  { id: "cheap", label: "Cheap", emoji: "💸", prompt: "cheap day: a park, tacos and dessert" },
+  { id: "date", label: "Date", prompt: "date day: something fun, dinner and a view" },
+  { id: "friends", label: "Friends", prompt: "me and 3 friends: something fun, food and drinks" },
+  { id: "sports", label: "Sports", prompt: "with friends: pickleball then food" },
+  { id: "night", label: "Night out", prompt: "tonight: dinner and drinks with a view" },
+  { id: "rainy", label: "Rainy day", prompt: "rainy day: a museum, coffee and something fun" },
+  { id: "cheap", label: "Cheap", prompt: "cheap day: a park, tacos and dessert" },
+  { id: "daytrip", label: "Day trip", prompt: "all day by car: a hike, lunch and a view" },
 ];
-type Filter = "open" | "free" | "outdoors";
 
 export default function Home() {
   const { city, status, error, retry } = useCity();
   const clock = useCityClock(city?.utcOffset);
-  const here = useKnownLocation();
   const name = useStore((s) => s.profile.name);
   const [prompt, setPrompt] = useState(0);
-  const [filters, setFilters] = useState<Filter[]>([]);
   const [days, setDays] = useState<CommunityDay[] | null>(null);
+  const { vp, onScroll, onLayout } = useViewport();
 
   // DoorDash rotates real example searches in the placeholder.
   useEffect(() => {
     const t = setInterval(() => setPrompt((n) => (n + 1) % PROMPTS.length), 2600);
     return () => clearInterval(t);
   }, []);
-  // Popular days are built by the planner; do it after first paint.
   useEffect(() => {
     if (!city) return;
     setDays(null);
@@ -54,40 +54,28 @@ export default function Home() {
     return () => clearTimeout(t);
   }, [city]);
 
-  const from = useMemo(() => {
+  const rows = useMemo(() => {
     if (!city) return null;
-    // Your location when you're in this city; otherwise downtown.
-    if (here && metersBetween(here, city.center) < 60_000) return here;
-    return city.center;
-  }, [city, here]);
-  const nearYou = Boolean(here && city && metersBetween(here, city.center) < 60_000);
-
-  const pass = (p: Place) =>
-    !p.temporarilyClosed &&
-    (!filters.includes("open") || isOpenAt(p.hours, clock.day, clock.minutes) === true || (p.hours == null && (p.free || p.category === "views"))) &&
-    (!filters.includes("free") || p.free) &&
-    (!filters.includes("outdoors") || p.category === "views" || p.category === "courts" || /park|beach|trail|garden|outdoor/i.test(p.kind ?? ""));
-
-  const sections = useMemo(() => {
-    if (!city || !from) return null;
-    const near = (p: Place) => metersBetween(from, p) < (nearYou ? 6000 : 9000);
-    const byScore = (a: Place, b: Place) => b.locals - a.locals;
-    const gems = city.places.filter((p) => p.hiddenGem && pass(p) && near(p)).sort(byScore).slice(0, 12);
-    const open = city.places.filter((p) => !p.unrated && p.image && isOpenAt(p.hours, clock.day, clock.minutes) && pass(p) && near(p)).sort(byScore).slice(0, 12);
-    const courts = city.places.filter((p) => p.category === "courts" && pass(p)).sort((a, b) => metersBetween(from, a) - metersBetween(from, b) - (b.locals - a.locals) * 30).slice(0, 12);
-    const sun = sunTimes(city.center.lat, city.center.lng, clock.wall, offsetHours(city.utcOffset));
-    const views = city.places.filter((p) => p.category === "views" && !p.court && p.image && pass(p)).sort(byScore).slice(0, 12);
-    const moments = city.places.filter((p) => p.moments.length && pass(p)).sort((a, b) => b.moments.length - a.moments.length || byScore(a, b)).slice(0, 12);
-    return { gems, open, courts, views, sun, moments };
+    const top = topTen(city);
+    const seen = new Set(top.map((p) => p.id));
+    const night = tonight(city, new Date(), seen);
+    night.places.forEach((p) => seen.add(p.id));
+    const weekend = thisWeekend(city, seen);
+    weekend.forEach((p) => seen.add(p.id));
+    return { top, night, weekend, gems: hiddenGems(city, seen) };
+    // Recompute when the hour changes (open now / tonight).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [city, from, filters, clock.day, Math.floor(clock.minutes / 15)]);
+  }, [city, Math.floor(clock.minutes / 60)]);
 
-  const cityName = CITY_INDEX.find((c) => c.slug === city?.slug)?.name ?? "Your city";
-  const toggle = (f: Filter) => setFilters((fs) => (fs.includes(f) ? fs.filter((x) => x !== f) : [...fs, f]));
+  const cityName = CITY_INDEX.find((c) => c.slug === city?.slug)?.name ?? "your city";
+  const tonightLine = (p: Place) => {
+    if (p.category === "views" && rows?.night.sunset != null) return `Sunset ${formatClock(rows.night.sunset, { compact: true })}`;
+    const c = closesAt(p.hours, clock.day, rows?.night.from ?? 1200);
+    return c ? `Open till ${formatClock(c, { compact: true })}` : p.hood ?? "";
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      {/* Location row */}
       <View style={styles.topRow}>
         <Pressable testID="city-switcher" accessibilityRole="button" accessibilityLabel={`City: ${cityName}`} onPress={() => router.push("/city")} style={styles.location}>
           <Icon name="location-outline" size={22} tint="#000" />
@@ -101,132 +89,104 @@ export default function Home() {
         </View>
       </View>
 
-      <ScrollView testID="home-scroll" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        {/* Search pill + map button */}
-        <View style={styles.searchRow}>
-          <Pressable testID="home-prompt" accessibilityRole="button" accessibilityLabel="What are we doing?" onPress={() => router.push("/builder")} style={[styles.searchPill, shadow.soft]}>
-            <Icon name="sparkles-outline" size={20} tint="#000" />
-            <Text numberOfLines={1} style={[styles.searchText, prompt === 0 && { color: "#000", fontWeight: "600" }]}>{prompt === 0 ? PROMPTS[0] : `"${PROMPTS[prompt]}"`}</Text>
-          </Pressable>
-          <Pressable testID="open-map" accessibilityLabel="Map" onPress={() => router.push("/explore")} style={[styles.mapButton, shadow.soft]}>
-            <Icon name="map-outline" size={22} tint="#000" />
-          </Pressable>
-        </View>
+      <ScrollView testID="home-scroll" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }} onScroll={onScroll} scrollEventThrottle={64} onLayout={onLayout}>
+        <ViewportProvider vp={vp}>
+          {status === "error" ? (
+            <View style={{ paddingTop: 40 }}><ErrorState body={error ?? "We couldn't load this city."} onRetry={retry} /></View>
+          ) : !rows || !city ? (
+            <HomeSkeleton />
+          ) : (
+            <>
+              <RowTitle title={`Top 10 this week in ${city.name}`} testID="title-top10" />
+              <VideoRow testID="row-top10" data={rows.top} keyOf={(p) => p.id} gap={6} render={(p, i, active) => <RankCard testID={`top10-${i}`} place={p} rank={i + 1} active={active} />} />
 
-        {/* Category icon row */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
-          {CATEGORIES.map((c) => (
-            <Pressable key={c.id} testID={`cat-${c.id}`} accessibilityRole="button" accessibilityLabel={c.label} onPress={() => router.push(`/explore?category=${c.id}`)} style={styles.catItem}>
-              <Text style={{ fontSize: 34 }}>{c.emoji}</Text>
-              <Text style={styles.catLabel} numberOfLines={1}>{c.short[0].toUpperCase() + c.short.slice(1)}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+              {/* The one plan prompt, with the map one tap away. */}
+              <View style={styles.searchRow}>
+                <Pressable testID="home-prompt" accessibilityRole="button" accessibilityLabel="What are we doing?" onPress={() => router.push("/builder")} style={[styles.searchPill, shadow.soft]}>
+                  <Icon name="sparkles-outline" size={20} tint="#000" />
+                  <Text numberOfLines={1} style={[styles.searchText, prompt === 0 && { color: "#000", fontWeight: "600" }]}>{prompt === 0 ? PROMPTS[0] : `"${PROMPTS[prompt]}"`}</Text>
+                </Pressable>
+                <Pressable testID="open-map" accessibilityLabel="Map" onPress={() => router.push("/explore")} style={[styles.mapButton, shadow.soft]}>
+                  <Icon name="map-outline" size={22} tint="#000" />
+                </Pressable>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                {OCCASIONS.map((o) => <Chip key={o.id} testID={`occasion-${o.id}`} label={o.label} onPress={() => router.push(`/builder?q=${encodeURIComponent(o.prompt)}`)} />)}
+              </ScrollView>
 
-        {/* Occasion chips (Uber Eats) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {OCCASIONS.map((o) => (
-            <Chip key={o.id} testID={`occasion-${o.id}`} label={o.label} icon={o.emoji} onPress={() => router.push(`/builder?q=${encodeURIComponent(o.prompt)}`)} />
-          ))}
-        </ScrollView>
+              {rows.night.places.length ? (
+                <>
+                  <RowTitle title="Tonight" subtitle={`Open from ${formatClock(rows.night.from, { compact: true })}${rows.night.sunset != null ? `, sunset at ${formatClock(rows.night.sunset, { compact: true })}` : ""}`} onMore={() => router.push("/explore?open=1")} testID="title-tonight" />
+                  <VideoRow testID="row-tonight" data={rows.night.places} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`tonight-${i}`} place={p} active={active} line={tonightLine(p)} />} />
+                </>
+              ) : null}
 
-        {/* Filter chips (DoorDash) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.chipRow, { paddingTop: 0 }]}>
-          <FilterChip testID="filter-open" label="Open now" icon="time-outline" on={filters.includes("open")} onPress={() => toggle("open")} />
-          <FilterChip testID="filter-free" label="Free" icon="pricetag-outline" on={filters.includes("free")} onPress={() => toggle("free")} />
-          <FilterChip testID="filter-outdoors" label="Outdoors" icon="leaf-outline" on={filters.includes("outdoors")} onPress={() => toggle("outdoors")} />
-        </ScrollView>
+              <RowTitle title="This weekend" subtitle="Open Saturday afternoon" onMore={() => router.push("/explore")} testID="title-weekend" />
+              <VideoRow testID="row-weekend" data={rows.weekend} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`weekend-${i}`} place={p} active={active} />} />
 
-        {/* Promo banner (DoorDash gradient card) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={328} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-          <Banner title="A whole day, planned in 30 seconds." body={`Tell us who's coming and what they're into${name ? `, ${name}` : ""}.`} cta="Plan a day" onPress={() => router.push("/builder")} testID="banner-plan" />
-          <Banner title="Get paid for not gatekeeping." body="Your spots earn when people save them and do your days." cta="See rewards" onPress={() => router.push("/wallet")} testID="banner-rewards" />
-          <Banner title="Faves Plus: members-only nights." body="Live Plan B, busy-now levels and 2x spot rewards." cta="Try Plus" onPress={() => router.push("/plus")} testID="banner-plus" />
-        </ScrollView>
+              <RowTitle title="Most-done days this week" subtitle={`Popular days in ${city.name}`} onMore={() => router.push("/feed")} testID="more-days" />
+              <View style={styles.sampleLine}>
+                <SampleTag text="Sample people" />
+                <Text style={styles.sampleText}>Real spots, placeholder people until real days are posted</Text>
+              </View>
+              {days ? (
+                <VideoRow testID="row-days" data={days.slice(0, 8)} keyOf={(d) => d.id} gap={10} render={(d, i, active) => <DayStoryCard testID={`day-card-${i}`} day={d} city={city} first={i === 0} active={active} />} />
+              ) : (
+                <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: STORY.w, height: STORY.h }} />)}</View>
+              )}
 
-        {status === "loading" || !sections ? (
-          status === "error" ? <View style={{ paddingTop: 24 }}><ErrorState body={error ?? "We couldn't load this city."} onRetry={retry} /></View> : <HomeSkeleton />
-        ) : (
-          <>
-            <View style={{ height: 18 }} />
-            <Band />
-            <SectionHeader title="Most-done days this week" subtitle={`Popular days in ${city!.name}`} onMore={() => router.push("/feed")} testID="more-days" />
-            <View style={{ paddingHorizontal: 16, marginTop: -6, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <SampleTag text="Sample people" />
-              <T v="caption">Real spots, placeholder people until real days are posted</T>
-            </View>
-            {days ? (
-              <FlatList horizontal data={days.slice(0, 8)} keyExtractor={(d) => d.id} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 16 }} renderItem={({ item, index }) => <DayCard testID={`day-card-${index}`} day={item} city={city!} first={index === 0} />} />
-            ) : (
-              <View style={{ flexDirection: "row", gap: 16, paddingHorizontal: 16 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: 165, height: 165 }} />)}</View>
-            )}
-
-            <Carousel title={nearYou ? "Hidden gems near you" : `Hidden gems in ${city!.name}`} subtitle="Locals love them, tourists haven't found them" places={sections.gems} clock={clock} from={from} more={() => router.push("/explore?gems=1")} testID="gems" />
-            <Carousel title="Open now" subtitle={`It's ${formatClock(clock.minutes)} in ${city!.name}`} places={sections.open} clock={clock} from={from} more={() => router.push("/explore?open=1")} testID="open" />
-            {sections.sun ? (
-              <Carousel title={`Sunset tonight: ${formatClock(sections.sun.sunset)}`} subtitle="Views locals rate highest" places={sections.views} clock={clock} from={from} more={() => router.push("/explore?category=views")} testID="views" />
-            ) : null}
-            <Carousel title="Courts near you" subtitle="Pickleball, tennis and basketball" places={sections.courts} clock={clock} from={from} more={() => router.push("/explore?category=courts")} testID="courts" />
-            <Carousel title="Spot Moments" subtitle="See what it's really like before you go" places={sections.moments} clock={clock} from={from} more={() => router.push("/explore?moments=1")} testID="moments" />
-          </>
-        )}
+              {rows.gems.length ? (
+                <>
+                  <RowTitle title={`Hidden gems in ${city.name}`} subtitle="Locals love them, tourists haven't found them" onMore={() => router.push("/explore?gems=1")} testID="more-gems" />
+                  <VideoRow testID="section-gems" data={rows.gems} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`gems-${i}`} place={p} active={active} />} />
+                </>
+              ) : null}
+              <Text style={styles.footer}>{name ? `Made for ${name}. ` : ""}Rankings use Google, Yelp, Reddit and TikTok. Clips are credited to their creators.</Text>
+            </>
+          )}
+        </ViewportProvider>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Banner({ title, body, cta, onPress, testID }: { title: string; body: string; cta: string; onPress: () => void; testID: string }) {
+function RowTitle({ title, subtitle, onMore, testID }: { title: string; subtitle?: string; onMore?: () => void; testID?: string }) {
   return (
-    <Pressable testID={testID} onPress={onPress} style={{ width: 320, borderRadius: 8, overflow: "hidden" }}>
-      <LinearGradient colors={["#FAC4AA", "#FEDBA3", "#FAEA9C"]} style={{ padding: 16, minHeight: 132, justifyContent: "space-between" }}>
-        <View>
-          <Text style={styles.bannerTitle}>{title}</Text>
-          <Text style={styles.bannerBody}>{body}</Text>
-        </View>
-        <View style={styles.bannerCta}><Text style={styles.bannerCtaText}>{cta}</Text></View>
-      </LinearGradient>
+    <Pressable testID={testID} disabled={!onMore} onPress={onMore} style={styles.rowTitle}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowTitleText} numberOfLines={1}>{title}</Text>
+        {subtitle ? <Text style={styles.rowSub} numberOfLines={1}>{subtitle}</Text> : null}
+      </View>
+      {onMore ? <Icon name="chevron-forward" size={20} tint="#000" /> : null}
     </Pressable>
-  );
-}
-
-function Carousel({ title, subtitle, places, clock, from, more, testID }: { title: string; subtitle?: string; places: Place[]; clock: ReturnType<typeof useCityClock>; from: { lat: number; lng: number } | null; more: () => void; testID: string }) {
-  if (!places.length) return null;
-  return (
-    <View testID={`section-${testID}`}>
-      <View style={{ height: 22 }} />
-      <Band />
-      <SectionHeader title={title} subtitle={subtitle} onMore={more} testID={`more-${testID}`} />
-      <FlatList horizontal data={places} keyExtractor={(p) => p.id} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }} renderItem={({ item, index }) => <PlaceCard testID={`${testID}-card-${index}`} place={item} clock={clock} from={from} />} />
-    </View>
   );
 }
 
 function HomeSkeleton() {
   return (
-    <View testID="home-loading" style={{ padding: 16, gap: 14, marginTop: 18 }}>
-      <Skeleton style={{ width: 240, height: 26 }} />
-      <View style={{ flexDirection: "row", gap: 16 }}>{[0, 1].map((i) => <Skeleton key={i} style={{ width: 165, height: 165 }} />)}</View>
-      <Skeleton style={{ width: 200, height: 26, marginTop: 12 }} />
-      <Skeleton style={{ width: 307, height: 149 }} />
-      <Skeleton style={{ width: 180, height: 16 }} />
+    <View testID="home-loading" style={{ padding: 16, gap: 14 }}>
+      <Skeleton style={{ width: 240, height: 22 }} />
+      <View style={{ flexDirection: "row", gap: 10 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h }} />)}</View>
+      <Skeleton style={{ height: 46, borderRadius: 23 }} />
+      <Skeleton style={{ width: 160, height: 22, marginTop: 10 }} />
+      <View style={{ flexDirection: "row", gap: 10 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h }} />)}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },
+  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 },
   location: { flexDirection: "row", alignItems: "center", gap: 6 },
   locationText: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000" },
-  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 4 },
+  rowTitle: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 20, paddingBottom: 10 },
+  rowTitleText: { fontFamily: font.sans, fontSize: 20, fontWeight: "800", color: "#000" },
+  rowSub: { fontFamily: font.sans, fontSize: 14, color: color.textSub, marginTop: 2 },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 18 },
   searchPill: { flex: 1, height: 46, borderRadius: 23, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 },
   searchText: { fontFamily: font.sans, fontSize: 16, color: color.textSub, flex: 1 },
   mapButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  catRow: { paddingHorizontal: 12, paddingTop: 16, gap: 4 },
-  catItem: { width: 68, alignItems: "center", gap: 4 },
-  catLabel: { fontFamily: font.sans, fontSize: 14, color: "#000" },
-  chipRow: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  bannerTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000", lineHeight: 21 },
-  bannerBody: { fontFamily: font.sans, fontSize: 14, color: "#000", marginTop: 4, lineHeight: 19 },
-  bannerCta: { alignSelf: "flex-start", backgroundColor: logo.color, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, marginTop: 10 },
-  bannerCtaText: { fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" },
+  chipRow: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
+  sampleLine: { paddingHorizontal: 16, marginTop: -4, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 6 },
+  sampleText: { fontFamily: font.sans, fontSize: 13, color: color.textMuted, flex: 1 },
+  footer: { fontFamily: font.sans, fontSize: 12, color: color.textMuted, paddingHorizontal: 16, paddingTop: 22, lineHeight: 17 },
 });

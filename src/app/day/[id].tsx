@@ -17,7 +17,9 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { fromMine, fromPlan, stopPlaces, type DayPost } from "@/components/social/dayPost";
 import { Facepile, NotesLine, PostHeader, ReorderPill } from "@/components/social/FeedPost";
 import { doThisDay, facesFor, useCommunityPosts } from "@/components/social/useDays";
-import { EmptyState, ErrorState, Icon, OfflineBanner, PlaceImage, SampleTag, Skeleton, SkeletonRows, Toast, type IconName } from "@/components/ui";
+import { EmptyState, ErrorState, Icon, OfflineBanner, SampleTag, Skeleton, SkeletonRows, Toast, type IconName } from "@/components/ui";
+import { StopClip } from "@/components/video/StopClip";
+import { ViewportProvider, useViewport } from "@/components/video/viewport";
 import { CITY_INDEX } from "@/data/cities";
 import type { City } from "@/data/types";
 import { formatLeg, type Mode } from "@/lib/geo";
@@ -144,14 +146,17 @@ export default function DayPage() {
 }
 
 function DayBody({ post, city, liked, faces, bottomPad }: { post: DayPost; city: City; liked: boolean; faces: string[]; bottomPad: number }) {
+  const view = useViewport();
   const stops = post.plan.stops.map((s) => ({ s, p: city.byId.get(s.placeId) })).filter((x): x is { s: (typeof post.plan.stops)[number]; p: NonNullable<ReturnType<City["byId"]["get"]>> } => Boolean(x.p));
   const pins: MapPin[] = stops.map(({ p }, i) => ({ id: p.id, lat: p.lat, lng: p.lng, kind: "number", number: i + 1, color: color.dayColor }));
   const routes: RouteSegment[] = stops.slice(1).map(({ s, p }, i) => ({ points: [{ lat: stops[i].p.lat, lng: stops[i].p.lng }, { lat: p.lat, lng: p.lng }], walk: s.leg?.mode === "walk" }));
   const count = post.likes + (liked ? 1 : 0);
   const plan = post.plan;
   const miles = plan.stops.reduce((m, s) => m + (s.leg?.miles ?? 0), 0);
+  const reelBase = post.kind === "mine" ? `/reel?plan=${encodeURIComponent(plan.id)}` : `/reel?day=${encodeURIComponent(post.id)}`;
   return (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }} testID="day-scroll">
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }} testID="day-scroll" onScroll={view.onScroll} scrollEventThrottle={64} onLayout={view.onLayout}>
+      <ViewportProvider vp={view.vp}>
       <PostHeader post={post} city={city} testID="day-header" />
       <View style={{ paddingHorizontal: 21 }}>
         <View style={{ marginTop: -8 }}><NotesLine post={post} subreddit={city.subreddit} testID="day-notes" /></View>
@@ -186,21 +191,22 @@ function DayBody({ post, city, liked, faces, bottomPad }: { post: DayPost; city:
         <Text style={styles.sub}>{plan.stops.length} stops · {formatClock(plan.start, { compact: true })} to {formatClock(plan.end, { compact: true })} · {miles >= 0.1 ? `${miles.toFixed(1)} mi between stops` : MODE_WORD[plan.transport]}</Text>
         <View style={{ marginTop: 18 }}>
           {stops.map(({ s, p }, i) => (
-            <Pressable key={s.key} testID={`day-stop-${i}`} accessibilityRole="button" accessibilityLabel={`Stop ${i + 1}: ${p.name}`} onPress={() => router.push(`/place/${encodeURIComponent(p.id)}`)} style={styles.stop}>
+            <View key={s.key} style={styles.stop}>
               {i < stops.length - 1 ? <View style={styles.connector} /> : null}
-              <PlaceImage uri={p.image} category={p.category} style={styles.stopPhoto} emojiSize={30} />
-              <View style={{ flex: 1 }}>
+              <StopClip testID={`day-stop-clip-${i}`} place={p} reel={`${reelBase}&i=${i}`} width={72} height={128} />
+              <Pressable testID={`day-stop-${i}`} accessibilityRole="button" accessibilityLabel={`Stop ${i + 1}: ${p.name}`} onPress={() => router.push(`/place/${encodeURIComponent(p.id)}`)} style={{ flex: 1 }}>
                 <Text style={styles.stopTitle} numberOfLines={2}>{p.name}</Text>
                 <Text style={styles.stopDesc} numberOfLines={2}>{s.why}</Text>
                 <View style={styles.legRow}>
                   <Icon name={s.leg ? MODE_ICON[s.leg.mode] : "time-outline"} size={14} tint={color.airbnbSub} />
                   <Text style={styles.legText} numberOfLines={1}>{formatClock(s.start)}{s.leg ? ` · ${formatLeg(s.leg)}` : " · first stop"}</Text>
                 </View>
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           ))}
         </View>
       </View>
+      </ViewportProvider>
     </ScrollView>
   );
 }
@@ -232,8 +238,7 @@ const styles = StyleSheet.create({
   h2: { fontFamily: font.sans, fontSize: 22, fontWeight: "600", color: color.airbnbText, marginTop: 24 },
   sub: { fontFamily: font.sans, fontSize: 15, color: color.airbnbSub, marginTop: 4 },
   stop: { flexDirection: "row", gap: 20, marginBottom: 18 },
-  connector: { position: "absolute", left: 37.25, top: 76, bottom: -18, width: 1.5, backgroundColor: "#EBEBEB" },
-  stopPhoto: { width: 76, height: 76, borderRadius: 8 },
+  connector: { position: "absolute", left: 35.25, top: 128, bottom: -18, width: 1.5, backgroundColor: "#EBEBEB" },
   stopTitle: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "600", color: color.airbnbText },
   stopDesc: { fontFamily: font.sans, fontSize: 16, lineHeight: 22, color: color.airbnbSub, marginTop: 2 },
   legRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },

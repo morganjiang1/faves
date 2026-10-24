@@ -53,6 +53,7 @@ export default function RootLayout() {
                 <Stack.Screen name="rank" options={{ presentation: "transparentModal", animation: "fade" }} />
                 <Stack.Screen name="rankings" />
                 <Stack.Screen name="moments/[id]" options={{ presentation: "fullScreenModal" }} />
+                <Stack.Screen name="reel" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="post-moment/[id]" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="wallet" />
                 <Stack.Screen name="payout" options={{ presentation: "modal" }} />

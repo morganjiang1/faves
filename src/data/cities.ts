@@ -53,6 +53,7 @@ export function toPlace(r: RawPlace): Place {
     exposure: r.sc[3],
     hiddenGem: Boolean(r.gem),
     localPick: Boolean(r.lp),
+    tiktokPick: Boolean(r.tp),
     description: r.d,
     moments: (r.mo ?? []).map((m) => ({
       id: m.id, source: "tiktok", creator: m.u, views: m.v, likes: m.l, postedAt: m.at, caption: m.cap, duration: m.dur, cover: m.cv ?? null, kind: "video",
@@ -103,6 +104,7 @@ function courtPlace(c: RawCourt, slug: string, near: (lat: number, lng: number) 
     exposure: host?.exposure ?? 0,
     hiddenGem: false,
     localPick: false,
+    tiktokPick: false,
     description: null,
     moments: [],
     unrated: !host,
