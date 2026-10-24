@@ -11,3 +11,9 @@ ios/
 android/
 data/raw/
 data/out/
+expo-env.d.ts
+.metro-health-check*
+*.tsbuildinfo
+test-results/
+playwright-report/
+npm-debug.*

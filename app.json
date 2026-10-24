@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Faves",
+    "slug": "faves",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "faves",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.faves.ios",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Faves uses your location to show spots near you and to check you are at a spot before you post a moment.",
+        "NSCameraUsageDescription": "Faves uses the camera to post a moment from the spot you are at.",
+        "NSMicrophoneUsageDescription": "Faves records sound with your moment clips."
+      }
+    },
+    "web": {
+      "output": "single",
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Faves",
+      "shortName": "Faves",
+      "themeColor": "#134452",
+      "backgroundColor": "#FFFFFF"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Faves uses your location to show spots near you and to check you are at a spot before you post a moment."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Faves uses the camera to post a moment from the spot you are at.",
+          "microphonePermission": "Faves records sound with your moment clips.",
+          "photosPermission": false
+        }
+      ],
+      "expo-sharing",
+      "expo-asset",
+      "expo-video",
+      "expo-font"
+    ],
+    "experiments": {
+      "reactCompiler": true
+    },
+    "android": {
+      "package": "app.faves.android"
+    }
+  }
+}
