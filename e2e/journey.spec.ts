@@ -84,7 +84,7 @@ test("a popular day from Home, Do this day, then the recap", async ({ page }) =>
 
   await page.getByTestId("link-recap").click();
   await expect(page).toHaveURL(/\/recap\//);
-  await expect(page.getByTestId("recap-page")).toBeVisible();
+  await expect(page.getByTestId("recap-screen")).toBeVisible();
 
   expect(problems, problems.join("\n")).toEqual([]);
 });

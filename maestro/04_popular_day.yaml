@@ -21,5 +21,5 @@ env:
     id: "link-recap"
 - extendedWaitUntil:
     visible:
-      id: "recap-page"
+      id: "recap-screen"
     timeout: 15000
