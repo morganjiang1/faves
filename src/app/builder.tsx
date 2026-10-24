@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Sheet } from "@/components/Sheet";
 import { EmptyState, ErrorState, Icon, PrimaryButton, Skeleton, TextButton } from "@/components/ui";
 import type { Mode } from "@/lib/geo";
 import { llmEnabled, llmExplain, llmParse } from "@/lib/llm";
@@ -79,6 +80,9 @@ export default function Builder() {
   const [req, setReq] = useState<PlanRequest | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [history, setHistory] = useState(false);
+  const plans = useStore((s) => s.plans);
+  const planOrder = useStore((s) => s.planOrder);
   const started = useRef(false);
   const included = params.place && city ? city.byId.get(decodeURIComponent(params.place)) : undefined;
 
@@ -200,8 +204,21 @@ export default function Builder() {
           <Icon name="sparkles" size={24} tint={color.askMapsBlue} />
           <Text style={styles.askTitle}>Plan a day</Text>
           <View style={{ flex: 1 }} />
+          <Pressable testID="builder-history" accessibilityLabel="Your past days" onPress={() => setHistory(true)} style={styles.askRound}><Icon name="time-outline" size={20} tint="#1F1F1F" /></Pressable>
+          <Pressable testID="builder-new" accessibilityLabel="Start over" onPress={() => setText("")} style={styles.askRound}><Icon name="create-outline" size={19} tint="#1F1F1F" /></Pressable>
           <Pressable testID="builder-close" accessibilityLabel="Close" onPress={close} style={styles.askRound}><Icon name="close" size={20} tint="#1F1F1F" /></Pressable>
         </View>
+        <Sheet open={history} onClose={() => setHistory(false)} title="Your days" testID="history-sheet">
+          {planOrder.length ? planOrder.slice(0, 20).map((id) => plans[id]).filter(Boolean).map((p) => (
+            <Pressable key={p.id} testID={`history-${p.id}`} onPress={() => { setHistory(false); router.replace(`/plan/${p.id}`); }} style={styles.historyRow}>
+              <Icon name="calendar-outline" size={20} tint="#1F1F1F" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.historyTitle} numberOfLines={1}>{p.title}</Text>
+                <Text style={styles.historySub} numberOfLines={1}>{p.dayLabel} · {p.cityName} · "{p.request.raw}"</Text>
+              </View>
+            </Pressable>
+          )) : <Text style={[styles.historySub, { padding: 20 }]}>No days yet. The days you plan show up here.</Text>}
+        </Sheet>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
           <Text style={styles.greeting}>Hi{profile.name ? `, ${profile.name}` : ""}. Who's coming, and what are you into?</Text>
           {included ? (
@@ -342,7 +359,10 @@ function Building({ req, plan, failed, raw, cityName, spots, onEdit, onOpen }: {
 const styles = StyleSheet.create({
   askHeader: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6 },
   askTitle: { fontFamily: font.sans, fontSize: 22, color: "#1F1F1F" },
-  askRound: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F2F2F2", alignItems: "center", justifyContent: "center" },
+  askRound: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F2F2F2", alignItems: "center", justifyContent: "center", marginLeft: 8 },
+  historyRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F1F1F1" },
+  historyTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#1F1F1F" },
+  historySub: { fontFamily: font.sans, fontSize: 13, color: color.textSub, marginTop: 2 },
   greeting: { fontFamily: font.sans, fontSize: 26, lineHeight: 32, color: "#1B1B1B", marginTop: 14, fontWeight: "500" },
   includedChip: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", backgroundColor: color.tonal, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginTop: 14, maxWidth: "100%" },
   includedText: { fontFamily: font.sans, fontSize: 15, color: color.tonalText, fontWeight: "600", flexShrink: 1 },

@@ -12,15 +12,15 @@ import { actions, useStore } from "@/state/store";
 import { color, font } from "@/theme/tokens";
 import { Icon, PlaceImage, ScoreBadge, T } from "./ui";
 
-export function metaLine(p: Place, clock: CityClock, from: LatLng | null): string {
+export function metaLine(p: Place, clock: CityClock, from: LatLng | null, withPrice = true): string {
   const bits: string[] = [];
   const d = distanceLabel(from, p);
   if (d) bits.push(d);
   const st = statusAt(p, clock.day, clock.minutes);
   if (st.state !== "unknown") bits.push(st.state === "open" ? (st.detail.startsWith("Closes") ? `Open, ${st.detail.toLowerCase()}` : "Open 24 hours") : st.detail || "Closed");
   const c = costOf(p);
-  if (c.dollars) bits.push(c.dollars);
-  else if (c.perPerson === 0 && !c.estimated) bits.push("Free");
+  if (withPrice && c.dollars) bits.push(c.dollars);
+  else if (withPrice && c.perPerson === 0 && !c.estimated) bits.push("Free");
   return bits.join(" • ");
 }
 
@@ -95,7 +95,7 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
         </Pressable>
       ) : null}
       <View style={styles.rowBottom}>
-        <Text style={styles.rowMeta} numberOfLines={1}>{metaLine(place, clock, from)}</Text>
+        <Text style={styles.rowMeta} numberOfLines={1}>{metaLine(place, clock, from, false)}</Text>
         <Pressable accessibilityLabel="Add to a day" hitSlop={8} onPress={onAdd ?? (() => router.push(`/builder?place=${encodeURIComponent(place.id)}`))}>
           <Icon name="add-circle-outline" size={27} tint="#000" />
         </Pressable>

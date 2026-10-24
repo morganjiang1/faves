@@ -86,12 +86,14 @@ export default function Explore() {
     );
   }
 
+  // Map mode: Corner's white shadowed pills. List mode: Beli's outlined 32 pt chips.
+  const P = mode === "list" ? BeliChip : Pill;
   const filterPills = (
     <ScrollView horizontal style={{ flexGrow: 0, flexShrink: 0 }} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pills} keyboardShouldPersistTaps="handled">
-      <Pill testID="pill-open" icon="time-outline" label="open now" on={open} onPress={() => setOpen((v) => !v)} />
-      <Pill testID="pill-gems" icon="diamond-outline" label="hidden gems" on={gems} onPress={() => setGems((v) => !v)} />
-      <Pill testID="pill-moments" icon="play-circle-outline" label="moments" on={moments} onPress={() => setMoments((v) => !v)} />
-      {cat === "courts" ? SPORTS.map((s) => <Pill key={s} testID={`pill-${s}`} label={s} on={sport === s} onPress={() => setSport((v) => (v === s ? null : s))} />) : null}
+      <P testID="pill-open" icon="time-outline" label={mode === "list" ? "Open now" : "open now"} on={open} onPress={() => setOpen((v) => !v)} />
+      <P testID="pill-gems" icon="diamond-outline" label={mode === "list" ? "Hidden gems" : "hidden gems"} on={gems} onPress={() => setGems((v) => !v)} />
+      <P testID="pill-moments" icon="play-circle-outline" label={mode === "list" ? "Moments" : "moments"} on={moments} onPress={() => setMoments((v) => !v)} />
+      {cat === "courts" ? SPORTS.map((s) => <P key={s} testID={`pill-${s}`} label={s} on={sport === s} onPress={() => setSport((v) => (v === s ? null : s))} />) : null}
     </ScrollView>
   );
 
@@ -208,6 +210,15 @@ function Pill({ label, icon, on, onPress, testID }: { label: string; icon?: Para
   );
 }
 
+function BeliChip({ label, icon, on, onPress, testID }: { label: string; icon?: Parameters<typeof Icon>[0]["name"]; on: boolean; onPress: () => void; testID: string }) {
+  return (
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={[styles.beliChip, on && styles.beliChipOn]}>
+      {icon ? <Icon name={icon} size={16} tint={on ? "#0F3F49" : "#424242"} /> : null}
+      <Text style={[styles.beliChipText, on && { color: "#0F3F49" }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function CatItem({ emoji, label, on, onPress, testID }: { emoji: string; label: string; on: boolean; onPress: () => void; testID: string }) {
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={styles.cat}>
@@ -227,6 +238,9 @@ const styles = StyleSheet.create({
   pills: { paddingHorizontal: 14, gap: 8, paddingVertical: 6 },
   pill: { height: 30, borderRadius: 15, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12 },
   pillText: { fontFamily: font.sans, fontSize: 16, color: "#000" },
+  beliChip: { height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#424242", backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
+  beliChipOn: { backgroundColor: "#EAEDEF", borderColor: "#A2ABC8" },
+  beliChipText: { fontFamily: font.sans, fontSize: 16, color: "#424242" },
   cats: { paddingHorizontal: 8, gap: 2, paddingVertical: 6 },
   cat: { width: 70, alignItems: "center", gap: 2 },
   catIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
