@@ -33,12 +33,22 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ animation: "fade", gestureEnabled: false }} />
                 <Stack.Screen name="builder" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
-                <Stack.Screen name="city" options={{ presentation: "modal" }} />
+                <Stack.Screen name="plan/[id]" />
+                <Stack.Screen name="place/[id]" />
+                <Stack.Screen name="explore" />
                 <Stack.Screen name="search" options={{ animation: "fade" }} />
+                <Stack.Screen name="city" options={{ presentation: "modal" }} />
+                <Stack.Screen name="day/[id]" />
+                <Stack.Screen name="recap/[id]" options={{ presentation: "fullScreenModal" }} />
+                <Stack.Screen name="group/[id]" />
                 <Stack.Screen name="rank" options={{ presentation: "transparentModal", animation: "fade" }} />
+                <Stack.Screen name="rankings" />
                 <Stack.Screen name="moments/[id]" options={{ presentation: "fullScreenModal", animation: "fade" }} />
                 <Stack.Screen name="post-moment/[id]" options={{ presentation: "fullScreenModal" }} />
+                <Stack.Screen name="wallet" />
+                <Stack.Screen name="payout" options={{ presentation: "modal" }} />
                 <Stack.Screen name="plus" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+                <Stack.Screen name="settings" />
               </Stack>
             </View>
           </View>

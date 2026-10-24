@@ -66,7 +66,19 @@ export interface AppState {
   plus: { active: boolean; plan: "monthly" | "annual" | null; since: string | null };
   replans: { day: string; count: number };
   recentSearches: string[];
+  // Demo mode lets a judge outside the city try posting a moment; such clips are stamped
+  // "Demo, not verified" instead of "Taken here".
+  settings: { demoHere: boolean };
+  likedMoments: string[]; // Spot Moments the user hearted in the viewer
+  spotNotes: SpotNote[]; // "Notice something missing? Add a spot" notes from search
+  savedDays: string[]; // community day ids bookmarked from the feed (newest first)
+  groupMeta: Record<string, GroupMeta>; // by group id: city, place names, whether you host it
 }
+
+// What a group link carries besides the Group itself (so a friend's phone can show it).
+export interface GroupMeta { city: string; names: Record<string, string>; mine: boolean }
+
+export interface SpotNote { id: string; city: string; query: string; text: string; at: string }
 
 const KEY = "faves:v1";
 
@@ -88,6 +100,11 @@ export const initialState: AppState = {
   plus: { active: false, plan: null, since: null },
   replans: { day: "", count: 0 },
   recentSearches: [],
+  settings: { demoHere: false },
+  likedMoments: [],
+  spotNotes: [],
+  savedDays: [],
+  groupMeta: {},
 };
 
 let state: AppState = initialState;
@@ -121,7 +138,7 @@ export async function hydrate() {
   try {
     const raw = await AsyncStorage.getItem(KEY);
     const saved = raw ? (JSON.parse(raw) as Partial<AppState>) : {};
-    state = { ...initialState, ...saved, profile: { ...initialState.profile, ...(saved.profile ?? {}) }, hydrated: true };
+    state = { ...initialState, ...saved, profile: { ...initialState.profile, ...(saved.profile ?? {}) }, settings: { ...initialState.settings, ...(saved.settings ?? {}) }, hydrated: true };
   } catch {
     state = { ...initialState, hydrated: true };
   }
@@ -204,5 +221,30 @@ export const actions = {
   },
   clearSearches() {
     setState({ recentSearches: [] });
+  },
+  setSetting(patch: Partial<AppState["settings"]>) {
+    setState((s) => ({ settings: { ...s.settings, ...patch } }));
+  },
+  toggleSaveDay(dayId: string) {
+    setState((s) => ({ savedDays: s.savedDays.includes(dayId) ? s.savedDays.filter((x) => x !== dayId) : [dayId, ...s.savedDays] }));
+  },
+};
+
+// ---- Spot Moments, wallet test data and search notes (added alongside the core actions) ----
+
+export const momentsMoneyActions = {
+  toggleMomentLike(id: string) {
+    setState((s) => ({ likedMoments: s.likedMoments.includes(id) ? s.likedMoments.filter((x) => x !== id) : [id, ...s.likedMoments] }));
+  },
+  addSpotNote(note: SpotNote) {
+    setState((s) => ({ spotNotes: [note, ...s.spotNotes].slice(0, 50) }));
+  },
+};
+
+// ---- Group voting (added for the group screen) ----
+
+export const groupActions = {
+  setGroupMeta(id: string, meta: GroupMeta) {
+    setState((s) => ({ groupMeta: { ...s.groupMeta, [id]: meta } }));
   },
 };

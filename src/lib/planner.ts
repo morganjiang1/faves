@@ -5,7 +5,7 @@
 import type { City, Place } from "@/data/types";
 import type { CategoryId } from "@/theme/tokens";
 import { CATEGORIES } from "@/theme/tokens";
-import { bestLeg, metersBetween, type LatLng, type Leg, type Mode } from "./geo";
+import { bestLeg, legFor, metersBetween, type LatLng, type Leg, type Mode } from "./geo";
 import { isOpenAt, nextOpen, openForVisit } from "./hours";
 import type { Activity, PlanRequest, Sport, Who } from "./parser";
 import { costOf, compact, scoreOutOf10 } from "./score";
@@ -55,6 +55,7 @@ export interface Plan {
   source: "rules" | "model";
   revision: number;
   log: string[];
+  legModes?: Record<string, Mode>; // a leg's travel mode picked by hand (by stop key)
 }
 
 export interface PlanContext {
@@ -65,6 +66,7 @@ export interface PlanContext {
   profileInterests?: CategoryId[];
   exclude?: Set<string>;
   idSeed?: string;
+  includePlace?: string; // "Add to a day" from a place page: the day is built around it
 }
 
 // How long people stay, by kind of stop (minutes).
@@ -251,6 +253,7 @@ interface PickState {
   windowStart: number;
   windowEnd: number;
   center: LatLng | null;
+  toward?: LatLng | null; // the next stop when it is already fixed: pick things on the way
 }
 
 function baseScore(p: Place, s: Slot, req: PlanRequest): number {
@@ -322,6 +325,7 @@ export function rankCandidates(s: Slot, prev: LatLng | null, time: number, st: P
     if (budget != null && budget > 0 && cost.perPerson > budget * 0.9) { if (!cost.estimated) continue; score -= 10; }
     if (leg) score -= Math.max(0, leg.minutes - 6) * (st.mode === "walk" ? 1.8 : 1.4);
     if (st.center && prev) score -= Math.min(12, metersBetween(st.center, p) / 800);
+    if (st.toward) score -= Math.min(30, bestLeg(p, st.toward, st.mode).minutes * 0.9);
     if (st.center && !prev) score -= Math.min(40, metersBetween(st.center, p) / 250);
     if (req.hood) {
       if (p.hood === req.hood) score += 15;
@@ -457,9 +461,17 @@ function schedule(slots: Slot[], st: PickState, start: number, origin: LatLng | 
         time += shift;
       }
     }
+    const nextPin = pinned.get(i + 1);
+    st.toward = nextPin && !pinned.get(i) ? nextPin : null;
     const ranked = rankCandidates(s, prev, time, st, 4);
+    st.toward = null;
     const pin = pinned.get(i);
-    const pick = (pin && ranked.find((c) => c.place.id === pin.id)) || ranked[0];
+    let pick = (pin && ranked.find((c) => c.place.id === pin.id)) || ranked[0];
+    if (pin && pick?.place.id !== pin.id && s.mustDo && s.label === pin.name) {
+      // A place you chose yourself stays, even when it isn't the agent's pick at this hour.
+      const leg = prev ? bestLeg(prev, pin, st.mode) : null;
+      pick = { place: pin, score: 0, arrive: time + (leg?.minutes ?? 0), leg, reasons: [], warnings: openForVisit(pin.hours, st.day, time + (leg?.minutes ?? 0), 30) === false ? ["May be closed at this time, check the hours"] : [] };
+    }
     if (!pick) continue;
     // Clip a stop that runs past the end of the day, unless it is a must-do.
     let end = pick.arrive + s.duration;
@@ -541,6 +553,15 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
   }
   slots = withFillers(slots, req, win.start, win.end, sun?.sunset ?? null, fits);
 
+  // A place picked from its page takes the template slot of its kind (or leads the day).
+  const included = ctx.includePlace ? city.byId.get(ctx.includePlace) : undefined;
+  let includedAt = -1;
+  if (included) {
+    const own: Slot = { label: included.name, categories: [included.category], keywords: [], mustDo: true, duration: DURATION[included.category] };
+    includedAt = slots.findIndex((s) => !s.mustDo && !s.interest && s.categories.includes(included.category));
+    if (includedAt >= 0) slots[includedAt] = own; else { slots.unshift(own); includedAt = 0; }
+  }
+
   // Anchor the day on its rarest stops (a Gundam shop, the pickleball courts): pick those
   // first, as a close-together pair when there are two, then build the route around them.
   let stops: PlanStop[];
@@ -565,8 +586,12 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     const pick = center ? rankCandidates(c.s, null, win.start, free, 1)[0]?.place : c.cands[0].place;
     if (pick) pinned.set(c.i, pick);
   }
+  if (included) {
+    pinned.set(includedAt, included);
+    st.exclude = new Set([...st.exclude].filter((x) => x !== included.id));
+  }
   if (!center) {
-    const anchor = pinned.size ? [...pinned.values()][0] : rankCandidates(slots[0], null, win.start, st, 1)[0]?.place;
+    const anchor = included ?? (pinned.size ? [...pinned.values()][0] : rankCandidates(slots[0], null, win.start, st, 1)[0]?.place);
     st.center = anchor ?? city.center;
     if (!pinned.size && anchor) pinned.set(0, anchor);
   }
@@ -686,7 +711,8 @@ function retime(plan: Plan, city: City, from: number, startAt?: number, log?: st
   for (let i = from; i < plan.stops.length; i++) {
     const s = plan.stops[i];
     let p = city.byId.get(s.placeId)!;
-    let leg = prev ? bestLeg(prev, p, plan.transport) : null;
+    const forced = plan.legModes?.[s.key];
+    let leg = prev ? (forced ? legFor(prev, p, forced) : bestLeg(prev, p, plan.transport)) : null;
     let arrive = time + (leg?.minutes ?? 0);
     if (openForVisit(p.hours, plan.weekday, arrive, Math.min(s.slot.duration, 45)) === false) {
       const n = nextOpen(p.hours, plan.weekday, arrive);
@@ -876,4 +902,38 @@ export function alternativesFor(plan: Plan, city: City, index: number, limit = 8
   const prev = index > 0 ? city.byId.get(plan.stops[index - 1].placeId)! : null;
   const time = index > 0 ? plan.stops[index - 1].end : plan.start;
   return rankCandidates(s.slot, prev, time, st, limit);
+}
+
+
+// Pick a travel mode for one leg by hand (Wanderlog's leg mode sheet) and re-time the day.
+export function setLegMode(input: Plan, city: City, index: number, mode: Mode): Plan {
+  const plan = clone(input);
+  plan.legModes = { ...(plan.legModes ?? {}), [plan.stops[index].key]: mode };
+  retime(plan, city, index);
+  plan.revision += 1;
+  return plan;
+}
+
+// Rebuild a plan someone shared as a link (request, places and start time only).
+export function planFromShared(city: City, shared: { id: string; raw: string; date: string; start: number; mode: Mode; places: string[]; title: string }, req: PlanRequest): Plan | null {
+  const places = shared.places.map((id) => city.byId.get(id)).filter((p): p is Place => Boolean(p));
+  if (!places.length) return null;
+  const date = new Date(`${shared.date}T00:00:00Z`);
+  const off = offsetHours(city.utcOffset, date);
+  const sun = sunTimes(city.center.lat, city.center.lng, date, off);
+  const plan: Plan = {
+    id: shared.id, citySlug: city.slug, cityName: city.name, createdAt: new Date().toISOString(), request: req, title: shared.title,
+    dateISO: shared.date, dayLabel: `${DAY_NAMES[date.getUTCDay()]}, ${MONTHS[date.getUTCMonth()].slice(0, 3)} ${date.getUTCDate()}`, weekday: date.getUTCDay(),
+    start: shared.start, end: shared.start + places.length * 100, transport: shared.mode, groupSize: req.groupSize ?? 2,
+    stops: places.map((p) => ({ key: newId("s"), placeId: p.id, slot: { label: p.kind ?? p.category, categories: [p.category], keywords: [], mustDo: false, duration: DURATION[p.category] }, start: 0, end: DURATION[p.category], leg: null, why: "", planB: [], warnings: [] })),
+    sunset: sun?.sunset ?? null, notes: [], source: "rules", revision: 0, log: [],
+  };
+  retime(plan, city, 0, shared.start);
+  const st = stateFor(plan, city);
+  plan.stops.forEach((s, i) => {
+    const p = city.byId.get(s.placeId)!;
+    s.why = explain({ place: p, score: 0, arrive: s.start, leg: s.leg, reasons: [], warnings: [] }, s.slot, i > 0 ? city.byId.get(plan.stops[i - 1].placeId)?.name ?? null : null, st);
+  });
+  plan.end = Math.max(plan.end, plan.stops[plan.stops.length - 1].end);
+  return plan;
 }
