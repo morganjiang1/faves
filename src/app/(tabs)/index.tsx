@@ -6,7 +6,7 @@
 // then Netflix-style rows of video cards: Tonight, This weekend, the most-done days as
 // vertical story cards (YouTube Shorts / Reels), and hidden gems. References:
 // references/video/* and docs/design_references.md "Video-first Home and itinerary".
-import { router, useIsFocused } from "expo-router";
+import { router, useIsFocused, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -22,7 +22,7 @@ import { closesAt } from "@/lib/hours";
 import { formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useCityClock } from "@/state/device";
-import { useStore } from "@/state/store";
+import { actions, useStore } from "@/state/store";
 import { color, font, shadow } from "@/theme/tokens";
 
 const PROMPTS = ["What are we doing?", "first date in the Mission", "pickleball then hot pot", "rainy day with the kids", "sunset and tacos", "my friend loves Gundam"];
@@ -40,6 +40,12 @@ export default function Home() {
   const { city, status, error, retry } = useCity();
   const clock = useCityClock(city?.utcOffset);
   const name = useStore((s) => s.profile.name);
+  const currentCity = useStore((s) => s.profile.city);
+  // Links can open Home in a given city: /?city=san-francisco
+  const { city: cityParam } = useLocalSearchParams<{ city?: string }>();
+  useEffect(() => {
+    if (cityParam && cityParam !== currentCity && CITY_INDEX.some((c) => c.slug === cityParam)) actions.updateProfile({ city: String(cityParam) });
+  }, [cityParam, currentCity]);
   const [prompt, setPrompt] = useState(0);
   const [days, setDays] = useState<CommunityDay[] | null>(null);
   const { vp, onScroll, onLayout } = useViewport();

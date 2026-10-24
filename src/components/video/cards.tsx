@@ -82,9 +82,13 @@ export function RankCard({ place, rank, active, testID }: { place: Place; rank: 
       </SpotMedia>
       <View pointerEvents="none" style={{ position: "absolute", left: 0, bottom: -2, width: numW, height: 92, overflow: "visible" }}>
         <Svg width={numW} height={92} style={{ overflow: "visible" }}>
-          <SvgText x={numW} y={88} textAnchor="end" fontSize={104} fontWeight="900" fontFamily={Platform.select({ web: "-apple-system, 'Helvetica Neue', Arial, sans-serif", default: undefined })} fill={DARK.bg} stroke="#D0D0D0" strokeWidth={2} letterSpacing={rank === 10 ? -10 : 0}>
-            {String(rank)}
-          </SvgText>
+          {/* Outline pass, then a fill pass on top: the fill hides the stroke inside the glyph
+              (system digits are built from overlapping contours), leaving a clean 2 pt outline. */}
+          {[4, 0].map((w) => (
+            <SvgText key={w} x={numW} y={88} textAnchor="end" fontSize={104} fontWeight="900" fontFamily={Platform.select({ web: "-apple-system, 'Helvetica Neue', Arial, sans-serif", default: undefined })} fill={DARK.bg} stroke={w ? "#D0D0D0" : "none"} strokeWidth={w} strokeLinejoin="round" letterSpacing={rank === 10 ? -10 : 0}>
+              {String(rank)}
+            </SvgText>
+          ))}
         </Svg>
       </View>
     </View>
