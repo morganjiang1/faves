@@ -17,4 +17,4 @@ expo-env.d.ts
 test-results/
 playwright-report/
 npm-debug.*
-docs/screens/pairs/
+docs/screens/

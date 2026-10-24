@@ -69,7 +69,7 @@ test("live re-plan: rain, running late and a swap", async ({ page }) => {
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("a popular day from Home, Do this day, then the recap", async ({ page }) => {
+test("a popular day from Home, Do this day, the recap, and posting it", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/");
   await page.getByTestId("day-card-0").click();
@@ -85,6 +85,29 @@ test("a popular day from Home, Do this day, then the recap", async ({ page }) =>
   await page.getByTestId("link-recap").click();
   await expect(page).toHaveURL(/\/recap\//);
   await expect(page.getByTestId("recap-screen")).toBeVisible();
+
+  // Thumbs up on three stops, a thumbs down on one, then Beli's comparison.
+  for (const i of [0, 1, 2]) await page.getByTestId(`rate-stop-${i}-up`).click();
+  await page.getByTestId("rate-stop-3-down").click();
+  await page.getByTestId("recap-continue").click();
+  for (let k = 0; k < 8 && (await page.getByTestId("compare-a").isVisible()); k++) {
+    await page.getByTestId("compare-a").click();
+    await page.waitForTimeout(250);
+  }
+  // Strava-style slides, then the Wrapped share card and posting the day.
+  await expect(page.getByTestId("recap-story")).toBeVisible();
+  for (let k = 0; k < 10 && !(await page.getByTestId("recap-make-card").isVisible()); k++) {
+    await page.getByTestId("recap-story-next").click();
+    await page.waitForTimeout(250);
+  }
+  await page.getByTestId("recap-make-card").click();
+  await expect(page.getByTestId("recap-share-card")).toBeVisible();
+  await page.getByTestId("recap-post").click();
+  await expect(page.getByTestId("posted-modal")).toBeVisible();
+
+  // The posted day shows at the top of the community feed.
+  await page.goto("/feed");
+  await expect(page.getByTestId("feed-screen")).toContainText("Saturday in SF");
 
   expect(problems, problems.join("\n")).toEqual([]);
 });

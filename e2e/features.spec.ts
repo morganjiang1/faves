@@ -66,3 +66,42 @@ test("rewards wallet, cash out and Faves Plus (test mode)", async ({ page }) => 
 
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("rank a spot from its page, then vote on a day by link", async ({ page, browser, context }) => {
+  const problems = watchConsole(page);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await startOnboarded(page, `/place/${GOLDEN_GATE}`);
+  await page.getByTestId("action-rank").click();
+  await expect(page.getByTestId("rank-screen")).toBeVisible();
+  await page.getByTestId("rate-great").click();
+  await expect(page.getByTestId("first-rank-modal-cta")).toBeVisible();
+
+  // Plan a day, open its group vote and copy the invite link.
+  await page.goto("/builder");
+  await page.getByTestId("builder-input").fill("date saturday: something fun, dinner and a view");
+  await page.getByTestId("builder-send").click();
+  await expect(page.getByTestId("itinerary")).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("link-vote").click();
+  await expect(page.getByTestId("group-screen")).toBeVisible();
+  await page.getByTestId("group-invite").click();
+  await expect(page.getByTestId("share-sheet")).toContainText("Anyone with the link can vote");
+  await page.getByTestId("share-copy").click();
+  const invite = await page.evaluate(() => navigator.clipboard.readText());
+  expect(invite).toMatch(/\/group\/.+\?d=/);
+
+  // A friend opens the link in a fresh browser (no app, no account) and votes.
+  const friendContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const friend = await friendContext.newPage();
+  const friendProblems = watchConsole(friend);
+  await friend.goto(invite);
+  await expect(friend.getByTestId("group-screen")).toBeVisible();
+  await friend.getByTestId("group-row-0-opt-0").click();
+  await expect(friend.getByTestId("rsvp-sheet")).toBeVisible();
+  await friend.getByTestId("rsvp-going").click();
+  await friend.getByTestId("rsvp-name").fill("Sam");
+  await friend.getByTestId("rsvp-continue").click();
+  await expect(friend.getByTestId("group-screen")).toContainText("Sam");
+  await friendContext.close();
+
+  expect([...problems, ...friendProblems], [...problems, ...friendProblems].join("\n")).toEqual([]);
+});
