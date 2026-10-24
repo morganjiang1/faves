@@ -2,7 +2,7 @@
 // Headless Chrome has a minimum window width, so each page renders inside a 390 x 844 iframe
 // on a wrapper page served from the app's own origin (so the app's saved state applies).
 //
-//   node scripts/shot.mjs <name> <path> [--state onboarded|fresh] [--wait ms] [--click testID] [--fill testID=text] ... [--scroll px] [--base url]
+//   node scripts/shot.mjs <name> <path> [--state onboarded|fresh] [--wait ms] [--click testID] [--clickcss selector] [--fill testID=text] ... [--scroll px] [--base url]
 //   e.g. node scripts/shot.mjs home / --state onboarded
 // Writes docs/screens/<name>.png (1170 px wide, 3x like an iPhone).
 import { mkdir } from "node:fs/promises";
@@ -47,6 +47,7 @@ await page.waitForTimeout(wait);
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--click") { await frame.getByTestId(args[i + 1]).first().click(); await page.waitForTimeout(900); }
   if (args[i] === "--sleep") await page.waitForTimeout(Number(args[i + 1]));
+  if (args[i] === "--clickcss") { await frame.locator(args[i + 1]).first().dispatchEvent("click"); await page.waitForTimeout(900); }
   if (args[i] === "--fill") { const [id, ...rest] = args[i + 1].split("="); await frame.getByTestId(id).first().fill(rest.join("=")); await page.waitForTimeout(400); }
 }
 if (scroll) {

@@ -21,10 +21,18 @@ env:
     visible:
       id: "place-page"
     timeout: 15000
-- scrollUntilVisible:
-    element:
-      id: "moments-section"
-    direction: DOWN
+- tapOn:
+    id: "place-caption"
+- assertVisible:
+    id: "details-section"
+- tapOn:
+    id: "details-close"
+- tapOn:
+    id: "moments-anchor"
+- extendedWaitUntil:
+    visible:
+      id: "moments-page"
+    timeout: 10000
 - tapOn:
     id: "moments-tab-now"
 - assertVisible:

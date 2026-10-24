@@ -2,10 +2,11 @@
 
 Never know what to do? Tell Faves who's coming and what you're into. It finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
 
-- **Video first.** Home opens on the Top 10 spots this week in your city, each playing a short clip, then what's open tonight, this weekend, the most-done days and hidden gems. Every day and itinerary shows each stop's clip, and you can swipe through a whole day full screen. Clips are credited to the TikTok creators who shot them.
+- **Video first.** Home opens on the Top 10 spots this week in your city, each playing a short clip, then what's open tonight, this weekend, the most-done days and hidden gems. Every day and itinerary shows each stop's clip, and you can swipe through a whole day full screen. Each clip shows its poster's username.
+- **Every spot plays full screen.** A spot's page is a vertical player: its clips, then its photos, with the name, Locals Score, what it is, whether it's open and a real local quote over the video, and a rail to add it to a day, save, share or get directions. Details (hours, cost, phone, booking, where the score comes from) open in a sheet.
 - **Locals Score** for every spot, built from Google, Yelp, TripAdvisor, Reddit and TikTok, with a hidden-gem flag for places locals rate highly that tourists haven't found.
 - **A planner agent** that turns "me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus" into a full day: stops picked by Locals Score, kind and opening hours, ordered by time and travel, a view timed to sunset, a Plan B for every stop and a reason for every pick. It re-plans live: "it's raining", "we're running 30 min late", "swap the sushi spot".
-- **Spot Moments**: clips taken at a place (public TikTok videos tagged there, played through TikTok's embed and credited to the creator) and clips you post, which carry "Taken here" only when your phone is at the spot while it's open.
+- **Spot Moments**: a spot's posts in a grid with play counts, and the clips you post, which carry "Taken here" only when your phone is at the spot while it's open.
 - **Community**: the most-done days in your city, Do this day, likes, posts, a Beli-style ranking of the spots you've been to, group voting by link, an end-of-day recap and share card.
 - **Spot rewards and Faves Plus**: the wallet and the Plus paywall run on test data in this build.
 - 10 cities: New York, Los Angeles, San Francisco, Chicago, Seattle, Boston, Austin, Miami, Washington DC and San Diego.
@@ -54,7 +55,7 @@ node scripts/serve-web.mjs 8090 # http://localhost:8090
 
 ### Spot clips
 
-Clips live in `assets/videos/<city>/` (480 x 854 H.264, muted, 3 to 5 seconds, with a poster JPG) and are listed in that folder's `manifest.json`: `{ "<placeId>": { "video", "poster", "creator", "sourceUrl" } }`. After adding or replacing clips, run `node scripts/make-video-index.mjs` to regenerate `src/data/videos.ts` (the app bundles every clip listed there). Spots without a clip show their photo in the same frame.
+Clips live in `assets/videos/<city>/` (480 x 854 H.264, muted, 2 to 5 seconds, with a poster JPG) and are listed in that folder's `manifest.json`: `{ "<placeId>": { "video", "poster", "creator", "views", "postedAt", "sourceUrl", "more": [extra clips] } }`. `sourceUrl` is kept for our records and is never bundled or shown. After adding or replacing clips, run `node scripts/make-video-index.mjs` to regenerate `src/data/videos.ts` (the app bundles every clip listed there). Spots without a clip show their photos, zooming slowly.
 
 ## Environment variables
 

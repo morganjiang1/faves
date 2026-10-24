@@ -25,6 +25,11 @@ From Beli (`social/beli/appstore_06_profile_stats.png`, `appstore_03_feed_post_r
 | `closed` | `#CE4E07` | "Closed" status | Corner |
 | `rateGreat` / `rateOk` / `rateBad` | `#8CC3A7` / `#F6CB68` / `#EFABAD` | "How was it?" circles | Beli |
 | `sectionBand` | `#F7F7F7` | 6 pt band between home sections | DoorDash |
+| `SPOT_DARK.bg` | `#110F15` | place page details sheet, Spot Moments page | Netflix iPhone (same as Home) |
+| `SPOT_DARK.text` / `.sub` | `#F8F8F8` / `#959595` | text on the dark spot screens | TikTok dark mode (`video/tiktok/yt_a3cZ5jYXnnc_t058_dark_mode_tokens.png`) |
+| `SPOT_DARK.raised` | `#2A282C` | chips, grey buttons, input pills on dark | TikTok "Add comment" pill (`#363336` on black), a step darker |
+| `SPOT_DARK.green` | `#7FE0B0` | Locals Score pill and "Open" on dark | Home's score green on dark |
+| `SPOT_DARK.red` | `#FE2C55` | add plus, record button, Save button, "Taken here" label | TikTok red |
 
 ## Type
 
@@ -112,6 +117,9 @@ From Beli (`social/beli/appstore_06_profile_stats.png`, `appstore_03_feed_post_r
 | Plan prompt between rows | Google Maps Ask Maps (unchanged, see Plan builder prompt) | same prompt card, placed between two video rows |
 | Itinerary stop clip tile | YouTube playlist row (`video/youtube/appstore_05_playlist_rows_thumb_duration.jpg`) | 50 × 75 pt thumbnail (YouTube's 75 pt height, Shorts 2:3 crop), radius 7, text 16 pt right; length badge 17.5 pt black 80% with 11 pt white digits, 4 pt in; 3.4 pt `brand` watched bar |
 | Day viewer (swipe through stops) | Netflix Clips (`video/netflix/appstore_04_clips_vertical_viewer_mute.jpg`) | full-screen clip, swipe up for next stop; rail of three 48 pt glass circles (mute, save, share), 64 pt pitch, 28 pt from the right; title 19 pt bold, meta 11.5 pt semibold, description 13 pt + "…more", 17.4 pt in; 71 pt place-photo circle; 2 pt progress bar `#A5A5A5` on `#2D2729` above the tab bar |
-| Place page hero video | Netflix title page trailer (`video/netflix/appstore_02_title_page_trailer_hero.jpg`) | 393 × 212 pt muted autoplay under the status bar; 30 pt dark circles (✕, share) top-right, 44 pt pitch, 10 pt in, 28 pt from the right; mute in the same 30 pt circle bottom-right with the Clips speaker-× icon |
+| Place page (full-screen player) | TikTok video opened from a place (`video/tiktok/yt_l4HrrhqS7NY_t045_video_location_anchor_caption_rail.png`) | clips fill the screen above a black bar with a 37 pt "Been here? Rank it" pill; caption 12 pt in: 26 pt Spot Moments anchor (18 pt `#40B49A` pin square), 17 pt bold name + green score pill, 15 pt lines, a Reddit quote, the poster line; rail centered 29 pt from the right (44 pt avatar + 20 pt red plus, 30 pt glyphs, 13 pt labels); 2 pt progress line with a 6 pt dot; "1/3" counter top right |
+| Details sheet | TikTok comments sheet (`video/tiktok/yt_XDmV5t6Y-0Y_t061_comments_sheet_tabs_add_comment.png`) in TikTok dark colors | top at 278/844 of the screen, 10 pt radius, no scrim; 44 pt tab row (14 pt semibold, 2 pt underline), 18 pt close; 32 pt discs, 13 pt grey names with a teal tag, 15 pt text; 36 pt "Been here? Rank it" pill at the bottom |
+| Spot Moments page | TikTok location page (`video/tiktok/yt_l4HrrhqS7NY_t055_location_page_reviews_posts_favorite.png`) + grid (`t029`) | 26 pt heavy name, score line, 3 pt radius chip with "More ›", 36 pt round directions, 8 pt bands, 17 pt section titles, 38 pt "View all"; 3-column 3:4 tiles with 1 pt gutters, 13 pt play counts, "Taken here" in the 12 pt "Pinned" label; bottom bar: 44 pt record ring with a 34 pt red disc, grey Share and red Save (40 pt, 4 pt radius) |
 | No-clip fallback | Netflix still poster in the same frame (`t051` Trending Now) + Instagram reel-glyph rule (`moments/instagram/yt_q2ASzVtL0YE_t080_...`) | best photo in the identical card frame and overlay; reel glyph (24 pt white, top-right) only on clip cards; no badge or play button on photos |
-| Creator credit on a video card | TikTok handle line (`video/tiktok/appstore_14_for_you_rail_handle_sound.png`) at YouTube Shorts card text size | card: "@handle" white 12 pt, one line under the title; viewer: handle 16 pt semibold + "on TikTok" 14 pt, 22 pt from the left |
+| Poster line on a video | TikTok username line (`video/tiktok/appstore_14_for_you_rail_handle_sound.png`) + initial disc (`t061`) | card: 13 pt disc + "@handle" white 11 pt under the title; viewer: 20 pt disc, "@handle" 16 pt semibold, "· 2w ago" 14 pt; never a platform name |
+| Initial disc (`UserDisc`) | TikTok comments sheet (`t061`) | first letter on teal `#0299A8`, green `#2E6716` or the Faves pink, picked by the username |

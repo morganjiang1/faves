@@ -1508,6 +1508,67 @@ One pick per element. Copy it exactly; values are from the measurements above. W
 | Plan prompt between rows | `plans/google-maps/promo_video_ask_maps_sheet_suggestions.png` (already in the catalog) | Keep the existing Ask Maps prompt card exactly as built; it sits between two video rows like any other row. | See "Plan builder prompt" in `docs/design_system.md`. |
 | Itinerary stop video tile | `video/youtube/appstore_05_playlist_rows_thumb_duration.jpg` | YouTube's playlist row: clip thumbnail left with the length badge bottom-right and the watched bar at its bottom, text right, "⋮" far right. Faves crops the thumbnail to the 2:3 YouTube Shorts card shape so vertical clips fit, and keeps YouTube's thumbnail height. Tap opens the full-screen viewer at that stop. | Thumbnail 75 pt tall; 2:3 = 50 x 75 pt (YouTube's own is 134.6 x 75.3 at 16:9), radius 7 pt, 14 pt from the left (or from the time rail), text 16 pt right of it. Badge 4 pt in from right and bottom, 17.5 pt tall, black 80%, white 11 pt semibold ("0:12"). Watched bar 3.4 pt `#FE0000` (Faves: `brand`). Title 13 pt, 2 lines; grey meta line. |
 | Full-screen swipe viewer for a day's stops | `video/netflix/appstore_04_clips_vertical_viewer_mute.jpg` | Netflix Clips: one clip per screen, swipe up for the next stop. Title block bottom-left (stop name, meta line, one-line description with "…more"), a round art circle to its right (Faves: the place photo, opens the place page), a right rail of three glass circles (mute, save, share), a 2 pt progress bar right above the tab bar. | Rail circles 48 pt, pitch 64 pt, white about 20% fill, icons 22 pt, rail 28 pt from the right edge. Title white bold 19 pt, 17.4 pt from the left; meta white semibold 11.5 pt ("Stop 2 of 5 · 10 min walk"); description white 13 pt + bold "…more". Art circle 71 pt, thin white ring. Progress bar 2 pt, full width, played `#A5A5A5`, unplayed `#2D2729`. |
-| Place page hero video with mute control | `video/netflix/appstore_02_title_page_trailer_hero.jpg` (+ the mute icon from `appstore_04`) | Netflix's title page: the clip plays muted, full width, directly under the status bar; round dark buttons in its top-right corner. Faves puts ✕ (or back) and share there, and the mute button in the hero's bottom-right corner in the same 30 pt dark circle, with Netflix Clips' speaker-× icon. Tap the hero to open the full-screen viewer. | Hero 393 x 212 pt (1.85:1), black status area above. Buttons 30 pt circles, near-black fill, white icons, 44 pt center to center, 10 pt from the video's top, ✕ 28 pt from the right edge. Mute: same 30 pt circle, 10 pt from the hero's bottom and 28 pt from its right edge. |
+| Place page hero video with mute control (replaced 2026-10-24 by the full-screen player, see "Place page as a full-screen player") | `video/netflix/appstore_02_title_page_trailer_hero.jpg` (+ the mute icon from `appstore_04`) | Netflix's title page: the clip plays muted, full width, directly under the status bar; round dark buttons in its top-right corner. Faves puts ✕ (or back) and share there, and the mute button in the hero's bottom-right corner in the same 30 pt dark circle, with Netflix Clips' speaker-× icon. Tap the hero to open the full-screen viewer. | Hero 393 x 212 pt (1.85:1), black status area above. Buttons 30 pt circles, near-black fill, white icons, 44 pt center to center, 10 pt from the video's top, ✕ 28 pt from the right edge. Mute: same 30 pt circle, 10 pt from the hero's bottom and 28 pt from its right edge. |
 | Fallback when a spot has no clip | `video/netflix/yt_PXo3QCmgWB4_t051_...` (Trending Now) + `moments/instagram/yt_q2ASzVtL0YE_t080_location_page_top_recent_grid.png` | Netflix rows mix titles freely: a still poster sits in the exact same card frame as everything else. Faves shows the spot's best photo in the same 9:16 frame, same radius and overlay. Instagram's rule marks the difference: only video tiles carry the reel glyph top-right; photo tiles carry none. | Same card size, radius and title overlay as the row. Reel glyph about 24 pt white, top-right, on clip cards only. No play button and no length badge on a photo. |
-| Small creator credit line on a video card | `video/tiktok/appstore_14_for_you_rail_handle_sound.png` (content) + `video/youtube/yt_Y6V9qRAan6U_t100_home_shorts_shelf.png` (size) | TikTok's bottom-left credit, the handle on its own line, scaled to the YouTube Shorts card text. On a card: the title, then one line "@handle" under it. In the full-screen viewer: TikTok's two lines exactly ("@handle", then "♫ original sound - handle" becomes "on TikTok"). | Card: white regular 12 pt (YouTube card text size), one line, truncate with "…", same 7 pt left inset, sits under the title inside the bottom gradient. Viewer: handle white semibold 16 pt, second line white regular 14 pt, 22 pt from the left, above the progress bar. |
+| Small poster line on a video card | `video/tiktok/appstore_14_for_you_rail_handle_sound.png` (content) + `video/youtube/yt_Y6V9qRAan6U_t100_home_shorts_shelf.png` (size) + the initial disc from `video/tiktok/yt_XDmV5t6Y-0Y_t061_...` | TikTok's bottom-left username line, scaled to the YouTube Shorts card text: every clip reads as a Faves user's post. On a card: the title, then the disc and "@handle" under it. In the full-screen viewer: disc, "@handle" and "· 2w ago". No platform name anywhere (Morgan, 2026-10-24). | Card: white regular 12 pt (YouTube card text size), one line, truncate with "…", same 7 pt left inset, sits under the title inside the bottom gradient. Viewer: handle white semibold 16 pt, second line white regular 14 pt, 22 pt from the left, above the progress bar. |
+
+---
+
+# Place page as a full-screen player: UI reference catalog
+
+Captured 2026-10-24 after Morgan's note on the place page ("i dont like how this looks like google maps"). The place page becomes a full-screen vertical player, dark like Home; Spot Moments becomes a location page with a grid; details move into a dark sheet. Images are in `references/video/tiktok/` (local only). Every frame below was opened and looked at, and every number was measured with PIL on the saved file.
+
+| File | What it shows | Scale |
+|---|---|---|
+| `yt_l4HrrhqS7NY_t045_video_location_anchor_caption_rail.png` | TikTok iPhone screen recording, a video opened from search: location anchor above the username, caption, right rail, progress line, black "Add comment..." bar | 666 x 1440 px for 390 x 844 pt = 1.71 px/pt |
+| `yt_l4HrrhqS7NY_t055_location_page_reviews_posts_favorite.png` | TikTok's location (POI) page: name, rating line, category chip with "More", address with a round directions button, Reviews with "View all", Posts grid, bottom bar "37 favorited / Share / Favorite" | 1.71 px/pt |
+| `yt_l4HrrhqS7NY_t029_grid_play_counts.png` | TikTok's 3-column grid: 3:4 tiles, 1 pt gutters, play counts bottom left, red "Pinned" labels top left | 1.71 px/pt |
+| `yt_XDmV5t6Y-0Y_t061_comments_sheet_tabs_add_comment.png` | TikTok's comments sheet on iPhone: tabs with counts, filter and close, comment rows with initial discs, "Add comment..." bar | 484 x 1080 px for 390 x 870 pt = 1.24 px/pt |
+| `yt_a3cZ5jYXnnc_t058_dark_mode_tokens.png` | TikTok in dark mode (settings screen): page, primary and secondary text colors, TikTok red | 498 px wide for 393 pt = 1.27 px/pt |
+| `../../moments/tiktok/appstore_05_camera_record_button.png` (already in the catalog) | TikTok's record button: red disc in a lighter red ring | App Store frame |
+| `../../moments/tiktok/press_02_local_feed_grid_place_video.jpg` (already in the catalog) | TikTok's photo-mode "1/7" counter top right, the place pill on a video | press image |
+
+## 1. The player (place page)
+
+From `t045`: video full screen under the status bar; the black bottom bar starts at 765 pt (79 pt tall with the home indicator) and holds the "Add comment..." pill: 37 pt tall, fully rounded, `#363336` on near-black `#020002`, 12 pt side margins, placeholder light grey 15 pt. The progress line is 2 pt, 3 pt above the video's bottom, 12 pt side margins, played white with a 6 pt scrub dot.
+
+Caption block, 12 pt from the left, bottom about 10 pt above the video's bottom:
+- Location anchor: 26 pt tall, 4 pt radius, translucent dark fill (`#3B3638` measured over the video), an 18 pt green square `#40B49A` with a white pin, label 13 pt white ("Mount Apo White Boulders · Davao City"). 688 pt from the top (center).
+- Username: about 17 pt bold white with "· 1d ago" in grey after it. 720 pt (center).
+- Caption: 15 pt white regular, one line here. 747 pt (center).
+
+Right rail, centered 29 pt from the right edge:
+- Avatar 44 pt with a 1 pt white ring, its top at 398 pt; a 20 pt red `#FE2C55` plus centered on its bottom edge.
+- Heart (top 470 pt), comment bubble (530 pt), bookmark (593 pt), share arrow (651 pt): glyphs about 27 to 30 pt, white; counts 13 pt semibold white, 3 pt under the glyph. About 60 pt per item.
+
+Top right in photo mode (`press_02`): "1/7" white 13 pt semibold.
+
+## 2. The comments sheet (details)
+
+From `t061` (1.24 px/pt): the sheet's top is at 278 pt (the video shrinks into the space above), radius about 10 pt, white in light mode. Tab row 44 pt: "Comments 1" black 14 pt semibold, "Likes 2" and "Views 1" grey `#8A8A8A`, 16 pt apart, the active tab underlined 2 pt black as wide as its label; a filter glyph and an 18 pt × at the right; a hairline under the row. Comment rows: 32 pt initial disc 10 pt from the left (teal `#0299A8` "M", green `#2E6716` "m"), name grey `#7A7A7A` 13 pt with "· Creator" in teal, text 15 pt black, then "3d ago" grey `#A4A4A4` 12 pt and a bold grey "Reply"; heart `#FE2A56` with its count at the right. The "Add comment..." bar is pinned to the bottom: your 32 pt disc, then a 36 pt pill `#F1F1F1`.
+
+Dark mode (`t058`): page `#111111`, primary text `#F8F8F8`, secondary `#959595`, captions `#878787`, red `#FF3B5F` (TikTok red `#FE2C55` after compression).
+
+## 3. The location page and grid (Spot Moments)
+
+From `t055` and `t029` (1.71 px/pt): back chevron and a faded title in the 44 pt nav; name 26 pt heavy, 16 pt from the left; rating line 15 pt ("★ 5.0 on TikTok (276 reviews) ›"); grey chip `#F1F1F2`, 3 pt radius, 13 pt, with "More ›" 15 pt grey at the right; address 15 pt grey with a 36 pt round directions button at the right; 8 pt grey bands between sections; section titles 17 pt bold; one review row and a full-width 38 pt "View all" button (4 pt radius). Posts: 3 columns, 1 pt gutters, tiles 3:4 (220 x 295 px), play count bottom left (outline play glyph + 13 pt semibold white, 6 pt in), red "Pinned" label top left (2 pt radius, 12 pt semibold white, 5 pt in). Bottom bar: "37 favorited" 15 pt at the left, a grey Share button and a red Favorite button (40 pt tall, 4 pt radius, icon + 15 pt semibold).
+
+Record button (`appstore_05`): a red disc in a translucent red ring, the disc about 78% of the ring.
+
+## Element map for Faves (place page)
+
+| Element | Copy this | Faves | Measured values |
+|---|---|---|---|
+| Place page | `t045` | The spot's clips fill the screen, muted and looping; swipe up through its other clips, then posts from this phone, then its photos (slow zoom when there is no clip) | Pages fill the screen above the bottom bar; scrim over the bottom 300 pt |
+| Location anchor | `t045` | "Spot Moments · 3 posts", opens the Spot Moments page | 26 pt, 4 pt radius, 18 pt `#40B49A` pin square, 13 pt white |
+| Name line | `t045` username | The spot's name 17 pt bold, the Locals Score as a small green pill where TikTok puts "· 1d ago" | Pill 18 pt tall, 3 pt radius (the "Pinned" label shape), Home's score green `#7FE0B0`, 12 pt heavy dark text |
+| Caption lines | `t045` caption | "City park · Free · Russian Hill"; "Open · Closes 12 AM" (open green `#7FE0B0`, closed orange `#FC8C00`); one real Reddit quote with "r/AskSF"; the poster's line (initial disc, @handle, "· 1y ago · Taken here") | 15 pt white; quote 14 pt, 2 lines; poster 13 pt semibold |
+| Right rail | `t045` rail | Avatar slot: the spot's photo with the red plus = Add to a day; comment bubble with the quote count = What locals say; bookmark = Save; share arrow = Share; navigate = Go | 44 pt avatar, 20 pt plus, 30 pt glyphs, 13 pt semibold labels, centered 29 pt from the right |
+| Progress line | `t045` | Plays over each clip's length and loops | 2 pt, 3 pt above the bottom, 12 pt margins, 6 pt dot |
+| Bottom bar | `t045` "Add comment..." | "Been here? Rank it" opens the rank flow | 37 pt pill `#363336` on black |
+| Counter | `press_02` "1/7" | "1/3" when a spot has more than one page | 13 pt semibold white, top right |
+| Details sheet | `t061` + `t058` | Tabs "Locals say 3 / Details / Scores"; Reddit quotes as comment rows; visit facts as rows; the score breakdown (Google, Yelp, Reddit, TikTok); "Been here? Rank it" in the "Add comment..." bar | Top at 278/844 of the screen, 10 pt radius, `#110F15` (Home), text `#F8F8F8`, grey `#959595`, 2 pt underline, 32 pt discs |
+| Initial disc | `t061` | Every clip's poster and you: the first letter on a colored disc | Teal `#0299A8`, green `#2E6716`, plus the Faves pink; white letter |
+| Spot Moments page | `t055` | Dark; name, Locals Score line, kind chip with "More ›" (opens Details), address with directions, What locals say with "View all", Posts with Highlights / Right now tabs | As measured in section 3, colors from `t058` and Home |
+| Post tiles | `t029` | 3:4 tiles of clips and photos; play counts; "Taken here" in the "Pinned" label; a photo glyph on photos | 1 pt gutters, 13 pt counts, 12 pt label |
+| Bottom bar | `t055` + `appstore_05` | The record button with "Post a moment" and the be-here line ("You're here" / "Be here to post"), Share (grey), Save (red) | Ring 44 pt, disc 34 pt `#FE2C55`; buttons 40 pt, 4 pt radius |
