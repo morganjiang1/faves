@@ -1,0 +1,90 @@
+// The main journey: onboarding, Home, plan a day, the itinerary, a place page, live
+// re-plan and the recap.
+import { expect, test } from "@playwright/test";
+import { onboard, startOnboarded, watchConsole } from "./helpers";
+
+test("onboarding to Home to a planned day to a place page", async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto("/__blank");
+  await page.evaluate(() => localStorage.clear());
+  await page.goto("/");
+  await expect(page.getByTestId("onboarding-splash")).toBeVisible();
+  await onboard(page);
+
+  // Home (DoorDash-style feed) with the city loaded.
+  await expect(page.getByTestId("home-prompt")).toBeVisible();
+  await expect(page.getByTestId("city-switcher")).toContainText("San Francisco");
+  await expect(page.getByTestId("day-card-0")).toBeVisible();
+  await expect(page.getByTestId("section-gems")).toBeVisible();
+
+  // Plan a day from a plain request.
+  await page.getByTestId("home-prompt").click();
+  await expect(page.getByTestId("builder-ask")).toBeVisible();
+  await page.getByTestId("builder-input").fill("me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus");
+  await page.getByTestId("builder-send").click();
+  await expect(page.getByTestId("builder-building")).toBeVisible();
+  await expect(page.getByTestId("building-answer")).toContainText("pickleball");
+
+  // The itinerary opens by itself when the answer finishes.
+  await expect(page.getByTestId("itinerary")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("plan-title")).toContainText(/Pickleball and hot pot/i);
+  await expect(page.getByTestId("stop-0")).toContainText(/pickleball/i);
+  await expect(page.getByTestId("leg-1")).toContainText(/min .* • .* mi/);
+
+  // A stop opens its place page with logistics and the Locals Score.
+  await page.getByTestId("stop-0").getByRole("button").first().click();
+  await expect(page.getByTestId("place-page")).toBeVisible();
+  await expect(page.getByTestId("locals-score-row")).toBeVisible();
+  await expect(page.getByTestId("details-section")).toBeVisible();
+  await page.getByTestId("place-back").click();
+  await expect(page.getByTestId("itinerary")).toBeVisible();
+
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
+test("live re-plan: rain, running late and a swap", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/builder");
+  await page.getByTestId("builder-input").fill("date saturday 1pm to 8pm, a hike then sushi then a view, by car");
+  await page.getByTestId("builder-send").click();
+  await expect(page.getByTestId("itinerary")).toBeVisible({ timeout: 30_000 });
+
+  const firstStop = await page.getByTestId("stop-0").innerText();
+  await page.getByTestId("quick-0").click(); // It's raining
+  await expect(page.getByTestId("agent-note")).toContainText(/takes its place|already indoors/);
+  expect(await page.getByTestId("stop-0").innerText()).not.toEqual(firstStop);
+
+  await page.getByTestId("replan-input").fill("we're running 45 min late");
+  await page.getByTestId("replan-send").click();
+  await expect(page.getByTestId("agent-note")).toContainText("45 min");
+
+  // Swap a stop from the sheet.
+  const second = await page.getByTestId("stop-1").innerText();
+  await page.getByTestId("stop-1-swap").click();
+  await expect(page.getByTestId("swap-sheet")).toBeVisible();
+  await page.getByTestId("swap-rec-0").click();
+  await expect(page.getByTestId("agent-note")).toContainText("Swapped");
+  expect(await page.getByTestId("stop-1").innerText()).not.toEqual(second);
+
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
+test("a popular day from Home, Do this day, then the recap", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/");
+  await page.getByTestId("day-card-0").click();
+  await expect(page).toHaveURL(/\/day\/san-francisco-saturday-in-sf/);
+  await expect(page.getByTestId("day-page")).toContainText("Saturday in SF");
+  for (const name of ["Arsicault Bakery", "Bay Padel - Treasure Island", "Golden Boy Pizza", "Musée Mécanique", "Ina Coolbrith Park", "The Interval at Long Now"]) {
+    await expect(page.getByTestId("day-page")).toContainText(name);
+  }
+  await page.getByTestId("day-do").click();
+  await expect(page.getByTestId("itinerary")).toBeVisible();
+  await expect(page.getByTestId("stop-5")).toContainText("The Interval at Long Now");
+
+  await page.getByTestId("link-recap").click();
+  await expect(page).toHaveURL(/\/recap\//);
+  await expect(page.getByTestId("recap-page")).toBeVisible();
+
+  expect(problems, problems.join("\n")).toEqual([]);
+});

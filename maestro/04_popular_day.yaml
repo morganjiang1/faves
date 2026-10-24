@@ -1,0 +1,25 @@
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: 01_onboarding.yaml
+- scrollUntilVisible:
+    element:
+      id: "day-card-0"
+    direction: DOWN
+- tapOn:
+    id: "day-card-0"
+- assertVisible: "Saturday in SF"
+- assertVisible: "Arsicault Bakery"
+- tapOn:
+    id: "day-do"
+- extendedWaitUntil:
+    visible:
+      id: "itinerary"
+    timeout: 15000
+- tapOn:
+    id: "link-recap"
+- extendedWaitUntil:
+    visible:
+      id: "recap-page"
+    timeout: 15000

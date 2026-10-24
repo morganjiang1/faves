@@ -1,0 +1,33 @@
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: 01_onboarding.yaml
+- tapOn:
+    id: "home-prompt"
+- tapOn:
+    id: "builder-input"
+- inputText: "date saturday 1pm to 8pm, a hike then sushi then a view, by car"
+- tapOn:
+    id: "builder-send"
+- extendedWaitUntil:
+    visible:
+      id: "itinerary"
+    timeout: 30000
+- tapOn:
+    id: "quick-0"
+- assertVisible:
+    id: "agent-note"
+- tapOn:
+    id: "replan-input"
+- inputText: "we're running 45 min late"
+- tapOn:
+    id: "replan-send"
+- assertVisible: ".*45 min.*"
+- tapOn:
+    id: "stop-1-swap"
+- assertVisible:
+    id: "swap-sheet"
+- tapOn:
+    id: "swap-rec-0"
+- assertVisible: "Swapped.*"

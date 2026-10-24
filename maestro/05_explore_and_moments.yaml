@@ -1,0 +1,31 @@
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: 01_onboarding.yaml
+- tapOn:
+    id: "open-map"
+- extendedWaitUntil:
+    visible:
+      id: "explore-map"
+    timeout: 20000
+- tapOn:
+    id: "explore-cat-courts"
+- tapOn:
+    id: "toggle-list"
+- assertVisible:
+    id: "explore-row-0"
+- tapOn:
+    id: "explore-row-0"
+- extendedWaitUntil:
+    visible:
+      id: "place-page"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: "moments-section"
+    direction: DOWN
+- tapOn:
+    id: "moments-tab-now"
+- assertVisible:
+    id: "post-moment"

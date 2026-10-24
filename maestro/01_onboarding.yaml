@@ -1,0 +1,43 @@
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- clearState
+- openLink: ${APP_URL}
+- extendedWaitUntil:
+    visible:
+      id: "get-started"
+    timeout: 60000
+- tapOn:
+    id: "get-started"
+- tapOn:
+    id: "name-input"
+- inputText: "Morgan"
+- tapOn:
+    id: "onboarding-next"
+- assertVisible:
+    id: "city-san-francisco"
+- tapOn:
+    id: "onboarding-next"
+- tapOn:
+    id: "interest-courts"
+- tapOn:
+    id: "interest-food"
+- tapOn:
+    id: "interest-views"
+- tapOn:
+    id: "onboarding-next"
+- tapOn:
+    id: "crew-friends"
+- tapOn:
+    id: "onboarding-next"
+- tapOn:
+    id: "move-transit"
+- tapOn:
+    id: "finish-onboarding"
+- extendedWaitUntil:
+    visible:
+      id: "home-prompt"
+    timeout: 30000
+- assertVisible: "San Francisco"
+- assertVisible: "Most-done days this week"

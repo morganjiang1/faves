@@ -23,6 +23,9 @@ import { activitiesIn, parseRequest, requestChips } from "@/lib/parser";
 import { alternativesFor, planCost, planFromShared, planTravel, replan, setLegMode, swapStop } from "@/lib/planner";
 import { cityClock, DAY_SHORT, formatClock, wallDateFor } from "@/lib/time";
 import { weatherFor, type DayWeather } from "@/lib/weather";
+import { services } from "@/lib/adapters";
+import { routeLeg, type RouteLeg } from "@/lib/adapters/routes";
+import { eventsNear, type LiveEvent } from "@/lib/adapters/ticketmaster";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
@@ -52,6 +55,8 @@ export default function Itinerary() {
   const [toast, setToast] = useState<string | null>(null);
   const [weather, setWeather] = useState<DayWeather | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const [realLegs, setRealLegs] = useState<Record<string, RouteLeg>>({});
+  const [events, setEvents] = useState<LiveEvent[]>([]);
 
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 60_000); return () => clearInterval(t); }, []);
 
@@ -71,6 +76,25 @@ export default function Itinerary() {
     weatherFor(city.center.lat, city.center.lng, plan.dateISO).then((w) => { if (live) setWeather(w); });
     return () => { live = false; };
   }, [plan?.dateISO, city, online]);
+
+  // Optional: Google Routes for real travel times and lines, Ticketmaster for events that day.
+  useEffect(() => {
+    if (!plan || !city || !online || !services.googleRoutes) return;
+    let on = true;
+    const stops = plan.stops;
+    Promise.all(stops.slice(1).map((s, i) => {
+      const a = city.byId.get(stops[i].placeId), b = city.byId.get(s.placeId);
+      return a && b && s.leg ? routeLeg(a, b, s.leg.mode).then((r) => [s.key, r] as const) : Promise.resolve([s.key, null] as const);
+    })).then((pairs) => { if (on) setRealLegs(Object.fromEntries(pairs.filter((p): p is readonly [string, RouteLeg] => Boolean(p[1])))); });
+    return () => { on = false; };
+  }, [plan?.revision, plan?.id, city, online]);
+  useEffect(() => {
+    if (!plan || !city || !online || !services.ticketmaster) return;
+    let on = true;
+    const first = city.byId.get(plan.stops[0]?.placeId ?? "");
+    if (first) eventsNear(first.lat, first.lng, plan.dateISO).then((e) => { if (on) setEvents(e); });
+    return () => { on = false; };
+  }, [plan?.id, city, online]);
 
   const cityMatches = plan && city && plan.citySlug === city.slug;
   const places = useMemo(() => (plan && city && cityMatches ? plan.stops.map((s) => city.byId.get(s.placeId)!) : []), [plan, city, cityMatches]);
@@ -114,7 +138,10 @@ export default function Itinerary() {
   const rainHour = weather?.rainHours.find((h) => h.hour * 60 >= plan.start - 60 && h.hour * 60 <= plan.end);
 
   const pins: MapPin[] = places.map((p, i) => ({ id: p.id, lat: p.lat, lng: p.lng, kind: "number", number: i + 1, color: color.dayColor }));
-  const routes: RouteSegment[] = places.slice(1).map((p, i) => ({ points: [places[i], p], walk: plan.stops[i + 1].leg?.mode === "walk" }));
+  const routes: RouteSegment[] = places.slice(1).map((p, i) => {
+    const real = realLegs[plan.stops[i + 1].key];
+    return { points: real?.points.length ? real.points : [places[i], p], walk: plan.stops[i + 1].leg?.mode === "walk" };
+  });
 
   const save = (next: typeof plan, note?: string) => { actions.savePlan(next); if (note) setMessage(note); };
 
@@ -197,7 +224,7 @@ export default function Itinerary() {
                 const planB = s.planB.map((x) => city.byId.get(x)).find(Boolean);
                 return (
                   <View key={s.key}>
-                    {s.leg && prev ? <LegRow testID={`leg-${i}`} leg={s.leg} onModes={() => setLegAt(i)} onDirections={() => openDirections({ lat: p.lat, lng: p.lng, name: p.name }, s.leg!.mode)} /> : null}
+                    {s.leg && prev ? <LegRow testID={`leg-${i}`} leg={realLegs[s.key] ? { ...s.leg, minutes: realLegs[s.key].minutes, meters: realLegs[s.key].meters, miles: realLegs[s.key].meters / 1609.344 } : s.leg} onModes={() => setLegAt(i)} onDirections={() => openDirections({ lat: p.lat, lng: p.lng, name: p.name }, s.leg!.mode)} /> : null}
                     <StopCard
                       testID={`stop-${i}`}
                       stop={s}
@@ -216,7 +243,19 @@ export default function Itinerary() {
               })}
             </View>
           </View>
-          <Text style={styles.footnote}>Travel times are estimates from distance and typical speeds. Lines on the map are straight; tap Directions for the real route.</Text>
+          {events.length ? (
+            <View style={{ marginTop: 16 }} testID="events">
+              <Text style={styles.changedTitle}>Happening nearby that day</Text>
+              {events.map((e) => (
+                <Pressable key={e.id} onPress={() => openUrl(e.url)} style={styles.menuRow}>
+                  <Icon name="ticket-outline" size={20} tint="#1F1F1F" />
+                  <Text style={[styles.menuText, { flex: 1, fontSize: 15 }]} numberOfLines={2}>{e.name}{e.venue ? ` · ${e.venue}` : ""}{e.time ? ` · ${formatClock(Number(e.time.slice(0, 2)) * 60 + Number(e.time.slice(3, 5)), { compact: true })}` : ""}</Text>
+                  <Text style={styles.link}>Tickets</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+          <Text style={styles.footnote}>{Object.keys(realLegs).length ? "Travel times and route lines from Google Routes." : "Travel times are estimates from distance and typical speeds. Lines on the map are straight; tap Directions for the real route."}</Text>
         </ScrollView>
 
         {/* Live re-plan: one row with the agent box and the start button */}

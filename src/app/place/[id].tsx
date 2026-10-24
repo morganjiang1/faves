@@ -15,6 +15,9 @@ import { ActionPill, CircleButton, EmptyState, ErrorState, Grabber, Icon, Offlin
 import { bestLeg, metersBetween } from "@/lib/geo";
 import { callNumber, openDirections, openUrl, shareUrl } from "@/lib/links";
 import { compact, costOf, gemLine, scoreOutOf10, signalCount } from "@/lib/score";
+import { services } from "@/lib/adapters";
+import { livePlace, type LivePlace } from "@/lib/adapters/places";
+import { liveYelp, type LiveYelp } from "@/lib/adapters/yelp";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
@@ -43,6 +46,14 @@ export default function PlacePage() {
 
   const place = city?.byId.get(placeId) ?? null;
   useEffect(() => { if (reserve === "1" && place?.reserveUrl) openUrl(place.reserveUrl); }, [reserve, place]);
+  // Optional live checks (only with keys): Google's current hours and Yelp's current rating.
+  const [live, setLive] = useState<{ google: LivePlace | null; yelp: LiveYelp | null }>({ google: null, yelp: null });
+  useEffect(() => {
+    if (!place || !online || (!services.googlePlaces && !services.yelp)) return;
+    let on = true;
+    Promise.all([livePlace(place.id), liveYelp(place.name, place.lat, place.lng)]).then(([google, yelp]) => { if (on) setLive({ google, yelp }); });
+    return () => { on = false; };
+  }, [place, online]);
 
   const myMoments = useMemo(() => (mine ?? []).filter((m) => !hidden.includes(m.id)), [mine, hidden]);
   const visible = useMemo(() => (place ? { ...place, moments: place.moments.filter((m) => !hidden.includes(m.id)) } : null), [place, hidden]);
@@ -119,6 +130,10 @@ export default function PlacePage() {
             {status_.word ? <Text style={{ color: status_.open ? color.open : color.closed }}>{status_.word}</Text> : null}
             {status_.word ? " · " : ""}{status_.rest}
           </Text>
+          {live.google?.openNow != null ? (
+            <Text style={[styles.gray, { marginTop: 3 }]} testID="live-hours">Live from Google: <Text style={{ color: live.google.openNow ? color.open : color.closed }}>{live.google.openNow ? "open now" : "closed now"}</Text>{live.google.todayHours ? ` · ${live.google.todayHours}` : ""}</Text>
+          ) : null}
+          {live.yelp ? <Text style={[styles.gray, { marginTop: 3 }]} testID="live-yelp" onPress={() => openUrl(live.yelp!.url)}>Live on Yelp: ★ {live.yelp.rating.toFixed(1)} ({compact(live.yelp.count)}){live.yelp.price ? ` · ${live.yelp.price}` : ""}</Text> : null}
           {gem ? (
             <View style={styles.gemRow}>
               <Icon name="diamond-outline" size={15} tint="#000" />

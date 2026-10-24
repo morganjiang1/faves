@@ -1,0 +1,33 @@
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: 01_onboarding.yaml
+- tapOn:
+    id: "home-prompt"
+- tapOn:
+    id: "builder-input"
+- inputText: "me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus"
+- tapOn:
+    id: "builder-send"
+- assertVisible:
+    id: "building-answer"
+- extendedWaitUntil:
+    visible:
+      id: "itinerary"
+    timeout: 30000
+- assertVisible: "Pickleball and hot pot.*"
+- assertVisible:
+    id: "stop-0"
+- tapOn:
+    id: "stop-0"
+- extendedWaitUntil:
+    visible:
+      id: "place-page"
+    timeout: 15000
+- assertVisible:
+    id: "locals-score-row"
+- tapOn:
+    id: "place-back"
+- assertVisible:
+    id: "itinerary"
