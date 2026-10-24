@@ -1,0 +1,12 @@
+[
+  { "slug": "new-york", "name": "New York", "google": "New York, USA", "yelp": "New York, NY", "tripadvisor": "New York City", "subreddit": "AskNYC", "tiktok": "nyc" },
+  { "slug": "los-angeles", "name": "Los Angeles", "google": "Los Angeles, USA", "yelp": "Los Angeles, CA", "tripadvisor": "Los Angeles", "subreddit": "AskLosAngeles", "tiktok": "la" },
+  { "slug": "san-francisco", "name": "San Francisco", "google": "San Francisco, USA", "yelp": "San Francisco, CA", "tripadvisor": "San Francisco", "subreddit": "AskSF", "tiktok": "sf" },
+  { "slug": "chicago", "name": "Chicago", "google": "Chicago, USA", "yelp": "Chicago, IL", "tripadvisor": "Chicago", "subreddit": "AskChicago", "tiktok": "chicago" },
+  { "slug": "seattle", "name": "Seattle", "google": "Seattle, USA", "yelp": "Seattle, WA", "tripadvisor": "Seattle", "subreddit": "Seattle", "tiktok": "seattle" },
+  { "slug": "boston", "name": "Boston", "google": "Boston, USA", "yelp": "Boston, MA", "tripadvisor": "Boston", "subreddit": "boston", "tiktok": "boston" },
+  { "slug": "austin", "name": "Austin", "google": "Austin, USA", "yelp": "Austin, TX", "tripadvisor": "Austin", "subreddit": "Austin", "tiktok": "austin" },
+  { "slug": "miami", "name": "Miami", "google": "Miami, USA", "yelp": "Miami, FL", "tripadvisor": "Miami", "subreddit": "Miami", "tiktok": "miami" },
+  { "slug": "washington-dc", "name": "Washington, DC", "google": "Washington, DC, USA", "yelp": "Washington, DC", "tripadvisor": "Washington DC", "subreddit": "washingtondc", "tiktok": "dc" },
+  { "slug": "san-diego", "name": "San Diego", "google": "San Diego, USA", "yelp": "San Diego, CA", "tripadvisor": "San Diego", "subreddit": "sandiego", "tiktok": "san diego" }
+]

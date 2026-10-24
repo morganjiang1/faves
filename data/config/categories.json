@@ -1,0 +1,12 @@
+[
+  { "id": "courts", "label": "Courts", "occasions": ["sports", "friends"], "google": ["pickleball courts", "tennis courts", "basketball courts"] },
+  { "id": "food", "label": "Food", "occasions": ["friends", "date", "cheap"], "google": ["hot pot", "sushi", "ramen", "tacos", "pizza", "dim sum", "korean bbq", "brunch", "food hall", "late night food"], "yelp": ["hot pot", "sushi", "ramen", "tacos", "brunch", "korean bbq"] },
+  { "id": "sweets", "label": "Cafes and sweets", "occasions": ["date", "friends", "cheap"], "google": ["dessert", "boba", "coffee shop", "bakery"], "yelp": ["dessert", "boba", "coffee"] },
+  { "id": "night", "label": "Night out", "occasions": ["night", "date", "friends"], "google": ["rooftop bar", "speakeasy", "cocktail bar", "live music venue", "jazz bar", "comedy club", "karaoke"], "yelp": ["rooftop bar", "speakeasy", "karaoke"] },
+  { "id": "games", "label": "Games and fun", "occasions": ["friends", "date", "rainy"], "google": ["bowling alley", "arcade", "escape room", "mini golf", "go karts", "axe throwing", "billiards", "board game cafe", "trampoline park", "batting cages", "roller skating rink", "ice skating rink"], "yelp": ["arcade", "escape room", "bowling"] },
+  { "id": "active", "label": "Get active", "occasions": ["sports", "friends", "day-trip"], "google": ["climbing gym", "hiking trail", "kayak rental", "bike rental"] },
+  { "id": "views", "label": "Views and outdoors", "occasions": ["date", "night", "cheap", "day-trip"], "google": ["scenic viewpoint", "observation deck", "beach", "park", "botanical garden", "sunset spot"] },
+  { "id": "culture", "label": "Culture", "occasions": ["date", "rainy", "friends"], "google": ["museum", "art gallery", "aquarium", "zoo", "planetarium", "theater", "independent movie theater"] },
+  { "id": "shops", "label": "Shops and markets", "occasions": ["friends", "date", "rainy"], "google": ["bookstore", "vintage store", "record store", "anime store", "hobby shop", "flea market", "farmers market"] },
+  { "id": "classes", "label": "Classes", "occasions": ["date", "friends", "rainy"], "google": ["pottery class", "paint and sip", "cooking class", "dance class"] }
+]
