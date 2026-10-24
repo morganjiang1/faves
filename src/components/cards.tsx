@@ -107,6 +107,12 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
   );
 }
 
+// Card titles drop the trailing "in <neighborhood>" when enough title is left ("Saturday in SF" stays).
+const shortTitle = (t: string) => {
+  const m = t.match(/^(.*) in [^,]+$/);
+  return m && m[1].trim().split(/\s+/).length >= 2 ? m[1] : t;
+};
+
 // Beli featured-list card (yt_GlMma4eXe18_t160): 165 pt square photo, dark bottom gradient,
 // white 2-line title, white sub line. First card carries DoorDash's "#1 Most Liked" badge.
 export function DayCard({ day, city, first, size = 165, testID }: { day: CommunityDay; city: City; first?: boolean; size?: number; testID?: string }) {
@@ -117,7 +123,7 @@ export function DayCard({ day, city, first, size = 165, testID }: { day: Communi
       <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.72)"]} locations={[0.35, 1]} style={StyleSheet.absoluteFill} />
       {first ? <View style={styles.mostBadge}><Text style={styles.tagText}>#1 Most done</Text></View> : null}
       <View style={{ position: "absolute", left: 10, right: 10, bottom: 10 }}>
-        <Text style={styles.dayTitle} numberOfLines={2}>{day.plan.title}</Text>
+        <Text style={styles.dayTitle} numberOfLines={2}>{shortTitle(day.plan.title)}</Text>
         <Text style={styles.daySub} numberOfLines={1}>{day.plan.stops.length} stops · done by {day.doneCount}</Text>
       </View>
     </Pressable>

@@ -359,7 +359,7 @@ function closingWithin(p: Place, day: number, arrive: number, dur: number): numb
 const SOURCE_NAMES = (p: Place, subreddit: string) => {
   const bits: string[] = [];
   if (p.reddit.mentions) bits.push(`named ${p.reddit.mentions}x on r/${subreddit}`);
-  if (p.tiktok.mentions) bits.push(`${p.tiktok.mentions} TikToks, ${compact(p.tiktok.views)} views`);
+  if (p.tiktok.mentions) bits.push(`${p.tiktok.mentions} ${p.tiktok.mentions === 1 ? "TikTok" : "TikToks"}, ${compact(p.tiktok.views)} views`);
   if (p.google) bits.push(`${p.google.rating.toFixed(1)} on Google (${compact(p.google.count)})`);
   if (p.yelp) bits.push(`${p.yelp.rating.toFixed(1)} on Yelp`);
   return bits;
@@ -425,7 +425,9 @@ function titleFor(req: PlanRequest, stops: PlanStop[], city: City): string {
   const named = [...req.interests.map((i) => i.activities[0].label), ...req.mustDos.map((m) => m.label)].filter((l) => !GENERIC.includes(l));
   if (named.length) {
     const list = named.length === 1 ? named[0] : `${named.slice(0, -1).join(", ")} and ${named[named.length - 1]}`;
-    return `${list[0].toUpperCase()}${list.slice(1)} in ${top}`;
+    const lead = req.rain ? "Rainy day: " : req.who === "solo" ? "Solo day: " : req.who === "date" ? "Date: " : "";
+    const text = `${list} in ${top}`;
+    return lead ? `${lead}${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
   }
   const who = { date: "Date day", friends: "A day with friends", family: "Family day", solo: "Solo day", "catch-up": "Catch-up day" } as const;
   if (req.rain) return `Rainy day in ${top}`;
@@ -936,4 +938,50 @@ export function planFromShared(city: City, shared: { id: string; raw: string; da
   });
   plan.end = Math.max(plan.end, plan.stops[plan.stops.length - 1].end);
   return plan;
+}
+
+export interface FixedStop { placeId: string; start: number; duration: number; label: string }
+
+// A day made of chosen places (a featured community day, or "Do this day" on one): each
+// stop starts at its target time or as soon as you can get there, with real legs between
+// stops, a reason for each pick and a Plan B of the same kind nearby.
+export function planFromStops(city: City, spec: { id: string; title: string; date: Date; transport: Mode; raw: string; stops: FixedStop[]; groupSize?: number }): Plan {
+  const date = spec.date;
+  const off = offsetHours(city.utcOffset, date);
+  const sun = sunTimes(city.center.lat, city.center.lng, date, off);
+  const req: PlanRequest = { ...parseRequestLite(spec.raw), groupSize: spec.groupSize ?? null };
+  const st: PickState = {
+    city, req, day: date.getUTCDay(), mode: spec.transport, used: new Set(spec.stops.map((s) => s.placeId)), exclude: new Set(),
+    sunset: sun?.sunset ?? null, windowStart: spec.stops[0]?.start ?? 600, windowEnd: (spec.stops[spec.stops.length - 1]?.start ?? 1200) + 180, center: null,
+  };
+  const stops: PlanStop[] = [];
+  let prev: Place | null = null;
+  let time = spec.stops[0]?.start ?? 600;
+  for (const f of spec.stops) {
+    const p = city.byId.get(f.placeId);
+    if (!p) continue;
+    const leg = prev ? bestLeg(prev, p, spec.transport) : null;
+    const arrive = Math.max(f.start, time + (leg?.minutes ?? 0));
+    const slot: Slot = { label: f.label, categories: [p.category], keywords: [], mustDo: true, duration: f.duration };
+    const alts = rankCandidates({ ...slot, mustDo: false }, prev, time, st, 3).filter((c) => c.place.id !== p.id);
+    stops.push({
+      key: newId("s"), placeId: p.id, slot, start: arrive, end: arrive + f.duration, leg,
+      why: explain({ place: p, score: 0, arrive, leg, reasons: [], warnings: [] }, { ...slot, mustDo: false }, prev?.name ?? null, st),
+      planB: alts.slice(0, 2).map((c) => c.place.id),
+      warnings: openForVisit(p.hours, st.day, arrive, Math.min(45, f.duration)) === false ? ["May be closed at this time, check the hours"] : [],
+    });
+    time = arrive + f.duration;
+    prev = p;
+  }
+  return {
+    id: spec.id, citySlug: city.slug, cityName: city.name, createdAt: new Date().toISOString(), request: req, title: spec.title,
+    dateISO: date.toISOString().slice(0, 10), dayLabel: `${DAY_NAMES[date.getUTCDay()]}, ${MONTHS[date.getUTCMonth()].slice(0, 3)} ${date.getUTCDate()}`, weekday: date.getUTCDay(),
+    start: stops[0]?.start ?? 600, end: stops[stops.length - 1]?.end ?? 1200, transport: spec.transport, groupSize: spec.groupSize ?? 2,
+    stops, sunset: sun?.sunset ?? null, notes: sun ? [`Sunset is at ${formatClock(sun.sunset)}.`] : [], source: "rules", revision: 0, log: [],
+  };
+}
+
+// The request object for a fixed day (no parsing needed beyond the raw text).
+function parseRequestLite(raw: string): PlanRequest {
+  return { raw, who: null, groupSize: null, vibes: [], budget: null, budgetWord: null, start: null, end: null, durationHours: null, day: null, transport: null, mustDos: [], interests: [], hood: null, rain: false, nearMe: false, ordered: true, then: [] };
 }

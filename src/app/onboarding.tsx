@@ -85,7 +85,7 @@ export default function Onboarding() {
   return (
     <View style={[styles.fill, { backgroundColor: "#0B0B0F" }]} testID={`onboarding-${step}`}>
       <LinearGradient colors={["#2A1646", "#1B1430", "#0B0B0F"]} locations={[0, 0.5, 1]} style={styles.aurora} />
-      <LinearGradient colors={["rgba(42,52,65,0.9)", "rgba(42,52,65,0)"]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.aurora, { left: "30%", right: "25%", opacity: 0.7 }]} />
+      <LinearGradient colors={["rgba(42,52,65,0.55)", "rgba(42,52,65,0)"]} start={{ x: 0.5, y: 0 }} end={{ x: 0.2, y: 1 }} style={[styles.aurora, { opacity: 0.8 }]} />
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
           <View style={styles.nav}>

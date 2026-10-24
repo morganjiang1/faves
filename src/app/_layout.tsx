@@ -18,6 +18,14 @@ export default function RootLayout() {
   const hydrated = useStore((s) => s.hydrated);
 
   useEffect(() => { hydrate(); }, []);
+  // Web: inputs keep the border their reference shows instead of the browser's focus ring.
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined" || document.getElementById("faves-web-style")) return;
+    const st = document.createElement("style");
+    st.id = "faves-web-style";
+    st.textContent = "input,textarea{outline:none!important}html,body{overscroll-behavior:none}";
+    document.head.appendChild(st);
+  }, []);
   const ready = (fontsLoaded || Boolean(fontError)) && hydrated;
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => {}); }, [ready]);
   if (!ready) return null;

@@ -2,19 +2,23 @@
 // grabber, centered ~17 pt semibold title, round close button, large top radius, over a
 // dimmed scrim. Used for share, swap, leg modes, and other pickers.
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { color, font } from "@/theme/tokens";
 import { Grabber, Icon } from "./ui";
 
 export function Sheet({ open, onClose, title, subtitle, children, background = "#fff", testID, scroll = true, maxHeight = "86%" }: { open: boolean; onClose: () => void; title?: string; subtitle?: string; children: ReactNode; background?: string; testID?: string; scroll?: boolean; maxHeight?: `${number}%` | number }) {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const max = typeof maxHeight === "number" ? maxHeight : (height * parseFloat(maxHeight)) / 100;
+  // iPhone lifts the sheet over the keyboard; the web needs no keyboard handling.
+  const Column = Platform.OS === "ios" ? KeyboardAvoidingView : View;
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.wrap}>
         <Pressable accessibilityLabel="Close" style={styles.scrim} onPress={onClose} />
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.column}>
-          <View testID={testID} style={[styles.sheet, { backgroundColor: background, paddingBottom: Math.max(insets.bottom, 16), maxHeight }]}>
+        <Column behavior="padding" style={styles.column}>
+          <View testID={testID} style={[styles.sheet, { backgroundColor: background, paddingBottom: Math.max(insets.bottom, 16), maxHeight: max }]}>
             <Grabber />
             {title ? (
               <View style={styles.header}>
@@ -26,9 +30,9 @@ export function Sheet({ open, onClose, title, subtitle, children, background = "
                 <Pressable testID={testID ? `${testID}-close` : undefined} accessibilityLabel="Close" onPress={onClose} style={styles.close}><Icon name="close" size={18} tint="#000" /></Pressable>
               </View>
             ) : null}
-            {scroll ? <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>{children}</ScrollView> : children}
+            {scroll ? <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>{children}</ScrollView> : children}
           </View>
-        </KeyboardAvoidingView>
+        </Column>
       </View>
     </Modal>
   );

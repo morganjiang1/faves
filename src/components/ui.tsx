@@ -212,7 +212,7 @@ export function ErrorState({ title, body, onRetry, testID }: { title?: string; b
 export function OfflineBanner() {
   return (
     <View testID="offline-banner" style={styles.offline}>
-      <Text style={{ fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" }}>Faves is offline. Showing what's saved.</Text>
+      <Text style={{ fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" }}>You're offline. Showing saved spots.</Text>
     </View>
   );
 }
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   blobWrap: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
   blob: { position: "absolute", width: "86%", height: 140, borderRadius: 70, backgroundColor: color.sage, transform: [{ rotate: "-6deg" }] },
   blobIcon: { width: 112, height: 112, borderRadius: 56, borderWidth: 3, borderColor: color.brand, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  offline: { alignItems: "center", justifyContent: "center", backgroundColor: "#121212", paddingVertical: 9, paddingHorizontal: 16 },
+  offline: { alignItems: "center", justifyContent: "center", backgroundColor: color.text, paddingVertical: 9, paddingHorizontal: 16 },
   error: { alignItems: "center", paddingHorizontal: 32, paddingVertical: 28, gap: 10 },
   errorTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000", textAlign: "center", marginTop: 8 },
   errorBody: { fontFamily: font.sans, fontSize: 14, color: "#6B6B6B", textAlign: "center" },

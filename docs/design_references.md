@@ -1335,3 +1335,22 @@ One pick per element. Copy it exactly; values are from the measurements above. W
 | Error state with retry | `states/tiktok/yt_spo0PbcgeOo_t004_no_internet_tap_to_retry.png` | TikTok's centered message: retry-arrow icon, one bold line that already says the fix ("No internet connection. Tap to retry."), one grey helper line; the whole block is the button, the screen's chrome stays. Faves: "Couldn't load this plan. Tap to retry." / "Check your connection and try again." | Layout and wording only (filmed). Icon above, bold line, smaller grey line, centered vertically in the content area. |
 | Loading skeleton | `states/instagram/yt_q2ASzVtL0YE_t089_loading_pill_skeleton_rows.png` | Instagram's skeleton: grey shapes in the exact layout of the coming rows (circle + three bars + a wide photo block), no spinner; a "Loading" label replaces the map's search pill. Faves: same shapes for place rows and plan stops. | 1.235 px/dp. Circle 58 dp. Bars about 10 dp tall, round ends, widths about 174 / 226 / 121 dp (middle longest). Block 378x121 dp, rounded. Fill `#F8F8F8` on `#FFFFFF`. About 24 dp between groups. |
 | No-results state | `discovery/yelp/yelp_empty_no_results_android_vid.png` (already in the catalog) | Yelp's recovery pattern, unchanged: headline, one helper line, "People also search for" chips, "Notice something missing? Add a spot". | See the Discovery catalog, Yelp. |
+
+---
+
+# Brand mark: the Faves logo
+
+Added 2026-10-24. The app icon, splash and adaptive icon use "01 Heart Pin" (Morgan's pick for now; he may swap it). It lives in one place: `assets/brand/heart_pin.svg` plus `assets/brand/brand.json` (background `#FF4F6D`, glyph `#FFFFFF`). `scripts/make-icons.mjs` renders every icon size from that file, and `app.config.js` and `src/theme/tokens.ts` (`logo`) read the colors from `brand.json`. The iOS icon is exported full bleed (corner radius removed) because iOS masks it.
+
+## References
+
+| File | What it shows | Measured |
+|---|---|---|
+| `brand/airbnb_app_icon_belo_mark.jpg` (App Store artwork, 512 px, Airbnb id401626263) | Airbnb's Bélo: one continuous white line on a coral-pink field | Field gradient `#F31C57` (bottom left) to `#FF5A7A` (top right). Stroke 25 px on a 512 px icon (4.9% of the width), round joins, the mark spans about 56% of the icon width. |
+| `brand/google_maps_app_icon_pin.jpg` (App Store artwork, 512 px, Google Maps id585027354) | Google Maps' pin with a round hole | Hole 155 px across on a 308 px wide pin head (about 50% of the pin), centered in the head. |
+
+## What the Faves mark takes from each
+
+- From Airbnb: a single continuous line drawn in white on one warm pink-coral field, round joins, a stroke about 5% of the icon width (ours: 8 units in a 70% group on a 100 unit canvas, 5.6%).
+- From Google Maps: the round hole that reads as "a place on a map". Ours is a filled white dot inside the heart, about a quarter of the heart's width.
+- The field color `#FF4F6D` sits inside Airbnb's measured gradient range. In the app it is used only for the logo, the splash and the DoorDash-style banner CTA; the interface itself keeps Beli's teal (`brand`).
