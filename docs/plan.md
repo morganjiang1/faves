@@ -60,6 +60,18 @@ Every screen is built from a captured reference (see `docs/design_references.md`
 - End-of-day thumbs up and down feed back into the rankings.
 - Friends' rankings, Beli-style.
 
+## Spot rewards: get paid for not gatekeeping
+
+People earn real money when their spots and days help others.
+
+- **What earns:** not raw likes, which are easy to fake with friends or bots, but verified use. You earn when someone saves your spot, does your day (location check-in at the stops), and gives it a thumbs up at the end.
+- **Rates (starting point):** about $0.01 per save, $0.25 per verified "did this day", and a bonus when a spot you posted first becomes a trending hidden gem. Likes still show on posts, they just don't pay.
+- **Wallet:** earnings show live on your profile ("Your spots earned $3.42 this month, 48 people did your Sunset in Bernal day"). Cash out at $5 as a gift card or a bank transfer.
+- **Where the money comes from:** a share of real revenue, so rewards scale with use, not with a cash pile: booking commissions (reservations, tickets, tours) and promoted placements venues pay for. A fixed share of each booking made from your post goes to you.
+- **Anti-fraud:** rewards need a real visit (GPS near the place during opening hours), one reward per account per spot, new accounts earn after a short trust period, and unusual like or save patterns are held for review.
+- **Legal:** payouts go through a provider that handles identity checks and US tax forms (1099s above the IRS threshold), so we never hold or send money ourselves.
+- **Hackathon demo:** the wallet, earnings feed and payout screen run on test data; real payouts come after launch.
+
 ## Tech
 
 - **App:** Expo (React Native). One codebase for iPhone and the website. Demo on iPhone through Expo Go by scanning a QR code; TestFlight later.

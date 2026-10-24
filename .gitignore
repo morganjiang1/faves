@@ -10,3 +10,4 @@ web-build/
 ios/
 android/
 data/raw/
+data/out/
