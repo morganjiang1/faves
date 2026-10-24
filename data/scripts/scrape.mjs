@@ -79,6 +79,15 @@ async function scrape(city, name) {
   console.log(`${city.slug}/${name}: ${items.length} items, $${meta.usd.toFixed(2)}`);
 }
 
-const jobs = chosenCities.flatMap((city) => chosenSources.map((name) => () => scrape(city, name)));
-const results = await Promise.allSettled(jobs.map((job) => job()));
+// Apify sources run in parallel (bounded by MAX_RUNS). OpenStreetMap's free services allow
+// about one request per second, so those run one city at a time.
+const apifyJobs = chosenCities.flatMap((city) => chosenSources.filter((n) => n !== "osm").map((name) => scrape(city, name)));
+const osmJob = (async () => {
+  if (!chosenSources.includes("osm")) return;
+  for (const city of chosenCities) {
+    await scrape(city, "osm").catch((err) => console.error(`${city.slug}/osm failed:`, err.message));
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+})();
+const results = await Promise.allSettled([...apifyJobs, osmJob]);
 results.filter((r) => r.status === "rejected").forEach((r) => console.error("failed:", r.reason.message));
