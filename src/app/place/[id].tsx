@@ -93,12 +93,17 @@ export default function PlacePage() {
     <View style={{ flex: 1, backgroundColor: "#fff" }} testID="place-page">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         {hero ? (
-          // Video hero (references/video): the spot's clip plays muted and loops; tap for full screen.
+          // Video hero (video/netflix/appstore_02_title_page_trailer_hero.jpg): the clip plays muted
+          // and loops under the status bar, with Netflix's 30 pt dark circles in the top corners.
+          // Taller than Netflix's 1.85:1 because the clips are vertical. Tap for full screen.
           <View style={styles.hero} testID="place-hero">
             <SpotMedia place={place} active={isFocused} style={StyleSheet.absoluteFill} onPress={() => router.push(`/reel?place=${encodeURIComponent(place.id)}`)} />
-            <View style={[styles.headerButtons, { top: insets.top + 8 }]} pointerEvents="box-none">
-              <CircleButton testID="place-back" icon="chevron-back" label="Back" light size={40} onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
-              <CircleButton testID="place-directions-fab" icon="navigate" label="Directions" light size={40} onPress={() => openDirections({ ...place }, transport)} />
+            <View style={[styles.heroButtons, { top: insets.top + 10 }]} pointerEvents="box-none">
+              <Pressable testID="place-back" accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={styles.heroCircle}><Icon name="chevron-back" size={18} tint="#fff" /></Pressable>
+              <View style={{ flexDirection: "row", gap: 14 }}>
+                <Pressable testID="place-hero-share" accessibilityLabel="Share" onPress={() => setShare(true)} style={styles.heroCircle}><Icon name="share-outline" size={16} tint="#fff" /></Pressable>
+                <Pressable testID="place-directions-fab" accessibilityLabel="Directions" onPress={() => openDirections({ ...place }, transport)} style={styles.heroCircle}><Icon name="navigate" size={16} tint="#fff" /></Pressable>
+              </View>
             </View>
           </View>
         ) : (
@@ -183,6 +188,8 @@ export default function PlacePage() {
 const styles = StyleSheet.create({
   header: { height: 250, backgroundColor: color.cornerLand },
   hero: { height: 460, backgroundColor: "#000" },
+  heroButtons: { position: "absolute", left: 14, right: 28, flexDirection: "row", justifyContent: "space-between" },
+  heroCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: "rgba(20,20,20,0.7)", alignItems: "center", justifyContent: "center" },
   headerButtons: { position: "absolute", left: 14, right: 14, flexDirection: "row", justifyContent: "space-between" },
   ringWrap: { position: "absolute", alignSelf: "center", width: 108, height: 108, alignItems: "center", justifyContent: "center" },
   ring: { position: "absolute", width: 108, height: 108, borderRadius: 54 },

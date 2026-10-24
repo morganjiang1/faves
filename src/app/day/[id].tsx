@@ -193,7 +193,7 @@ function DayBody({ post, city, liked, faces, bottomPad }: { post: DayPost; city:
           {stops.map(({ s, p }, i) => (
             <View key={s.key} style={styles.stop}>
               {i < stops.length - 1 ? <View style={styles.connector} /> : null}
-              <StopClip testID={`day-stop-clip-${i}`} place={p} reel={`${reelBase}&i=${i}`} width={72} height={128} />
+              <StopClip testID={`day-stop-clip-${i}`} place={p} reel={`${reelBase}&i=${i}`} />
               <Pressable testID={`day-stop-${i}`} accessibilityRole="button" accessibilityLabel={`Stop ${i + 1}: ${p.name}`} onPress={() => router.push(`/place/${encodeURIComponent(p.id)}`)} style={{ flex: 1 }}>
                 <Text style={styles.stopTitle} numberOfLines={2}>{p.name}</Text>
                 <Text style={styles.stopDesc} numberOfLines={2}>{s.why}</Text>
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
   mapWrap: { height: 250, marginTop: 22, backgroundColor: color.cornerLand, overflow: "hidden" },
   h2: { fontFamily: font.sans, fontSize: 22, fontWeight: "600", color: color.airbnbText, marginTop: 24 },
   sub: { fontFamily: font.sans, fontSize: 15, color: color.airbnbSub, marginTop: 4 },
-  stop: { flexDirection: "row", gap: 20, marginBottom: 18 },
-  connector: { position: "absolute", left: 35.25, top: 128, bottom: -18, width: 1.5, backgroundColor: "#EBEBEB" },
+  stop: { flexDirection: "row", gap: 16, marginBottom: 18 },
+  connector: { position: "absolute", left: 24.25, top: 75, bottom: -18, width: 1.5, backgroundColor: "#EBEBEB" },
   stopTitle: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "600", color: color.airbnbText },
   stopDesc: { fontFamily: font.sans, fontSize: 16, lineHeight: 22, color: color.airbnbSub, marginTop: 2 },
   legRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },

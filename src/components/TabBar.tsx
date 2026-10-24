@@ -21,10 +21,14 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const name = useStore((s) => s.profile.name);
   const online = useOnline();
+  // On the video-first Home the bar goes dark like Netflix's own tab bar.
+  const dark = state.routes[state.index]?.name === "index";
+  const ink = dark ? "#FFFFFF" : "#000";
+  const idle = dark ? "#B3B3B3" : "#393939";
   return (
     <View>
     {!online ? <OfflineBanner /> : null}
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }, dark && { backgroundColor: "#110F15", borderTopColor: "#2A2830" }]}>
       {state.routes.map((route, index) => {
         const tab = TABS[route.name];
         if (!tab) return null;
@@ -38,11 +42,11 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             {route.name === "plan" ? (
               <View style={styles.plus}><Icon name="add" size={28} tint="#fff" /></View>
             ) : route.name === "profile" ? (
-              <View style={[styles.avatarRing, focused && { borderColor: "#000" }]}><Avatar name={name || "You"} size={28} /></View>
+              <View style={[styles.avatarRing, focused && { borderColor: ink }]}><Avatar name={name || "You"} size={28} /></View>
             ) : (
-              <Icon name={focused ? tab.iconOn : tab.icon} size={26} tint={focused ? "#000" : "#393939"} />
+              <Icon name={focused ? tab.iconOn : tab.icon} size={26} tint={focused ? ink : idle} />
             )}
-            <Text style={[styles.label, focused && styles.labelOn]}>{route.name === "plan" ? "Plan" : tab.label}</Text>
+            <Text style={[styles.label, { color: idle }, focused && styles.labelOn, focused && { color: ink }]}>{route.name === "plan" ? "Plan" : tab.label}</Text>
           </Pressable>
         );
       })}

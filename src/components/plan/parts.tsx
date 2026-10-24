@@ -57,12 +57,12 @@ export function StopCard({ stop, place, index, live, onOpen, onSwap, onPlanB, on
   return (
     <View testID={testID} style={{ gap: 8 }}>
       <View style={[styles.card, live === "now" && styles.cardLive]}>
-        {/* The stop's clip (4:5) plays while on screen; tap it for the full-screen viewer. */}
+        {/* The stop's clip (YouTube playlist thumbnail, 50 x 75) plays while on screen; tap for the full-screen viewer. */}
         <View>
-          <StopClip testID={`${testID}-clip`} place={place} reel={reel} width={76} height={95} radius={14} />
+          <StopClip testID={`${testID}-clip`} place={place} reel={reel} watched={live === "now"} />
           <View style={styles.thumbNum} pointerEvents="none"><Text style={styles.thumbNumText}>{index + 1}</Text></View>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={place.name} onPress={onOpen} style={{ flex: 1, gap: 3 }}>
+        <Pressable testID={`${testID}-open`} accessibilityRole="button" accessibilityLabel={place.name} onPress={onOpen} style={{ flex: 1, gap: 3 }}>
           {live ? <Text style={[styles.livePill, live === "next" && { backgroundColor: color.wanderPill, color: color.wanderBlue }]}>{live === "now" ? "Now" : "Up next"}</Text> : null}
           <Text style={styles.cardTitle} numberOfLines={2}>{place.name}</Text>
           <Text style={styles.cardSub} numberOfLines={1}>{formatClock(stop.start)} to {formatClock(stop.end)} · {role}</Text>

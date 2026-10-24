@@ -18,9 +18,9 @@ env:
     timeout: 30000
 - assertVisible: "Pickleball and hot pot.*"
 - assertVisible:
-    id: "stop-0"
+    id: "stop-0-open"
 - tapOn:
-    id: "stop-0"
+    id: "stop-0-open"
 - extendedWaitUntil:
     visible:
       id: "place-page"

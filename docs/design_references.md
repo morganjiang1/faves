@@ -1354,3 +1354,160 @@ Added 2026-10-24. The app icon, splash and adaptive icon use "01 Heart Pin" (Mor
 - From Airbnb: a single continuous line drawn in white on one warm pink-coral field, round joins, a stroke about 5% of the icon width (ours: 8 units in a 70% group on a 100 unit canvas, 5.6%).
 - From Google Maps: the round hole that reads as "a place on a map". Ours is a filled white dot inside the heart, about a quarter of the heart's width.
 - The field color `#FF4F6D` sits inside Airbnb's measured gradient range. In the app it is used only for the logo, the splash and the DoorDash-style banner CTA; the interface itself keeps Beli's teal (`brand`).
+
+---
+
+# Video-first Home and itinerary: UI reference catalog
+
+Captured 2026-10-24 for Faves, for the video-first Home (Top 10 row, video card rows, most-done day card) and the video itinerary (stop clip tiles, full-screen swipe viewer, place page hero).
+
+Images live in `references/video/<app>/` (local only, never committed). 12 images; every kept image was opened and looked at. Every number below was measured with PIL on the saved file unless it says "visual".
+
+## How to read the numbers
+
+- `px` = pixels in the saved file. `pt` (iOS) or `dp` (Android) = px divided by the scale given for that file. Android dp and iOS pt are the same size on screen, so dp values copy straight to pt.
+- App Store screenshots are marketing frames. The phone screen was found by edge scan and tied to 393 pt. Treat their font sizes as +/-15% and their proportions as exact.
+- Video frames are H.264: colors +/-6 per channel, edges soft.
+- Font size is about cap height / 0.72.
+
+| Source set | Scale used |
+|---|---|
+| Netflix Android screen recording PXo3QCmgWB4 (576x1280, a 1080x2400 phone at 360 dp) | 1.6 px/dp (screen 576 px = 360 dp) |
+| Netflix App Store (1242x2688) | 2.445 px/pt (screen 961 px, x 141 to 1102 = 393 pt) |
+| YouTube Android recording Y6V9qRAan6U (crop 536x1080) | 1.308 px/pt (screen 514 px, x 11.5 to 525.5 of the crop = 393 pt; proportions exact, sizes +/-5%) |
+| YouTube App Store (1284x2778) | 2.63 px/pt (screen 1033 px = 393 pt) |
+| TikTok App Store (1242x2688) | 2.484 px/pt (screen 976 px, x 132 to 1108 = 393 pt) |
+| Instagram App Store (1284x2778) | 2.336 px/pt (screen 918 px, x 183 to 1101 = 393 pt) |
+
+---
+
+## 1. Netflix "Top 10" row (rank numeral + card)
+
+**Sources**
+- Screen recording (Android, real app): "Need to Find Netflix's Top 10? Watch This Simple Guide!" https://www.youtube.com/watch?v=PXo3QCmgWB4
+- App Store: https://apps.apple.com/us/app/netflix/id363590051 (iPhone 6.5" set). The App Store set does not show a Top 10 row.
+- Searched and rejected: nb1OKEgwmjk (phone too small in a 1080p frame, never scrolls to the row), mLRbltNrEBk (TV app), AFgeL8dPL2g and 6JTVYVUC68c (tablet).
+
+**Screens**
+
+`netflix/yt_PXo3QCmgWB4_t037_top10_tv_row_1_2_3.png` (**the Top 10 reference**, 1.6 px/dp):
+- Background `#000000`.
+- Row title "Top 10 TV Shows in Indonesia Today": white bold, cap 22 px = **13.75 dp (about 19 sp)**, 12.5 dp from the left edge, wraps to two lines at 25.6 dp line pitch. Title baseline to card top about 14 dp.
+- **Card: 100 x 141 dp (160 x 226 px), aspect 0.71, corner radius about 2.5 dp.** Card 1 starts 36 dp from the screen edge. Card pitch 132 dp: the gap between cards is **32 dp (51 px)**, and the numeral sits in that gap.
+- **Numeral: 72 dp tall for "1", 75 dp for "2" and "3" (115 to 120 px), which is 53% of the card height and 0.75 of the card width. Its bottom sits flush with the card bottom (within 1 px).** Numeral 1 starts 10.6 dp from the screen edge.
+- **Numeral style: solid fill `#1A1A1A` (26, 26, 26), outlined with a light grey stroke about 2 dp wide (3 to 4 px; core `#CDCDCD` to `#D4D4D4`, anti-aliased edge `#A9A9A9`).** A soft dark shadow fades out to the left of each stroke (values rise from 1 to 22 over about 30 px).
+- **The numeral is drawn ON TOP of the card's left edge**: its fill covers the poster. Overlap onto the card: 8.5 dp for "1", 16 dp for "2". Typeface: Netflix Sans Bold, a heavy geometric sans.
+- Under each card: "New Season" red pill, see section 2.
+- Next row ("My List") title cap top sits 31 dp under the Top 10 cards.
+
+`netflix/yt_PXo3QCmgWB4_t042_top10_row_9_10_double_digit.png`: the end of the row, "9" and "10". **The gap stays 32 dp for "10"; the two digits simply overlap the next card much more** (the "1" sits in the gap, the "0" is drawn almost entirely over card 10: about 58 dp of overlap). Cards stay 100 dp wide.
+
+---
+
+## 2. Netflix regular poster rows, tall "Only on Netflix" cards, row badges
+
+**Screens**
+
+`netflix/yt_PXo3QCmgWB4_t051_only_on_netflix_tall_cards_trending_row.png` (1.6 px/dp):
+- **Tall card row "Only on Netflix": cards 154 x 307 dp (247 x 491 px), aspect 1:2, gap 7.8 dp, 11.6 dp left margin.** Title "Only on Netflix" white bold, cap 14 dp (about 19 sp); title to card 13.4 dp.
+- **Regular row "Trending Now": cards 100 x 141 dp, gap 7.5 dp, 12 dp left margin**, same title style. "My List" in the t037 frame measures the same 100 x 141 dp with a 7.5 dp gap.
+- **"TOP 10" flag: red `#E81A1E`, flush with the card's top-right corner, white "TOP" small over a bigger "10". 16 x 21 dp on a regular card, 22.5 x 30.6 dp on a tall card.**
+- **"New Season" pill: red `#E1050B`, white bold label, 64 x 15 dp, centered on the card's bottom edge.**
+- Bottom tab bar: Home (white, active), Games, New & Hot (red "1" badge), Downloads.
+
+`netflix/appstore_06_home_hero_only_on_netflix_row.jpg` (**iPhone, current 2025 Home**, 2.445 px/pt):
+- **Background `#110F15` (17, 16, 21), not pure black.**
+- Header "N Home" + cast / download / bell icons; glass category chips (Shows, Movies, Podcasts, New & Hot).
+- Hero card 344 x 459 pt, rounded (about 12 pt, visual), title art, "Period Piece • Drama • Critically Acclaimed", white "Play" and grey "+ My List" buttons side by side.
+- **"Only on Netflix" row: posters about 110 pt wide, 8 pt gap, 11.7 pt left margin; title cap about 12.7 pt (about 18 pt) white; title baseline to poster top 10.6 pt.**
+- Floating glass tab bar: Home, Clips, Search, My Netflix.
+
+---
+
+## 3. Vertical video cards on a home feed: YouTube Shorts shelf
+
+**Sources**
+- Screen recording (Android, real app, dark mode): "YouTube Shorts Not Showing on Homepage | How to Fix" https://www.youtube.com/watch?v=Y6V9qRAan6U (frame at 100 s, phone crop).
+- App Store: https://apps.apple.com/us/app/youtube-watch-listen-stream/id544007664. Its "Create" screenshot shows the iPhone shelf only behind a sheet (the shelf header and the top of two cards, with a third card peeking at the right edge: on iPhone the shelf scrolls sideways).
+- Searched and rejected: vweJKhonU-k (desktop web), MUvFRDD2OiY and 0lbxHl0MfAU (settings only), arg4tSo7UBw (phone too small).
+
+**Screen**
+
+`youtube/yt_Y6V9qRAan6U_t100_home_shorts_shelf.png` (**the video card reference**, 1.308 px/pt):
+- Background `#0F0F0F` (15, 15, 15).
+- **Shelf header: red Shorts logo 21 x 26 pt, then "Shorts" white medium, cap 11.5 pt (about 16 pt); "⋮" at the right edge.**
+- **Card: 183 x 273 pt (239 x 358 px), 46.5% of the screen width, aspect 2:3 (the 9:16 video is center-cropped into it). Corner radius about 6 pt (8 px). 10.3 pt side margin, 6.9 pt gap between cards.**
+- **Title overlay: white, 2 lines max, about 12 pt regular, 12.2 pt line pitch, inset 7 pt from the left and 10 pt from the bottom, then "…" truncation.** A dark gradient covers about the bottom quarter of the card (the image darkens from 141 to 60 in luminance over the last 30 pt) so the white title reads on any clip.
+- "⋮" white, top-right of every card, about 9 pt in.
+- No view count or creator name on this card (the title is the only text).
+
+---
+
+## 4. Full-screen vertical swipe viewer
+
+**Sources**
+- App Store screenshots: Netflix "Browse clips to discover your next watch" (Clips tab, iPhone), TikTok "Follow your favourite teams." (For You), Instagram "Discover entertaining videos with Reels".
+
+**Screens**
+
+`netflix/appstore_04_clips_vertical_viewer_mute.jpg` (**the viewer reference**, 2.445 px/pt). Netflix Clips: one vertical clip fills the screen, swipe up for the next.
+- **Right rail: three round translucent buttons, 48 pt diameter, pitch 64 pt, light glass fill (white at about 20% over the clip), white line icons about 22 pt: mute (speaker with ×) on top, then "+" (My List), then share (paper plane). The rail's right edge sits 28 pt from the screen edge.**
+- **Title block bottom-left, 17.4 pt from the left edge:** title "KPop Demon Hunters" white bold, cap 13.9 pt (**about 19 pt**); genre line "Music, Family Movies, Kids & Family Movies" white semibold, cap 8.2 pt (**about 11.5 pt**); one-line description "When K-pop superstars Rumi, Mira" white regular, cap 9.4 pt (**about 13 pt**) ending in bold "…more".
+- **Title art circle 71 pt with a thin white ring, right of the title block** (opens the title page).
+- **Progress bar: 2 pt tall (5 px), full width, directly on top of the tab bar; played part `#A5A5A5` grey, unplayed part dark `#2D2729`.**
+
+`tiktok/appstore_14_for_you_rail_handle_sound.png` (2.484 px/pt). TikTok For You:
+- Video area 754 pt tall above an 80 pt black tab bar (Home, Friends, ✚, Inbox, Profile).
+- Top: "LIVE" icon left, "Following • For You" centered (active white bold, inactive white at about 60%), search icon right.
+- **Right rail, centered 33 pt from the right edge: avatar 51.5 pt with a white ring and a 21 pt red "+" disc on its bottom edge; then heart 32 x 29 pt, comment 32 x 31 pt, bookmark 25 x 28 pt, share 33 x 26 pt, each with a white count under it (cap 8.5 pt, about 12 pt semibold, soft shadow). Pitch 72 pt.**
+- **Bottom-left, about 22 pt in: handle "oddlysatisfying" white semibold (about 16 pt), then "♫ original sound - oddlysatisfying" white regular (about 14 pt).** Spinning sound disc bottom-right, about 34 pt.
+
+`instagram/appstore_14_reels_viewer_progress_bar.jpg` (2.336 px/pt). Instagram Reels (2025 layout):
+- Top: "+" left, "Reels  Friends" tabs centered, filter icon right.
+- Rail: heart 26 x 22 pt with "823K" (cap 8.1 pt, about 11.5 pt), comment, repost, share; centered about 26 pt from the right edge.
+- Bottom-left: 22 pt avatar + handle "marijmusa" white semibold (about 14 pt) + verified tick; caption "made a new friend today" white regular (about 14 pt).
+- **Progress bar: 2 pt tall (4 to 5 px), starts 17 pt from the left edge, ends under the rail; played `#FCFBF7`, unplayed white at about 30%.** It sits just above the floating glass tab bar.
+
+`youtube/appstore_03_shorts_full_screen_viewer.jpg` (layout only): YouTube Shorts full screen: rail with like / dislike / comment / share / remix, channel avatar + name + red "Subscribe" pill bottom-left, title line above it.
+
+---
+
+## 5. Video hero at the top of a detail page
+
+`netflix/appstore_02_title_page_trailer_hero.jpg` (**the hero reference**, 2.445 px/pt; the screenshot has a dimming rating overlay on top, so sizes are usable and colors are not):
+- **The trailer plays full width directly under the status bar: 393 x 212 pt (961 x 518 px), aspect 1.85:1 (about 16:9).** The status bar area above it is black.
+- **Two round dark buttons top-right of the video: cast and ✕, each 30 pt (74 px), near-black fill, white icons, 44 pt center to center, 10 pt below the top of the video, the ✕ about 28 pt from the right edge.** A large round play button sits centered on the video while paused.
+- Under the video: "NETFLIX" red wordmark, title "Stranger Things" (about 24 pt), meta "2025 TV-14 5 Seasons HD", "Watch the Complete Series Now", a full-width white "Play" button and a full-width grey "Download S5:E1" button, synopsis, then My List / Rate / Share / Download icon buttons.
+
+`netflix/appstore_04_clips_vertical_viewer_mute.jpg` gives the mute control: the 48 pt glass circle with the speaker-× icon (see section 4).
+
+---
+
+## 6. Small video tile beside text in a list
+
+`youtube/appstore_05_playlist_rows_thumb_duration.jpg` (**the list tile reference**, 2.63 px/pt). YouTube's playlist sheet under the player:
+- **Row: thumbnail left, text right, "⋮" far right. Thumbnail 134.6 x 75.3 pt (354 x 198 px, 16:9), corner radius about 7 pt (visual), 14 pt from the left edge; text starts 16 pt right of the thumbnail.** Rows are about 90 pt apart with no dividers.
+- **Duration badge: bottom-right inside the thumbnail, about 4 pt in from the right and bottom edges, black about 80%, 17.5 pt tall, white digits "3:11" cap 7.6 pt (about 11 pt semibold).**
+- **Watched bar: red `#FE0000`, 3.4 pt tall, across the bottom of the thumbnail, length = share watched.**
+- Title black regular, 2 lines, cap 9.1 pt (about 13 pt); channel line "Dua Lipa" grey, then "89M views • 1 year ago" grey (visual).
+- The playing row is highlighted with a pale tint `#EADCDC` across the full width.
+
+`netflix/appstore_03_moments_saved_clip_tiles.jpg` (2.445 px/pt): Netflix "Moments You've Saved" row: 16:9 clip tiles (video part 132.5 pt tall) with a round play button and the length ("15s", "2m") bottom-left, a share icon bottom-right, and a dark `#161616` caption box under each clip (51 pt tall, two centered lines: "Starts at 49:20" white, "Bridgerton | S4:E1" grey). Tiles 8 pt apart.
+
+---
+
+## Element map for Faves
+
+One pick per element. Copy it exactly; values are from the measurements above. Where a reference's color is a brand color, Faves swaps in its own token (`brand`, `score`, etc. in `docs/design_system.md`) and keeps everything else. The video-first screens are dark like their references: use Netflix's iPhone background `#110F15` for Home and the viewer.
+
+| Element | Copy this | Exactly what to copy | Measured values |
+|---|---|---|---|
+| Top 10 row (rank numeral + 9:16 card) | `video/netflix/yt_PXo3QCmgWB4_t037_top10_tv_row_1_2_3.png` (+ `t042` for 10) | Netflix's Top 10 row: big outlined rank numeral in the gap before each card, bottom-aligned with the card, drawn on top of the card's left edge. Title "Top 10 in San Francisco today" in the row title style. Faves keeps Netflix's card width and swaps the poster for a 9:16 clip (first frame as poster, autoplay muted when the row is centered). "10" keeps the same gap and overlaps the card more, as Netflix does. | Card 100 pt wide, 9:16 = 100 x 178 pt (Netflix's own card is 100 x 141), radius 2.5 pt. Gap 32 pt, so pitch 132 pt; first card 36 pt from the edge, numeral "1" 10.6 pt from the edge. Numeral 75 pt tall (0.75 of the card width), fill `#1A1A1A`, stroke 2 pt `#D0D0D0`, overlap onto the card 8.5 pt ("1") to 16 pt ("2"), about 58 pt for "10". Typeface: Netflix Sans Bold is proprietary, so use the iOS system font at heavy weight. Row title white bold 19 pt, 12.5 pt in, 14 pt above the cards; 31 pt from card bottom to the next row title. |
+| Regular video card row ("Tonight", "This weekend", "Hidden gems") | Row rhythm: `video/netflix/appstore_06_home_hero_only_on_netflix_row.jpg` + `t051` Trending Now. Card overlay: `video/youtube/yt_Y6V9qRAan6U_t100_home_shorts_shelf.png` | Netflix's row: bold white title, cards in one sideways-scrolling line, the next card peeking at the right edge. Each card is a 9:16 clip with YouTube Shorts' overlay: bottom gradient, white 2-line title, "⋮" top-right. | Cards 110 pt wide (Netflix iPhone poster width), 9:16 = 110 x 196 pt, gap 8 pt, left margin 12 pt. Radius 6 pt (YouTube card). Title overlay white 12 pt, 12.2 pt line pitch, 2 lines max, 7 pt left / 10 pt bottom inset, gradient over the bottom 25%. Row title white bold 19 pt (cap 13.75), 14 pt above the cards. |
+| Most-done day story card (vertical, first stop's clip) | `video/netflix/yt_PXo3QCmgWB4_t051_only_on_netflix_tall_cards_trending_row.png` ("Only on Netflix") | Netflix's tall card row: the one big card per row, its corner flag and its bottom pill. Faves: the day's first stop plays in the card; the red "TOP 10" flag becomes a "MOST DONE" flag; the "New Season" pill becomes the day's count ("Done 214 times"). | Card 154 pt wide (Netflix measures 154 x 307, 1:2); Faves 9:16 = 154 x 274 pt, gap 7.8 pt, 11.6 pt margin. Flag flush top-right, 22.5 x 30.6 pt, `#E81A1E` (Faves: `brand`). Pill centered on the bottom edge, 15 pt tall, about 64 pt wide, `#E1050B` (Faves: `brand`), white bold label. |
+| Plan prompt between rows | `plans/google-maps/promo_video_ask_maps_sheet_suggestions.png` (already in the catalog) | Keep the existing Ask Maps prompt card exactly as built; it sits between two video rows like any other row. | See "Plan builder prompt" in `docs/design_system.md`. |
+| Itinerary stop video tile | `video/youtube/appstore_05_playlist_rows_thumb_duration.jpg` | YouTube's playlist row: clip thumbnail left with the length badge bottom-right and the watched bar at its bottom, text right, "⋮" far right. Faves crops the thumbnail to the 2:3 YouTube Shorts card shape so vertical clips fit, and keeps YouTube's thumbnail height. Tap opens the full-screen viewer at that stop. | Thumbnail 75 pt tall; 2:3 = 50 x 75 pt (YouTube's own is 134.6 x 75.3 at 16:9), radius 7 pt, 14 pt from the left (or from the time rail), text 16 pt right of it. Badge 4 pt in from right and bottom, 17.5 pt tall, black 80%, white 11 pt semibold ("0:12"). Watched bar 3.4 pt `#FE0000` (Faves: `brand`). Title 13 pt, 2 lines; grey meta line. |
+| Full-screen swipe viewer for a day's stops | `video/netflix/appstore_04_clips_vertical_viewer_mute.jpg` | Netflix Clips: one clip per screen, swipe up for the next stop. Title block bottom-left (stop name, meta line, one-line description with "…more"), a round art circle to its right (Faves: the place photo, opens the place page), a right rail of three glass circles (mute, save, share), a 2 pt progress bar right above the tab bar. | Rail circles 48 pt, pitch 64 pt, white about 20% fill, icons 22 pt, rail 28 pt from the right edge. Title white bold 19 pt, 17.4 pt from the left; meta white semibold 11.5 pt ("Stop 2 of 5 · 10 min walk"); description white 13 pt + bold "…more". Art circle 71 pt, thin white ring. Progress bar 2 pt, full width, played `#A5A5A5`, unplayed `#2D2729`. |
+| Place page hero video with mute control | `video/netflix/appstore_02_title_page_trailer_hero.jpg` (+ the mute icon from `appstore_04`) | Netflix's title page: the clip plays muted, full width, directly under the status bar; round dark buttons in its top-right corner. Faves puts ✕ (or back) and share there, and the mute button in the hero's bottom-right corner in the same 30 pt dark circle, with Netflix Clips' speaker-× icon. Tap the hero to open the full-screen viewer. | Hero 393 x 212 pt (1.85:1), black status area above. Buttons 30 pt circles, near-black fill, white icons, 44 pt center to center, 10 pt from the video's top, ✕ 28 pt from the right edge. Mute: same 30 pt circle, 10 pt from the hero's bottom and 28 pt from its right edge. |
+| Fallback when a spot has no clip | `video/netflix/yt_PXo3QCmgWB4_t051_...` (Trending Now) + `moments/instagram/yt_q2ASzVtL0YE_t080_location_page_top_recent_grid.png` | Netflix rows mix titles freely: a still poster sits in the exact same card frame as everything else. Faves shows the spot's best photo in the same 9:16 frame, same radius and overlay. Instagram's rule marks the difference: only video tiles carry the reel glyph top-right; photo tiles carry none. | Same card size, radius and title overlay as the row. Reel glyph about 24 pt white, top-right, on clip cards only. No play button and no length badge on a photo. |
+| Small creator credit line on a video card | `video/tiktok/appstore_14_for_you_rail_handle_sound.png` (content) + `video/youtube/yt_Y6V9qRAan6U_t100_home_shorts_shelf.png` (size) | TikTok's bottom-left credit, the handle on its own line, scaled to the YouTube Shorts card text. On a card: the title, then one line "@handle" under it. In the full-screen viewer: TikTok's two lines exactly ("@handle", then "♫ original sound - handle" becomes "on TikTok"). | Card: white regular 12 pt (YouTube card text size), one line, truncate with "…", same 7 pt left inset, sits under the title inside the bottom gradient. Viewer: handle white semibold 16 pt, second line white regular 14 pt, 22 pt from the left, above the progress bar. |

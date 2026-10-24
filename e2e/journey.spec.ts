@@ -14,8 +14,9 @@ test("onboarding to Home to a planned day to a place page", async ({ page }) => 
   // Home (DoorDash-style feed) with the city loaded.
   await expect(page.getByTestId("home-prompt")).toBeVisible();
   await expect(page.getByTestId("city-switcher")).toContainText("San Francisco");
+  await expect(page.getByTestId("top10-0")).toBeVisible();
+  await expect(page.getByTestId("row-tonight").or(page.getByTestId("row-weekend")).first()).toBeVisible();
   await expect(page.getByTestId("day-card-0")).toBeVisible();
-  await expect(page.getByTestId("section-gems")).toBeVisible();
 
   // Plan a day from a plain request.
   await page.getByTestId("home-prompt").click();
@@ -31,8 +32,15 @@ test("onboarding to Home to a planned day to a place page", async ({ page }) => 
   await expect(page.getByTestId("stop-0")).toContainText(/pickleball/i);
   await expect(page.getByTestId("leg-1")).toContainText(/min .* • .* mi/);
 
+  // A stop's clip opens the full-screen swipe viewer through the day's stops.
+  await page.getByTestId("stop-1-clip").click();
+  await expect(page.getByTestId("reel")).toBeVisible();
+  await expect(page.getByTestId("reel-page-1")).toBeVisible();
+  await page.getByTestId("reel-close").click();
+  await expect(page.getByTestId("itinerary")).toBeVisible();
+
   // A stop opens its place page with logistics and the Locals Score.
-  await page.getByTestId("stop-0").getByRole("button").first().click();
+  await page.getByTestId("stop-0-open").click();
   await expect(page.getByTestId("place-page")).toBeVisible();
   await expect(page.getByTestId("locals-score-row")).toBeVisible();
   await expect(page.getByTestId("details-section")).toBeVisible();

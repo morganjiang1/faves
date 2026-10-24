@@ -1,16 +1,18 @@
-// Home, video first, in the order people want on open ("what is there to do this week"):
+// Home, video first and dark like its Netflix reference (#110F15), in the order people want
+// on open ("what is there to do this week"):
 // Netflix's Top 10 row with outlined rank numerals and 9:16 cards that play a muted clip
 // while on screen, the "What are we doing?" plan prompt (DoorDash's search pill with its
 // rotating examples, kept from the first Home), plain text occasion chips (Uber Eats),
 // then Netflix-style rows of video cards: Tonight, This weekend, the most-done days as
 // vertical story cards (YouTube Shorts / Reels), and hidden gems. References:
 // references/video/* and docs/design_references.md "Video-first Home and itinerary".
-import { router } from "expo-router";
+import { router, useIsFocused } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Chip, ErrorState, Icon, SampleTag, Skeleton } from "@/components/ui";
-import { CARD, DayStoryCard, RankCard, STORY, VideoCard, VideoRow } from "@/components/video/cards";
+import { ErrorState, Icon, SampleTag, Skeleton } from "@/components/ui";
+import { CARD, DARK, DayStoryCard, RankCard, STORY, TOP, VideoCard, VideoRow } from "@/components/video/cards";
 import { ViewportProvider, useViewport } from "@/components/video/viewport";
 import { CITY_INDEX } from "@/data/cities";
 import type { Place } from "@/data/types";
@@ -41,6 +43,7 @@ export default function Home() {
   const [prompt, setPrompt] = useState(0);
   const [days, setDays] = useState<CommunityDay[] | null>(null);
   const { vp, onScroll, onLayout } = useViewport();
+  const focused = useIsFocused();
 
   // DoorDash rotates real example searches in the placeholder.
   useEffect(() => {
@@ -75,17 +78,18 @@ export default function Home() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: DARK.bg }} edges={["top"]} testID="home">
+      {focused ? <StatusBar style="light" /> : null}
       <View style={styles.topRow}>
         <Pressable testID="city-switcher" accessibilityRole="button" accessibilityLabel={`City: ${cityName}`} onPress={() => router.push("/city")} style={styles.location}>
-          <Icon name="location-outline" size={22} tint="#000" />
+          <Icon name="location-outline" size={22} tint="#fff" />
           <Text style={styles.locationText}>{city?.name ?? cityName}</Text>
-          <Icon name="chevron-down" size={18} tint="#000" />
+          <Icon name="chevron-down" size={18} tint="#fff" />
         </Pressable>
         <View style={{ flexDirection: "row", gap: 18 }}>
-          <Pressable testID="open-wallet" accessibilityLabel="Spot rewards" hitSlop={8} onPress={() => router.push("/wallet")}><Icon name="wallet-outline" size={25} tint="#000" /></Pressable>
-          <Pressable testID="open-plus" accessibilityLabel="Faves Plus" hitSlop={8} onPress={() => router.push("/plus")}><Icon name="diamond-outline" size={24} tint="#000" /></Pressable>
-          <Pressable testID="open-search" accessibilityLabel="Search" hitSlop={8} onPress={() => router.push("/search")}><Icon name="search" size={24} tint="#000" /></Pressable>
+          <Pressable testID="open-wallet" accessibilityLabel="Spot rewards" hitSlop={8} onPress={() => router.push("/wallet")}><Icon name="wallet-outline" size={25} tint="#fff" /></Pressable>
+          <Pressable testID="open-plus" accessibilityLabel="Faves Plus" hitSlop={8} onPress={() => router.push("/plus")}><Icon name="diamond-outline" size={24} tint="#fff" /></Pressable>
+          <Pressable testID="open-search" accessibilityLabel="Search" hitSlop={8} onPress={() => router.push("/search")}><Icon name="search" size={24} tint="#fff" /></Pressable>
         </View>
       </View>
 
@@ -98,7 +102,7 @@ export default function Home() {
           ) : (
             <>
               <RowTitle title={`Top 10 this week in ${city.name}`} testID="title-top10" />
-              <VideoRow testID="row-top10" data={rows.top} keyOf={(p) => p.id} gap={6} render={(p, i, active) => <RankCard testID={`top10-${i}`} place={p} rank={i + 1} active={active} />} />
+              <VideoRow testID="row-top10" data={rows.top} keyOf={(p) => p.id} gap={0} inset={TOP.first - (TOP.pitch - TOP.w) + 8} render={(p, i, active) => <RankCard testID={`top10-${i}`} place={p} rank={i + 1} active={active} />} />
 
               {/* The one plan prompt, with the map one tap away. */}
               <View style={styles.searchRow}>
@@ -111,7 +115,12 @@ export default function Home() {
                 </Pressable>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                {OCCASIONS.map((o) => <Chip key={o.id} testID={`occasion-${o.id}`} label={o.label} onPress={() => router.push(`/builder?q=${encodeURIComponent(o.prompt)}`)} />)}
+                {OCCASIONS.map((o) => (
+                  // Spotify's dark chips (social/spotify/appstore_01_home_chips_shortcuts.png): 33 pt, #2A2A2A, white 15 pt.
+                  <Pressable key={o.id} testID={`occasion-${o.id}`} accessibilityRole="button" onPress={() => router.push(`/builder?q=${encodeURIComponent(o.prompt)}`)} style={({ pressed }) => [styles.darkChip, pressed && { opacity: 0.75 }]}>
+                    <Text style={styles.darkChipText}>{o.label}</Text>
+                  </Pressable>
+                ))}
               </ScrollView>
 
               {rows.night.places.length ? (
@@ -130,9 +139,9 @@ export default function Home() {
                 <Text style={styles.sampleText}>Real spots, placeholder people until real days are posted</Text>
               </View>
               {days ? (
-                <VideoRow testID="row-days" data={days.slice(0, 8)} keyOf={(d) => d.id} gap={10} render={(d, i, active) => <DayStoryCard testID={`day-card-${i}`} day={d} city={city} first={i === 0} active={active} />} />
+                <VideoRow testID="row-days" data={days.slice(0, 8)} keyOf={(d) => d.id} gap={7.8} render={(d, i, active) => <DayStoryCard testID={`day-card-${i}`} day={d} city={city} first={i === 0} active={active} />} />
               ) : (
-                <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: STORY.w, height: STORY.h }} />)}</View>
+                <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: STORY.w, height: STORY.h, backgroundColor: "#2A2830" }} />)}</View>
               )}
 
               {rows.gems.length ? (
@@ -157,7 +166,7 @@ function RowTitle({ title, subtitle, onMore, testID }: { title: string; subtitle
         <Text style={styles.rowTitleText} numberOfLines={1}>{title}</Text>
         {subtitle ? <Text style={styles.rowSub} numberOfLines={1}>{subtitle}</Text> : null}
       </View>
-      {onMore ? <Icon name="chevron-forward" size={20} tint="#000" /> : null}
+      {onMore ? <Icon name="chevron-forward" size={20} tint="#fff" /> : null}
     </Pressable>
   );
 }
@@ -165,11 +174,11 @@ function RowTitle({ title, subtitle, onMore, testID }: { title: string; subtitle
 function HomeSkeleton() {
   return (
     <View testID="home-loading" style={{ padding: 16, gap: 14 }}>
-      <Skeleton style={{ width: 240, height: 22 }} />
-      <View style={{ flexDirection: "row", gap: 10 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h }} />)}</View>
-      <Skeleton style={{ height: 46, borderRadius: 23 }} />
-      <Skeleton style={{ width: 160, height: 22, marginTop: 10 }} />
-      <View style={{ flexDirection: "row", gap: 10 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h }} />)}</View>
+      <Skeleton style={{ width: 240, height: 22, backgroundColor: "#2A2830" }} />
+      <View style={{ flexDirection: "row", gap: 8 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h, backgroundColor: "#2A2830" }} />)}</View>
+      <Skeleton style={{ height: 46, borderRadius: 23, backgroundColor: "#2A2830" }} />
+      <Skeleton style={{ width: 160, height: 22, marginTop: 10, backgroundColor: "#2A2830" }} />
+      <View style={{ flexDirection: "row", gap: 8 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h, backgroundColor: "#2A2830" }} />)}</View>
     </View>
   );
 }
@@ -177,16 +186,19 @@ function HomeSkeleton() {
 const styles = StyleSheet.create({
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 },
   location: { flexDirection: "row", alignItems: "center", gap: 6 },
-  locationText: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000" },
-  rowTitle: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 20, paddingBottom: 10 },
-  rowTitleText: { fontFamily: font.sans, fontSize: 20, fontWeight: "800", color: "#000" },
-  rowSub: { fontFamily: font.sans, fontSize: 14, color: color.textSub, marginTop: 2 },
-  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 18 },
+  locationText: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#fff" },
+  // Netflix row title: bold white ~19 pt, 12.5 pt in, 14 pt above the cards, ~31 pt below the last row.
+  rowTitle: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12.5, paddingTop: 28, paddingBottom: 12 },
+  rowTitleText: { fontFamily: font.sans, fontSize: 19, fontWeight: "800", color: DARK.text },
+  rowSub: { fontFamily: font.sans, fontSize: 13, color: DARK.sub, marginTop: 2 },
+  darkChip: { height: 33, borderRadius: 17, backgroundColor: "#2A2A2A", paddingHorizontal: 14, justifyContent: "center" },
+  darkChipText: { fontFamily: font.sans, fontSize: 15, color: "#fff" },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12.5, paddingTop: 24 },
   searchPill: { flex: 1, height: 46, borderRadius: 23, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 },
   searchText: { fontFamily: font.sans, fontSize: 16, color: color.textSub, flex: 1 },
   mapButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  chipRow: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
-  sampleLine: { paddingHorizontal: 16, marginTop: -4, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 6 },
-  sampleText: { fontFamily: font.sans, fontSize: 13, color: color.textMuted, flex: 1 },
-  footer: { fontFamily: font.sans, fontSize: 12, color: color.textMuted, paddingHorizontal: 16, paddingTop: 22, lineHeight: 17 },
+  chipRow: { paddingHorizontal: 12.5, paddingTop: 12, gap: 8 },
+  sampleLine: { paddingHorizontal: 12.5, marginTop: -4, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 6 },
+  sampleText: { fontFamily: font.sans, fontSize: 13, color: DARK.sub, flex: 1 },
+  footer: { fontFamily: font.sans, fontSize: 12, color: DARK.sub, paddingHorizontal: 12.5, paddingTop: 26, lineHeight: 17 },
 });
