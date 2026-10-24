@@ -74,10 +74,10 @@ export function ScoresSection({ place, subreddit }: { place: Place; subreddit: s
     );
   }
   const cols: { label: string; value: string; sub: string; tint: string; star?: boolean; testID: string }[] = [
-    { label: "GOOGLE", value: place.google ? place.google.rating.toFixed(1) : "–", sub: place.google ? `${compact(place.google.count)} reviews` : "not rated", tint: color.appleOrange, star: Boolean(place.google), testID: "src-google" },
-    { label: "YELP", value: place.yelp ? place.yelp.rating.toFixed(1) : "–", sub: place.yelp ? `${compact(place.yelp.count)} reviews` : "not listed", tint: color.appleOrange, star: Boolean(place.yelp), testID: "src-yelp" },
-    { label: "REDDIT", value: place.reddit.mentions ? `${place.reddit.mentions}` : "–", sub: place.reddit.mentions ? (place.reddit.mentions === 1 ? "mention" : "mentions") : "no mentions", tint: "#FF4500", testID: "src-reddit" },
-    { label: "TIKTOK", value: place.tiktok.views ? compact(place.tiktok.views) : "–", sub: place.tiktok.mentions ? "views" : "no posts", tint: "#000", testID: "src-tiktok" },
+    { label: "GOOGLE", value: place.google ? place.google.rating.toFixed(1) : "-", sub: place.google ? `${compact(place.google.count)} reviews` : "not rated", tint: color.appleOrange, star: Boolean(place.google), testID: "src-google" },
+    { label: "YELP", value: place.yelp ? place.yelp.rating.toFixed(1) : "-", sub: place.yelp ? `${compact(place.yelp.count)} reviews` : "not listed", tint: color.appleOrange, star: Boolean(place.yelp), testID: "src-yelp" },
+    { label: "REDDIT", value: place.reddit.mentions ? `${place.reddit.mentions}` : "-", sub: place.reddit.mentions ? (place.reddit.mentions === 1 ? "mention" : "mentions") : "no mentions", tint: "#FF4500", testID: "src-reddit" },
+    { label: "TIKTOK", value: place.tiktok.views ? compact(place.tiktok.views) : "-", sub: place.tiktok.mentions ? "views" : "no posts", tint: "#000", testID: "src-tiktok" },
   ];
   return (
     <View testID="scores-section" style={{ marginTop: 22 }}>
@@ -102,7 +102,7 @@ export function ScoresSection({ place, subreddit }: { place: Place; subreddit: s
         {cols.map((c, i) => (
           <View key={c.label} testID={c.testID} style={[styles.stripCol, i > 0 && styles.stripDivider]}>
             <Text style={styles.stripLabel} numberOfLines={1}>{c.label}</Text>
-            <Text style={[styles.stripValue, { color: c.value === "–" ? color.textMuted : c.tint }]}>{c.star ? "★ " : ""}{c.value}</Text>
+            <Text style={[styles.stripValue, { color: c.value === "-" ? color.textMuted : c.tint }]}>{c.star ? "★ " : ""}{c.value}</Text>
             <Text style={styles.stripSub} numberOfLines={1}>{c.sub}</Text>
           </View>
         ))}

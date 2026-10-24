@@ -86,7 +86,7 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
             </View>
           ) : null}
         </View>
-        {place.unrated ? <ScoreBadge score="–" muted size={39} /> : <ScoreBadge score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} tint={color.scoreList} size={39} />}
+        {place.unrated ? <ScoreBadge score="-" muted size={39} /> : <ScoreBadge score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} tint={color.scoreList} size={39} />}
       </View>
       {place.reserveUrl ? (
         <Pressable accessibilityRole="link" onPress={() => router.push(`/place/${encodeURIComponent(place.id)}?reserve=1`)} style={styles.slot}>
@@ -177,7 +177,7 @@ export function CornerCard({ place, onPress, testID, savedCount }: { place: Plac
           </View>
         ) : (
           <View style={styles.gemRow}>
-            <Text style={[styles.ratingNum, { fontSize: 15 }]}>{place.unrated ? "–" : scoreOutOf10(place.locals)}</Text>
+            <Text style={[styles.ratingNum, { fontSize: 15 }]}>{place.unrated ? "-" : scoreOutOf10(place.locals)}</Text>
             <Text style={[styles.ratingLabel, { fontSize: 15 }]}>Locals Score</Text>
           </View>
         )}
