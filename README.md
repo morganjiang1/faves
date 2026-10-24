@@ -1,6 +1,6 @@
-# Daymaker
+# Faves
 
-Working name. Never know what to do? Tell it who's coming and what you're into, and it finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
+Never know what to do? Tell it who's coming and what you're into, and it finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
 
 - Find open pickleball, tennis and basketball courts, the best hot pot in town, or a skyline view for tonight.
 - Plan a first date, a day with friends, or a catch-up with an old friend built around what they love.

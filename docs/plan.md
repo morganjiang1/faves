@@ -1,6 +1,6 @@
-# Daymaker: build plan
+# Faves: build plan
 
-Working name. Tell it who's coming and what you're into, and it finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
+Tell it who's coming and what you're into, and it finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
 
 ## Moments it's built for
 
