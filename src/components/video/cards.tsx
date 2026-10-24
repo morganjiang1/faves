@@ -5,7 +5,8 @@
 //   9:16 (100 x 178) so the spot's clip fits.
 // - Regular rows: Netflix's row rhythm with YouTube Shorts' card overlay
 //   (video/youtube/yt_Y6V9qRAan6U_t100): 110 x 196 pt, radius 6, 8 pt gap, 12 pt margin,
-//   gradient over the bottom, white 12 pt title, then the @handle credit line (TikTok).
+//   gradient over the bottom, white 12 pt title, then the poster's username line (an initial
+//   disc and @handle, like TikTok's username line).
 // - Most-done days: Netflix's tall "Only on Netflix" card (t051): 154 x 274 pt with the corner
 //   flag and the bottom pill in the brand color.
 // Only clip cards carry Instagram's reel glyph; photo fallbacks sit in the same frame bare.
@@ -18,7 +19,7 @@ import type { City, Place } from "@/data/types";
 import type { CommunityDay } from "@/lib/community";
 import { scoreOutOf10 } from "@/lib/score";
 import { color, font } from "@/theme/tokens";
-import { Icon, SampleTag } from "../ui";
+import { Icon, SampleTag, UserDisc } from "../ui";
 import { SpotMedia, clipFor } from "./SpotMedia";
 import { useRowVisible, useVisibleItems } from "./viewport";
 
@@ -61,7 +62,12 @@ function Overlay({ place, line, small, top }: { place: Place; line?: string; sma
           {place.unrated ? "" : <Text style={styles.score}>{scoreOutOf10(place.locals)} </Text>}
           {line ?? place.hood ?? place.kind ?? ""}
         </Text>
-        {clip?.creator ? <Text style={styles.handle} numberOfLines={1}>{clip.creator}</Text> : null}
+        {clip?.creator ? (
+          <View style={styles.posterRow}>
+            <UserDisc name={clip.creator.replace(/^@/, "")} size={13} />
+            <Text style={styles.handle} numberOfLines={1}>{clip.creator}</Text>
+          </View>
+        ) : null}
       </View>
     </>
   );
@@ -126,7 +132,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: font.sans, color: "#fff", fontSize: 12.5, lineHeight: 15, fontWeight: "800" },
   meta: { fontFamily: font.sans, color: "rgba(255,255,255,0.9)", fontSize: 11 },
   score: { fontWeight: "800", color: "#7FE0B0" },
-  handle: { fontFamily: font.sans, color: "#fff", fontSize: 11, fontWeight: "600", opacity: 0.85 },
+  posterRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  handle: { fontFamily: font.sans, color: "#fff", fontSize: 11, fontWeight: "600", opacity: 0.85, flexShrink: 1 },
   reel: { position: "absolute", top: 6, right: 6 },
   reelBottom: { position: "absolute", bottom: 6, right: 6 },
   textTop: { position: "absolute", left: 7, right: 7, top: 8, gap: 2 },

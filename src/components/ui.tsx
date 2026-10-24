@@ -127,6 +127,20 @@ export function Avatar({ name, size = 40, uri, tint }: { name: string; size?: nu
   );
 }
 
+// A poster with no photo: TikTok's initial on a colored disc (video/tiktok/
+// yt_XDmV5t6Y-0Y_t061_comments_sheet_tabs_add_comment.png: 32 pt, white letter, teal #0299A8 or
+// green #2E6716), with the Faves pink as a third color. The color follows the username.
+const DISC_COLORS = ["#0299A8", "#2E6716", "#FF4F6D"];
+export function UserDisc({ name, size = 32, ring }: { name: string; size?: number; ring?: boolean }) {
+  const letter = (name.match(/[a-z0-9]/i)?.[0] ?? "?").toUpperCase();
+  const hash = [...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: DISC_COLORS[hash % DISC_COLORS.length], alignItems: "center", justifyContent: "center", borderWidth: ring ? 1 : 0, borderColor: "#fff" }}>
+      <Text style={{ fontFamily: font.sans, fontSize: size * 0.5, lineHeight: size * 0.62, fontWeight: "500", color: "#fff" }}>{letter}</Text>
+    </View>
+  );
+}
+
 // DoorDash section header: 24 pt bold title + 33 pt grey circle with an arrow.
 export function SectionHeader({ title, subtitle, onMore, testID }: { title: string; subtitle?: string; onMore?: () => void; testID?: string }) {
   return (

@@ -9,7 +9,7 @@ import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } fro
 import { CLIPS, type SpotClip } from "@/data/videos";
 import type { Place } from "@/data/types";
 import { font } from "@/theme/tokens";
-import { Icon, PlaceImage } from "../ui";
+import { PlaceImage, UserDisc } from "../ui";
 
 export const clipFor = (placeId: string | null | undefined): SpotClip | null => (placeId ? CLIPS[placeId] ?? null : null);
 
@@ -60,7 +60,7 @@ export function SpotMedia({ place, active, style, radius = 0, credit = true, onP
       {children}
       {credit && clip?.creator ? (
         <View style={styles.credit} pointerEvents="none">
-          <Icon name="logo-tiktok" size={10} tint="#fff" />
+          <UserDisc name={clip.creator.replace(/^@/, "")} size={14} />
           <Text style={styles.creditText} numberOfLines={1}>{clip.creator}</Text>
         </View>
       ) : null}

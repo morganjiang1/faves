@@ -162,7 +162,7 @@ export default function Home() {
                   <VideoRow testID="section-gems" data={rows.gems} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`gems-${i}`} place={p} active={active} />} />
                 </>
               ) : null}
-              <Text style={styles.footer}>{name ? `Made for ${name}. ` : ""}Rankings use Google, Yelp, Reddit and TikTok. Clips are credited to their creators.</Text>
+              <Text style={styles.footer}>{name ? `Made for ${name}. ` : ""}Rankings use Google, Yelp, Reddit and TikTok.</Text>
             </>
           )}
         </ViewportProvider>

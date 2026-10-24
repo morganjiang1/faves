@@ -3,13 +3,15 @@
 // #110F15, swipe up for the next stop, a title block bottom left (19 pt bold name, 11.5 pt
 // semibold meta, 13 pt line), a 71 pt art circle with a thin white ring (opens the spot), a
 // right rail of 48 pt glass circles, and a 2 pt playback bar (played #A5A5A5, unplayed
-// #2D2729). The creator credit is TikTok's two parts (@handle 16 pt, "on TikTok" 14 pt).
+// #2D2729). The poster's line is TikTok's username line: an initial disc, @handle 16 pt and
+// when it was posted, 14 pt.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ShareSheet } from "@/components/ShareSheet";
-import { EmptyState, Icon, PlaceImage } from "@/components/ui";
+import { EmptyState, Icon, PlaceImage, UserDisc } from "@/components/ui";
+import { shortAgo } from "@/components/moments/clips";
 import { SpotMedia, clipFor } from "@/components/video/SpotMedia";
 import type { Place } from "@/data/types";
 import { findDay } from "@/lib/community";
@@ -90,11 +92,13 @@ export default function Reel() {
                   <Text style={styles.name} numberOfLines={2}>{item.place.name}</Text>
                   <Text style={styles.meta} numberOfLines={1}>{meta}</Text>
                   {item.stop?.why ? <Text style={styles.desc} numberOfLines={1}>{item.stop.why}</Text> : item.place.hood ? <Text style={styles.desc} numberOfLines={1}>{item.place.hood}</Text> : null}
-                  <View style={styles.creditRow}>
-                    <Icon name={clip?.creator ? "logo-tiktok" : "image-outline"} size={15} tint="#fff" />
-                    <Text style={styles.handle} numberOfLines={1}>{clip?.creator ?? "Photo"}</Text>
-                    <Text style={styles.on} numberOfLines={1}>{clip?.creator ? "on TikTok" : "from Google Maps"}</Text>
-                  </View>
+                  {clip?.creator ? (
+                    <View style={styles.creditRow} testID={`reel-poster-${index}`}>
+                      <UserDisc name={clip.creator.replace(/^@/, "")} size={20} />
+                      <Text style={styles.handle} numberOfLines={1}>{clip.creator}</Text>
+                      {clip.postedAt ? <Text style={styles.on} numberOfLines={1}>· {shortAgo(clip.postedAt)} ago</Text> : null}
+                    </View>
+                  ) : null}
                 </View>
                 <Pressable testID={`reel-open-${index}`} accessibilityLabel={`Open ${item.place.name}`} onPress={() => router.push(`/place/${encodeURIComponent(item.place.id)}`)} style={styles.art}>
                   <PlaceImage uri={item.place.image} category={item.place.category} style={{ width: 67, height: 67, borderRadius: 34 }} />
