@@ -67,10 +67,38 @@ People earn real money when their spots and days help others.
 - **What earns:** not raw likes, which are easy to fake with friends or bots, but verified use. You earn when someone saves your spot, does your day (location check-in at the stops), and gives it a thumbs up at the end.
 - **Rates (starting point):** about $0.01 per save, $0.25 per verified "did this day", and a bonus when a spot you posted first becomes a trending hidden gem. Likes still show on posts, they just don't pay.
 - **Wallet:** earnings show live on your profile ("Your spots earned $3.42 this month, 48 people did your Sunset in Bernal day"). Cash out at $5 as a gift card or a bank transfer.
-- **Where the money comes from:** a share of real revenue, so rewards scale with use, not with a cash pile: booking commissions (reservations, tickets, tours) and promoted placements venues pay for. A fixed share of each booking made from your post goes to you.
+- **Where the money comes from:** a share of real revenue, so rewards scale with use, not with a cash pile: booking commissions (reservations, tickets, tours) and a share of Faves Plus revenue. A fixed share of each booking made from your post goes to you. No paid placements in the feed, the same rule Beli follows.
 - **Anti-fraud:** rewards need a real visit (GPS near the place during opening hours), one reward per account per spot, new accounts earn after a short trust period, and unusual like or save patterns are held for review.
 - **Legal:** payouts go through a provider that handles identity checks and US tax forms (1099s above the IRS threshold), so we never hold or send money ourselves.
 - **Hackathon demo:** the wallet, earnings feed and payout screen run on test data; real payouts come after launch.
+
+## Monetization (copied from Beli)
+
+How Beli makes money, from its App Store listing, its creator terms and press coverage:
+
+| Beli | What it is | Price |
+|---|---|---|
+| Free core app | Ranking, lists, map, friends and recommendations; "nothing in the core restaurant tracking requires a subscription" | free |
+| Beli Supper Club | Invite-only annual membership for top users with partner dinners at hard-to-book restaurants plus premium app features (New York only) | $74.99 / year |
+| Creator subscriptions (paid guides) | Subscribe to a creator's paid restaurant guides; the contract is with the creator, Beli takes payment as their agent | $5.79 / month or $42.90 / year |
+| Weekly Streak Restore | Rescues a broken weekly logging streak | $0.99 |
+| Reservation partners | Book a table without leaving the app (Resy, OpenTable, SevenRooms); terms not public | commission (undisclosed) |
+| Ticketed events | One-off parties with restaurant partners | per ticket |
+| No in-feed ads | The founders rule them out to protect the rankings | none |
+
+Faves, same model:
+
+| Faves | What it is | Price |
+|---|---|---|
+| **Free** | Everything core: explore, Locals Scores, hidden gems, planning days, the community, posting spots and earning rewards | free |
+| **Faves Plus** | Members-only Faves Nights at partner spots (the Supper Club idea, in every city); perks at partner places; live Plan B re-planning; "busy now" crowd levels and best time to go; 2x spot rewards; streak saves included | $5.79 / month or $42.90 / year (Beli's tested price points) |
+| **Local guides** | Top locals sell paid guides and days ("my 12 date spots", "Gundam day in SF"); the creator sets the price, Faves takes payment as their agent and keeps a cut | from $5.79 / month |
+| **Weekend streak save** | Keeps your "something new every weekend" streak alive | $0.99 |
+| **Booking commissions** | Reservations, tickets, tours and classes booked from a plan | partner commission |
+| **Faves Nights tickets** | Hosted group outings with partner venues | per ticket |
+| **No ads** | Locals Scores are never for sale | none |
+
+Sources: [Beli on the App Store](https://apps.apple.com/us/app/beli/id1478375386), [Beli paid guides terms](https://beliapp.com/paid-guides-terms-subscriber), [Is Beli free? (prices checked 2026-10-02)](https://crumble.me/guides/is-beli-free), [Resy: reservations in Beli](https://blog.resy.com/?p=93063), [Ivey Business Review: Beli, A Recipe for Revenue](https://www.iveybusinessreview.ca/magazine/articles/beli), [San Francisco Chronicle on Beli](https://www.sfchronicle.com/food/article/beli-restaurants-bay-area-app-20772802.php).
 
 ## Tech
 
