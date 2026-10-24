@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { CornerCard, PlaceRow } from "@/components/cards";
+import { PlaceRow } from "@/components/cards";
 import FavesMap from "@/components/map/FavesMap";
 import type { MapPin } from "@/components/map/types";
 import { EmptyState, ErrorState, Icon, OfflineBanner, Skeleton } from "@/components/ui";
@@ -40,7 +40,6 @@ export default function Explore() {
   const [query, setQuery] = useState(params.q ?? "");
   const [center, setCenter] = useState<LatLng | null>(null);
   const [searchCenter, setSearchCenter] = useState<LatLng | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
 
   const start = useMemo(() => (city ? (here && metersBetween(here, city.center) < 60_000 ? here : city.center) : null), [city, here]);
   const focus = searchCenter ?? start;
@@ -69,13 +68,12 @@ export default function Explore() {
   }, [city, focus, cat, sport, open, gems, moments, query, clock.day, clock.minutes, mode]);
 
   const pins: MapPin[] = useMemo(() => {
-    const out: MapPin[] = results.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, kind: "spot", emoji: categoryInfo(p.category).emoji, label: p.name, sub: vibeLine(p), selected: p.id === selected, saved: saved.includes(p.id), priority: p.unrated ? 30 : p.locals }));
+    const out: MapPin[] = results.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, kind: "spot", emoji: categoryInfo(p.category).emoji, label: p.name, sub: vibeLine(p), saved: saved.includes(p.id), priority: p.unrated ? 30 : p.locals }));
     if (here) out.push({ id: "you", lat: here.lat, lng: here.lng, kind: "you" });
     return out;
-  }, [results, selected, here, saved]);
+  }, [results, here, saved]);
 
-  const sel = selected && city ? city.byId.get(selected) ?? null : null;
-  const pickCat = (c: CategoryId | "top") => { setCat(c); setSport(null); setSelected(null); };
+  const pickCat = (c: CategoryId | "top") => { setCat(c); setSport(null); };
 
   if (status === "error") return <SafeAreaView style={{ flex: 1, justifyContent: "center" }}><ErrorState body={error ?? "We couldn't load this city."} onRetry={retry} /></SafeAreaView>;
   if (!city || !start) {
@@ -161,7 +159,7 @@ export default function Explore() {
         span={0.05}
         pins={pins}
         fitKey={`${cat}|${sport}|${open}|${gems}|${moments}|${query}|${searchCenter?.lat ?? ""}`}
-        onPinPress={(id) => id !== "you" && setSelected(id)}
+        onPinPress={(id) => { if (id !== "you") router.push(`/place/${encodeURIComponent(id)}`); }}
         onMove={setCenter}
       />
       <SafeAreaView edges={["top"]} pointerEvents="box-none" style={styles.top}>
@@ -170,12 +168,12 @@ export default function Explore() {
             <Icon name="chevron-back" size={22} tint="#000" />
           </Pressable>
           {toggle}
-          <Pressable testID="explore-locate" accessibilityLabel="Back to start" onPress={() => { setSearchCenter(null); setSelected(null); }} style={[styles.round, shadow.soft]}>
+          <Pressable testID="explore-locate" accessibilityLabel="Back to start" onPress={() => setSearchCenter(null)} style={[styles.round, shadow.soft]}>
             <Icon name="navigate" size={20} tint="#000" />
           </Pressable>
         </View>
         {moved ? (
-          <Pressable testID="search-here" onPress={() => { setSearchCenter(center); setSelected(null); }} style={styles.searchHere}>
+          <Pressable testID="search-here" onPress={() => setSearchCenter(center)} style={styles.searchHere}>
             <Icon name="refresh" size={17} tint="#fff" />
             <Text style={styles.searchHereText}>search here</Text>
           </Pressable>
@@ -183,12 +181,6 @@ export default function Explore() {
       </SafeAreaView>
 
       <View style={[styles.bottom, { paddingBottom: insets.bottom + 10 }]} pointerEvents="box-none">
-        {sel ? (
-          <View style={{ paddingHorizontal: 14, marginBottom: 10 }}>
-            <CornerCard testID="selected-card" place={sel} />
-            <Pressable accessibilityLabel="Close" onPress={() => setSelected(null)} style={styles.cardClose}><Icon name="close" size={16} tint="#000" /></Pressable>
-          </View>
-        ) : null}
         {!results.length ? (
           <View style={styles.noResults}><Text style={styles.noResultsText}>No spots match here. Try another filter or move the map.</Text></View>
         ) : null}
@@ -249,7 +241,6 @@ const styles = StyleSheet.create({
   search: { height: 47, borderRadius: 24, backgroundColor: color.cornerSearch, flexDirection: "row", alignItems: "center", paddingLeft: 18, paddingRight: 3, marginTop: 4 },
   searchInput: { flex: 1, color: "#fff", fontSize: 17, fontFamily: font.sans, height: 47 },
   searchGo: { width: 41, height: 41, borderRadius: 21, backgroundColor: color.cornerBlue, alignItems: "center", justifyContent: "center" },
-  cardClose: { position: "absolute", right: 22, top: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: "#F2F2F2", alignItems: "center", justifyContent: "center" },
   noResults: { marginHorizontal: 14, marginBottom: 6, backgroundColor: "#fff", borderRadius: 12, padding: 12 },
   noResultsText: { fontFamily: font.sans, fontSize: 15, color: "#333" },
   toggle: { flexDirection: "row", width: 200, height: 32 },

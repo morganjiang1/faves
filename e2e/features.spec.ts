@@ -65,6 +65,17 @@ test("a spot plays full screen: its clips, Spot Moments, details, and the be-her
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
+test("a map pin opens the spot full screen", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/explore");
+  await expect(page.getByTestId("explore-map")).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.locator(".leaflet-marker-icon").first().dispatchEvent("click");
+  await expect(page.getByTestId("place-page")).toBeVisible();
+  await expect(page.getByTestId("place-name")).toBeVisible();
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
 test("rewards wallet, cash out and Faves Plus (test mode)", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/wallet");
