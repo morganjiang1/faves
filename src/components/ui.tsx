@@ -194,33 +194,69 @@ export function EmptyState({ icon, title, body, cta, onCta, secondary, onSeconda
   );
 }
 
-// Error with a way out (Beli card frame, Yelp-style recovery line).
-export function ErrorState({ title = "Something went wrong", body, onRetry, testID }: { title?: string; body: string; onRetry?: () => void; testID?: string }) {
-  return <EmptyState testID={testID ?? "error-state"} icon="cloud-offline-outline" title={title} body={body} cta={onRetry ? "Try again" : undefined} onCta={onRetry} />;
+// Error with a way out: TikTok's "No internet connection. Tap to retry." (refresh glyph,
+// one bold line, one grey helper line; the whole block is the tap target).
+export function ErrorState({ title, body, onRetry, testID }: { title?: string; body: string; onRetry?: () => void; testID?: string }) {
+  const content = (
+    <View style={styles.error}>
+      <Icon name="refresh" size={52} tint="#000" />
+      <Text style={styles.errorTitle}>{title ?? (onRetry ? "Couldn't load this. Tap to retry." : "Something went wrong.")}</Text>
+      <Text style={styles.errorBody}>{body}</Text>
+    </View>
+  );
+  return onRetry ? <Pressable testID={testID ?? "error-state"} accessibilityRole="button" onPress={onRetry}>{content}</Pressable> : <View testID={testID ?? "error-state"}>{content}</View>;
 }
 
-// Offline strip shown at the top of a screen.
+// Offline: Spotify's full-width dark bar with one bold line, sitting right above the tab bar
+// (or at the bottom of screens without one).
 export function OfflineBanner() {
   return (
     <View testID="offline-banner" style={styles.offline}>
-      <Icon name="cloud-offline-outline" size={16} tint="#fff" />
-      <Text style={{ fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "600" }}>You're offline. Showing saved data.</Text>
+      <Text style={{ fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" }}>Faves is offline. Showing what's saved.</Text>
     </View>
   );
 }
 
-// Loading placeholder blocks that pulse.
+// Loading placeholders: Instagram's skeleton (#F8F8F8 circles, round-ended bars and blocks
+// on white, no spinner), with a gentle pulse.
 export function Skeleton({ style }: { style: StyleProp<ViewStyle> }) {
-  const a = useRef(new Animated.Value(0.5)).current;
+  const a = useRef(new Animated.Value(0.6)).current;
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(a, { toValue: 1, duration: 700, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(a, { toValue: 0.5, duration: 700, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(a, { toValue: 1, duration: 800, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(a, { toValue: 0.6, duration: 800, useNativeDriver: Platform.OS !== "web" }),
     ]));
     loop.start();
     return () => loop.stop();
   }, [a]);
-  return <Animated.View style={[{ backgroundColor: "#EDEDED", borderRadius: 8, opacity: a }, style]} />;
+  return <Animated.View style={[{ backgroundColor: "#F2F2F2", borderRadius: 8, opacity: a }, style]} />;
+}
+
+// Instagram's skeleton rows: 58 pt circle, two round-ended bars.
+export function SkeletonRows({ rows = 4, testID }: { rows?: number; testID?: string }) {
+  return (
+    <View testID={testID} style={{ padding: 16, gap: 22 }}>
+      {Array.from({ length: rows }, (_, i) => (
+        <View key={i} style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
+          <Skeleton style={{ width: 58, height: 58, borderRadius: 29 }} />
+          <View style={{ flex: 1, gap: 10 }}>
+            <Skeleton style={{ width: "62%", height: 12, borderRadius: 6 }} />
+            <Skeleton style={{ width: "84%", height: 10, borderRadius: 5 }} />
+            <Skeleton style={{ width: "40%", height: 10, borderRadius: 5 }} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// Instagram's map "Loading" pill.
+export function LoadingPill({ text = "Loading" }: { text?: string }) {
+  return (
+    <View style={[{ alignSelf: "center", height: 36, borderRadius: 18, backgroundColor: "#fff", paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 6 }, shadow.soft]}>
+      <Text style={{ fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#000" }}>· {text}</Text>
+    </View>
+  );
 }
 
 // Beli's "X ranked!" toast: near-black 47 pt bar, white text, top of the screen.
@@ -271,7 +307,10 @@ const styles = StyleSheet.create({
   blobWrap: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
   blob: { position: "absolute", width: "86%", height: 140, borderRadius: 70, backgroundColor: color.sage, transform: [{ rotate: "-6deg" }] },
   blobIcon: { width: 112, height: 112, borderRadius: 56, borderWidth: 3, borderColor: color.brand, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  offline: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#3C4043", paddingVertical: 8 },
+  offline: { alignItems: "center", justifyContent: "center", backgroundColor: "#121212", paddingVertical: 9, paddingHorizontal: 16 },
+  error: { alignItems: "center", paddingHorizontal: 32, paddingVertical: 28, gap: 10 },
+  errorTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000", textAlign: "center", marginTop: 8 },
+  errorBody: { fontFamily: font.sans, fontSize: 14, color: "#6B6B6B", textAlign: "center" },
   toast: { position: "absolute", left: 16, right: 16, minHeight: 47, borderRadius: 11, backgroundColor: color.toast, justifyContent: "center", paddingHorizontal: 16, zIndex: 50 },
   sample: { backgroundColor: "#F2F2F2", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start" },
 });

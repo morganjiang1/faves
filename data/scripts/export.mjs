@@ -85,7 +85,8 @@ function slimPlace(p) {
     a: p.address?.replace(/, United States$/, "") ?? null,
     h: p.neighborhood,
     p: p.priceLevel ?? null,
-    f: FREE.test(kindText) && !NOT_FREE.test(kindText),
+    // Free entry is judged from the main kind only ("beer garden" in a cafe's extra tags is not a park).
+    f: !["food", "sweets", "night", "classes"].includes(p.category) && FREE.test(p.kind ?? "") && !NOT_FREE.test(kindText),
     img: p.image,
     ph: (p.photos ?? []).slice(0, 3).map((x) => x.url),
     hr: parseWeek(p.hours),
@@ -106,7 +107,7 @@ function slimPlace(p) {
     lp: p.localPick || undefined,
     d: short(p.description, 180),
     mo: p.moments?.length
-      ? p.moments.slice(0, 12).map((m) => ({ id: m.id, u: m.creator, v: m.views, l: m.likes, at: m.postedAt, cap: m.caption, dur: m.duration }))
+      ? p.moments.slice(0, 12).map((m) => ({ id: m.id, u: m.creator, v: m.views, l: m.likes, at: m.postedAt, cap: m.caption, dur: m.duration, cv: m.cover ?? undefined }))
       : undefined,
   };
 }

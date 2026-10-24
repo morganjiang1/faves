@@ -6,7 +6,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { color, font } from "@/theme/tokens";
 import { useStore } from "@/state/store";
-import { Avatar, Icon, type IconName } from "./ui";
+import { useOnline } from "@/state/device";
+import { Avatar, Icon, OfflineBanner, type IconName } from "./ui";
 
 const TABS: Record<string, { label: string; icon: IconName; iconOn: IconName }> = {
   index: { label: "Home", icon: "home-outline", iconOn: "home" },
@@ -19,7 +20,10 @@ const TABS: Record<string, { label: string; icon: IconName; iconOn: IconName }> 
 export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const name = useStore((s) => s.profile.name);
+  const online = useOnline();
   return (
+    <View>
+    {!online ? <OfflineBanner /> : null}
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {state.routes.map((route, index) => {
         const tab = TABS[route.name];
@@ -42,6 +46,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
           </Pressable>
         );
       })}
+    </View>
     </View>
   );
 }

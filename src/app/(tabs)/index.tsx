@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DayCard, PlaceCard } from "@/components/cards";
-import { Band, Chip, ErrorState, FilterChip, Icon, OfflineBanner, SampleTag, SectionHeader, Skeleton, T } from "@/components/ui";
+import { Band, Chip, ErrorState, FilterChip, Icon, SampleTag, SectionHeader, Skeleton, T } from "@/components/ui";
 import { CITY_INDEX } from "@/data/cities";
 import type { Place } from "@/data/types";
 import { communityDays, type CommunityDay } from "@/lib/community";
@@ -16,7 +16,7 @@ import { isOpenAt } from "@/lib/hours";
 import { sunTimes } from "@/lib/sunset";
 import { formatClock, offsetHours } from "@/lib/time";
 import { useCity } from "@/state/city";
-import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
+import { useCityClock, useKnownLocation } from "@/state/device";
 import { useStore } from "@/state/store";
 import { CATEGORIES, color, font, logo, shadow } from "@/theme/tokens";
 
@@ -36,7 +36,6 @@ export default function Home() {
   const { city, status, error, retry } = useCity();
   const clock = useCityClock(city?.utcOffset);
   const here = useKnownLocation();
-  const online = useOnline();
   const name = useStore((s) => s.profile.name);
   const [prompt, setPrompt] = useState(0);
   const [filters, setFilters] = useState<Filter[]>([]);
@@ -88,7 +87,6 @@ export default function Home() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      {!online ? <OfflineBanner /> : null}
       {/* Location row */}
       <View style={styles.topRow}>
         <Pressable testID="city-switcher" accessibilityRole="button" accessibilityLabel={`City: ${cityName}`} onPress={() => router.push("/city")} style={styles.location}>

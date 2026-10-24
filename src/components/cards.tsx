@@ -65,34 +65,43 @@ export function PlaceCard({ place, clock, from, width = 307, testID }: { place: 
   );
 }
 
-// Beli ranked/recs list row (beli_appstore_05 + beli_ranked_list_numbered_vid): bold name,
-// "$$ | Burgers" and hood, grey status line, score circle right, add + bookmark under it.
-export function PlaceRow({ place, clock, from, rank, onPress, right, testID }: { place: Place; clock: CityClock; from: LatLng | null; rank?: number; onPress?: () => void; right?: React.ReactNode; testID?: string }) {
+// Beli ranked/recs list row (beli_appstore_05_recs_list_reserve + beli_ranked_list_numbered_vid):
+// bold name, "$$ | Kind", hood, optional teal reserve button, grey status line with the
+// add and bookmark icons at the right, score circle with its count badge top right.
+export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: { place: Place; clock: CityClock; from: LatLng | null; rank?: number; onPress?: () => void; onAdd?: () => void; testID?: string }) {
   const saved = useStore((s) => s.saved.includes(place.id));
   const c = costOf(place);
   const kind = place.kind ?? place.category;
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={place.name} onPress={onPress ?? (() => router.push(`/place/${encodeURIComponent(place.id)}`))} style={styles.row}>
-      <PlaceImage uri={place.image} category={place.category} style={styles.rowThumb} emojiSize={24} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="bodyStrong" numberOfLines={2} style={{ fontSize: 17, fontWeight: "700", color: "#000" }}>{rank ? `${rank}. ` : ""}{place.name}</T>
-        <T v="body" numberOfLines={1} style={{ fontSize: 15, color: color.text }}>{c.dollars ? `${c.dollars} | ` : ""}{kind}</T>
-        {place.hood ? <T v="body" numberOfLines={1} style={{ fontSize: 15, color: color.text }}>{place.hood}</T> : null}
-        <T v="meta" numberOfLines={1} style={{ color: "#989AA2" }}>{metaLine(place, clock, from)}</T>
-        {place.hiddenGem ? (
-          <View style={[styles.gemRow, { marginTop: 2 }]}>
-            <Icon name="diamond-outline" size={13} tint="#000" />
-            <Text style={[styles.gemText, { fontSize: 14 }]} numberOfLines={1}>{gemLine(place)}</Text>
-          </View>
-        ) : null}
-      </View>
-      <View style={{ alignItems: "center", justifyContent: "space-between", alignSelf: "stretch" }}>
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        <View style={{ flex: 1, gap: 1 }}>
+          <Text style={styles.rowName} numberOfLines={2}>{rank ? `${rank}. ` : ""}{place.name}</Text>
+          <Text style={styles.rowLine} numberOfLines={1}>{c.dollars ? `${c.dollars} | ` : ""}{kind}</Text>
+          {place.hood ? <Text style={styles.rowLine} numberOfLines={1}>{place.hood}</Text> : null}
+          {place.hiddenGem ? (
+            <View style={[styles.gemRow, { marginTop: 4 }]}>
+              <Icon name="diamond-outline" size={13} tint="#000" />
+              <Text style={[styles.gemText, { fontSize: 14 }]} numberOfLines={1}>{gemLine(place)}</Text>
+            </View>
+          ) : null}
+        </View>
         {place.unrated ? <ScoreBadge score="–" muted size={39} /> : <ScoreBadge score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} tint={color.scoreList} size={39} />}
-        {right ?? (
-          <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)}>
-            <Icon name={saved ? "bookmark" : "bookmark-outline"} size={24} tint={saved ? color.brand : "#000"} />
-          </Pressable>
-        )}
+      </View>
+      {place.reserveUrl ? (
+        <Pressable accessibilityRole="link" onPress={() => router.push(`/place/${encodeURIComponent(place.id)}?reserve=1`)} style={styles.slot}>
+          <Text style={styles.slotTop}>Reserve</Text>
+          <Text style={styles.slotSub}>TABLE</Text>
+        </Pressable>
+      ) : null}
+      <View style={styles.rowBottom}>
+        <Text style={styles.rowMeta} numberOfLines={1}>{metaLine(place, clock, from)}</Text>
+        <Pressable accessibilityLabel="Add to a day" hitSlop={8} onPress={onAdd ?? (() => router.push(`/builder?place=${encodeURIComponent(place.id)}`))}>
+          <Icon name="add-circle-outline" size={27} tint="#000" />
+        </Pressable>
+        <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)}>
+          <Icon name={saved ? "bookmark" : "bookmark-outline"} size={25} tint={saved ? color.brand : "#000"} />
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -125,9 +134,67 @@ const styles = StyleSheet.create({
   ratingMuted: { fontFamily: font.sans, fontSize: 14, color: color.textSub },
   gemRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   gemText: { fontFamily: font.sans, fontSize: 15, fontStyle: "italic", color: "#000", flexShrink: 1 },
-  row: { flexDirection: "row", gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#F7F7FA" },
-  rowThumb: { width: 64, height: 64, borderRadius: 6 },
+  row: { paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 6, borderBottomColor: "#F7F7FA", backgroundColor: "#fff" },
+  rowName: { fontFamily: font.sans, fontSize: 19, lineHeight: 24, fontWeight: "700", color: "#000" },
+  rowLine: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: color.text },
+  rowBottom: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10 },
+  rowMeta: { fontFamily: font.sans, fontSize: 15, color: "#989AA2", flex: 1 },
+  slot: { marginTop: 10, width: 79, height: 35, borderRadius: 5, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },
+  slotTop: { fontFamily: font.sans, color: "#fff", fontSize: 13, fontWeight: "600" },
+  slotSub: { fontFamily: font.sans, color: "#fff", fontSize: 9, fontWeight: "700", letterSpacing: 0.4 },
   mostBadge: { position: "absolute", top: 8, left: 8, backgroundColor: color.dashTag, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3 },
   dayTitle: { fontFamily: font.sans, color: "#fff", fontSize: 18, lineHeight: 22, fontWeight: "700" },
   daySub: { fontFamily: font.sans, color: "#fff", fontSize: 14, marginTop: 3 },
+});
+
+// Corner's AI-search result card (corner_ai_search_results_hidden_gem_cards.png): white,
+// radius 17, soft shadow, 90 x 131 photo radius 14, bold name, grey hood, purple vibe dot
+// line, gem line, "saved N times" pill, white bookmark circle.
+export function CornerCard({ place, onPress, testID, savedCount }: { place: Place; onPress?: () => void; testID?: string; savedCount?: number }) {
+  const saved = useStore((s) => s.saved.includes(place.id));
+  const c = costOf(place);
+  const gem = gemLine(place);
+  return (
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={place.name} onPress={onPress ?? (() => router.push(`/place/${encodeURIComponent(place.id)}`))} style={cornerStyles.corner}>
+      <PlaceImage uri={place.image} category={place.category} style={cornerStyles.cornerThumb} emojiSize={36} />
+      <View style={{ flex: 1, gap: 4, paddingVertical: 2 }}>
+        <Text style={cornerStyles.cornerName} numberOfLines={2}>{place.name}</Text>
+        <Text style={cornerStyles.cornerHood} numberOfLines={1}>{[place.hood, c.dollars].filter(Boolean).join(" • ") || place.kind}</Text>
+        <View style={cornerStyles.vibe}>
+          <View style={cornerStyles.vibeDot} />
+          <Text style={cornerStyles.vibeText} numberOfLines={1}>{vibeLine(place)}</Text>
+        </View>
+        {gem ? (
+          <View style={styles.gemRow}>
+            <Icon name="diamond-outline" size={14} tint="#000" />
+            <Text style={styles.gemText} numberOfLines={1}>{gem}</Text>
+          </View>
+        ) : (
+          <View style={styles.gemRow}>
+            <Text style={[styles.ratingNum, { fontSize: 15 }]}>{place.unrated ? "–" : scoreOutOf10(place.locals)}</Text>
+            <Text style={[styles.ratingLabel, { fontSize: 15 }]}>Locals Score</Text>
+          </View>
+        )}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
+          <View style={cornerStyles.savedPill}><Text style={cornerStyles.savedPillText}>{savedCount != null ? `saved ${savedCount} times` : `${compact(signalCount(place))} ratings`}</Text></View>
+          <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)} style={cornerStyles.cornerBookmark}>
+            <Icon name={saved ? "bookmark" : "bookmark-outline"} size={17} tint="#0077FF" />
+          </Pressable>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+const cornerStyles = StyleSheet.create({
+  corner: { flexDirection: "row", gap: 12, backgroundColor: "#fff", borderRadius: 17, padding: 12, shadowColor: "#4A5A7A", shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  cornerThumb: { width: 90, height: 131, borderRadius: 14 },
+  cornerName: { fontFamily: font.sans, fontSize: 18, lineHeight: 22, fontWeight: "800", color: "#000", letterSpacing: -0.3 },
+  cornerHood: { fontFamily: font.sans, fontSize: 16, color: "#868686" },
+  vibe: { flexDirection: "row", alignItems: "center", gap: 7 },
+  vibeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: color.gem },
+  vibeText: { fontFamily: font.sans, fontSize: 15, color: "#868686", flexShrink: 1 },
+  savedPill: { height: 24, borderRadius: 12, backgroundColor: "#EFEFEF", paddingHorizontal: 10, justifyContent: "center" },
+  savedPillText: { fontFamily: font.sans, fontSize: 13, color: "#8C8C8C" },
+  cornerBookmark: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
 });

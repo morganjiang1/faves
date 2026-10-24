@@ -52,7 +52,15 @@
       "expo-sharing",
       "expo-asset",
       "expo-video",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Faves uses the camera to post a moment from the spot you are at.",
+          "microphonePermission": "Faves records sound with your moment clips.",
+          "recordAudioAndroid": true
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

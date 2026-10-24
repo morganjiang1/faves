@@ -31,7 +31,7 @@ export interface RawPlace {
   gem?: boolean;
   lp?: boolean;
   d: string | null;
-  mo?: { id: string; u: string; v: number; l: number; at: string | null; cap: string; dur: number | null }[];
+  mo?: { id: string; u: string; v: number; l: number; at: string | null; cap: string; dur: number | null; cv?: string }[];
 }
 
 export interface RawCourt { id: string; s: "tennis" | "basketball" | "pickleball"; la: number; lo: number; n: number; nm: string | null; sf: string | null; lit?: boolean; ac: string | null; pid?: string }
@@ -61,7 +61,10 @@ export interface Moment {
   caption: string;
   duration: number | null;
   uri?: string; // local clip file for moments posted in the app
+  cover?: string | null; // TikTok cover image (signed link, may expire; the tile falls back to the place photo)
+  kind?: "video" | "photo";
   takenHere?: boolean;
+  demo?: boolean; // posted in demo mode: location not verified
 }
 
 export interface Quote { source: "reddit" | "tiktok"; text: string; url: string }

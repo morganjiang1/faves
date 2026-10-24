@@ -265,6 +265,7 @@ async function buildCity(city, categoryOf) {
       postedAt: t.uploadedAtFormatted ?? null,
       caption: tidyCaption(t.title ?? "").slice(0, 140),
       duration: t.video?.duration ?? null,
+      cover: t.video?.cover ?? null, // signed TikTok CDN link, expires after a few days
       tag,
     });
   }

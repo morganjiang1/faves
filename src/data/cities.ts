@@ -55,7 +55,7 @@ export function toPlace(r: RawPlace): Place {
     localPick: Boolean(r.lp),
     description: r.d,
     moments: (r.mo ?? []).map((m) => ({
-      id: m.id, source: "tiktok", creator: m.u, views: m.v, likes: m.l, postedAt: m.at, caption: m.cap, duration: m.dur,
+      id: m.id, source: "tiktok", creator: m.u, views: m.v, likes: m.l, postedAt: m.at, caption: m.cap, duration: m.dur, cover: m.cv ?? null, kind: "video",
     })),
   };
 }

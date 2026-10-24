@@ -1020,3 +1020,318 @@ One pick per element. Copy it exactly; values are from the measurements above.
 | Profile header and stats | `beli/appstore_06_profile_stats.png` | Beli profile top to bottom: centred avatar, @handle + badge, "Member since", match line, bio, social buttons, 3-column stats, outlined Follow button, rows with counts (Been / Want to Try / Both want to try), 2-up stat cards (Rank, Streak). Faves: "Days done 37 / Followers / #212 in Brooklyn", rows "Days done", "Want to do", cards "Rank" + "Weekend streak". | 2.70 px/pt. Avatar 96 pt, 1 pt #D3D3D3 ring. Stat value 16 pt semibold #222427, label 16 pt #989AA3. Button 33 pt tall, 1 pt #D3D3D3, radius 5 pt. Rows 43 pt, bold 17 pt label + bold count + chevron, 1 px #D3D3D3-ish dividers. Cards radius 12 pt, 1 pt #E5E5E5, label #8D8C8C, value bold #004F5E. Match green #009C61. |
 | Typography scale | DoorDash home (`appstore2025_02`) + about.doordash.com CSS tokens | DoorDash's verified scale, one geometric sans (DD Norms is theirs; pick a licensed equivalent of the same family shape). Sizes in use on the home feed: 24 bold section titles, 16 bold names, 14-15 regular meta, 14 chip labels, 12-13 tab labels. | Token font sizes 10/12/14/16/18/20/22/24/28/32/36/40/48 px; line heights 16/20/22/24/26/28/30/32/36 px. Text #191919, subdued #606060. Measured: title cap 16.5 pt, name cap 11 pt, meta cap 10.4 pt, tab cap 9 pt (2.31 px/pt). |
 | Color palette | Beli (`appstore_06_profile_stats.png`, `appstore_03_feed_post_ranked_share.png`, video `t160`/`t144`) | Beli's restrained palette: white canvas, one deep teal for every primary action, green for scores, soft pastels only for the rating circles. It reads "taste" not "delivery", which is Faves's lane. | Primary teal #134452 (chips, buttons, + tab; buttons sampled #144554). Deep teal value text #004F5E. Score/match green #009C61. Unselected chip #9DB3B7. Field fill #EBE8EC. Text #000000 / #222427, secondary #989AA3, borders #D3D3D3 and #E5E5E5. Like heart #F90B0C. Rating trio #8CC3A7 / #F6CB68 / #EFABAD. |
+
+
+---
+
+# Moments, wallet, paywall and states: UI reference catalog
+
+Captured 2026-10-24 for Faves. Group: SPOT MOMENTS (TikTok, Instagram, Snapchat, BeReal), SPOT REWARDS WALLET (Ibotta, Rakuten, Venmo, DoorDash Dasher, Uber Driver, Cash App, TikTok Studio), FAVES PLUS PAYWALL (Meetup, Timeleft, Duolingo, Letterboxd, Snapchat+, Strava) and STATES (offline, error, loading, no results).
+
+Images live in `references/moments/<app>/`, `references/wallet/<app>/`, `references/paywall/<app>/` and `references/states/<app>/` (local only, never committed). 50 images; every kept image was opened and looked at. Every number below was measured with PIL on the saved file unless it says "visual" or "layout only".
+
+## How to read the numbers
+
+- `px` = pixels in the saved file. `pt` (iOS) or `dp` (Android) = px divided by the scale given for that file.
+- App Store screenshots are marketing frames. The phone screen was found by run-length edges and tied to a device width (393 pt for modern iPhones, 375 pt for notch iPhone X frames, 414 pt for the pre-notch frames with a centered clock). Marketing frames draw UI a little larger than a phone does, so treat their font sizes as +/-15% and their proportions as exact.
+- The paywall screenshots come from paywallscreens.com, which publishes real iPhone screenshots of App Store paywalls at full resolution (1170 px = 390 pt, 1206 px = 402 pt). These are exact 3x: the best-measured files in this section.
+- Video frames are H.264: colors +/-6 per channel, edges soft. Frames from filmed phones (not screen recordings) are marked "layout only".
+- Font size is about cap height / 0.72. Where a word has no capital in reach, the size is "about" and visual.
+
+| Source set | Scale used |
+|---|---|
+| Instagram App Store (1242x2208) | 1.95 px/pt (screen 767 px = 393 pt) |
+| Snapchat App Store (1242x2208, pre-notch status bar) | 2.33 px/pt (screen 966 px = 414 pt) |
+| BeReal App Store (1260x2736) | about 2.70 px/pt (screen about 1060 px = 393 pt; black screen on a black bezel) |
+| TikTok press image (TechCrunch copy of TikTok's Local Feed launch image), 400x870 crop | 0.95 px/pt (screen 374 px = 393 pt) |
+| Instagram location page video q2ASzVtL0YE (Android, 640x1080 crops) | 1.235 px/dp (map width 509 px = 412 dp; tile check: 168 px = 136 dp = (412 - 4) / 3) |
+| Snap Map video wizASv52Zgk (iPhone, 540x1080 crops) | about 1.3 px/pt, structure only |
+| BeReal iOS video FMZgxjwSkfo (533x1080 crops, Dynamic Island) | 1.25 px/pt (screen 490 px = 393 pt; clock digit 16 px = 12 pt cap) |
+| BeReal Android videos KXVIqgEsm64 (filmed) and deB84cb-Jsw (recording) | about 1.08 px/dp, layout only |
+| Ibotta App Store (1290x2796, no status bar) | 2.47 px/pt (screen card 969 px = 393 pt) |
+| Rakuten App Store (1242x2208) | 1.94 px/pt (screen 728 px = 375 pt) |
+| Uber Driver App Store (1242x2208) | 2.35 px/pt (screen 924 px = 393 pt) |
+| Venmo video wHGzOIg7ayA (iPhone X, 615x1080 crops) | 1.315 px/pt (screen 493 px = 375 pt; notch 280 px = 213 pt, iPhone X notch is 209 pt) |
+| DoorDash Dasher video QtNGm8n4OdE (560x1080 crops) | 1.23 px/pt (screen 480 px = 390 pt). The editor dimmed the video (white reads `#BBBBBB`): sizes usable, colors not |
+| Cash App video AA6w50jncDM | layout only |
+| paywallscreens.com (1170 and 1206 px wide) | 3.0 px/pt exact |
+| TikTok and Spotify offline videos (filmed phones) | layout and wording only |
+
+---
+
+## 1. Spot Moments: TikTok location (POI) page
+
+**Sources**
+- TikTok Local Feed launch images (US launch, 2026-02-11), as published by TechCrunch: https://techcrunch.com/wp-content/uploads/2026/02/tiktok-local-feed-us.jpg and https://techcrunch.com/wp-content/uploads/2026/02/TikTok-Local-Feed.jpg (article https://techcrunch.com/?p=3091882). The same images appear in "TikTok Launches Local Feed in the US" https://www.youtube.com/watch?v=I5IDVpj39AY.
+- App Store: https://apps.apple.com/us/app/tiktok/id835599320 (4.72 stars, 18,404,584 ratings, v47.4.0).
+- Searched and rejected: 3GKcD49FN70 (Nearby search results only), PST3tlJCa98, Tr1dEtCJ8dM (content blurred), s31ziEd5JqU, 1iOvEcRQ2hw (filmed, no POI page), QNiSAel5UjU, iol_WJ-QIrk. No public recording showed the POI page's video grid cleanly.
+
+**Screens**
+
+`tiktok/press_01_poi_page_favorite_write_review.png` (0.95 px/pt; the page sits behind a 40% black scrim, so sampled colors are dark). A TikTok place page:
+- Full-bleed photo carousel header, about 220 pt tall, with a "1/27" counter bottom-right and round back / share / ••• buttons over the photo.
+- Place name "The New Yorker by Lotte Hotels" bold, about 20 pt, left-aligned; under it a tinted "Top Hotel >" badge and "100 favorites" grey; an amenity row (Infinity pool, Kids club, Delicious food) with line icons and a chevron; rating "4.5" with stars.
+- **Bottom action bar: two equal buttons, "✎ Write review" (light grey fill) and "🔖 Favorite" (TikTok red), each about half the width, about 44 pt tall, small radius (about 4 pt).** Under the scrim the red samples `#991A30`, which is TikTok red `#FE2C55` at 60%.
+- The location prompt over it: white card "See relevant content and places nearby / Open your device settings and go to Locations > While Using the App. You can turn this off at any time.", a mini illustration of the Settings row, and two text buttons "Cancel" / "Open settings".
+
+`tiktok/press_02_local_feed_grid_place_video.jpg` (2122x1158, four phones, proportions only): the Local tab (tabs "STEM · Local · Friends · Following") as a 2-column masonry grid of portrait tiles with a caption under each; a "See what's new around you" banner; and a full-screen video with a place anchor above the caption ("Caffe · New York") that opens the place page.
+
+`tiktok/appstore_05_camera_record_button.png`: the TikTok camera (AI art template open): record button bottom-center, "Camera / Templates" mode labels under it, right-side tool rail, "Add sound" pill at the top.
+
+---
+
+## 2. Spot Moments: Instagram location page (Top / Recent) and story viewer
+
+**Sources**
+- Video (Android, 2026): "Instagram Places Tab Not Showing Problem | How to Search for Places by Location on Instagram 2026" https://www.youtube.com/watch?v=q2ASzVtL0YE
+- App Store: https://apps.apple.com/us/app/instagram/id389801252 (4.69 stars, 29,630,143 ratings, v452.0.0). 5.5" screenshot set via the iTunes lookup API.
+- Rejected: eLZ1Z4J7IuE (friends map list only).
+
+**Screens**
+
+`instagram/yt_q2ASzVtL0YE_t080_location_page_top_recent_grid.png` (**the Moments reference**, 1.235 px/dp):
+- Map header 180 dp tall. Centered place story bubble: **108 dp circle with the story gradient ring (orange `#ED9E1A` on the left to magenta `#BA1AAA` on the right)**, place label "Kampala" black under it (cap 10.5 dp, about 15 sp). Round white back button top-left and a round locate button top-right (about 48 dp with a soft shadow).
+- Bottom sheet over the map: grabber 39x6 dp `#6E6F78`, rounded top corners (about 16 dp, visual).
+- Title "Kampala, Uganda, East Africa": regular, `#0D0D0D`, cap 17 dp (about 24 sp), two lines, 16 dp from the left. "•••" and "✕" (20 dp glyph) on the right of the title.
+- Status line: "Open" green `#196C49` + " • 24 hours" `#555555` (cap 16 dp). Share (paper plane) and save (bookmark) outline icons, 21 to 24 dp, right-aligned under the title.
+- **Tabs "Top" / "Recent"**: two equal halves, labels centered. Active "Top" black, cap 14.6 dp (about 20 sp); inactive "Recent" grey `#44494C` to `#54595C`. **Active underline 2.4 dp tall (3 px), 78 dp wide, near-black `#1B181E`, centered under the label (not the full half width).** No divider line under the tabs.
+- **Grid: 3 columns edge to edge, square 1:1 tiles 136x136 dp, 1.6 dp white gutters (2 px), no side margins.** Video posts carry a white reel glyph (about 24 dp) in the top-right corner of the tile.
+
+`instagram/yt_q2ASzVtL0YE_t097_map_place_bubbles_popular_nearby.png`: the Instagram map: places drawn as round photo bubbles with a white ring and a "+5 more" count under the label; "Search This Area" white pill at the top; sheet "Popular nearby" with a search icon; rows: round photo, bold place name, "Country/region • 15M posts", distance, then a horizontal row of recent photos.
+
+`instagram/yt_q2ASzVtL0YE_t009_search_places_tab.png`: search with tabs Accounts / Reels / Audio / Tags / **Places** (active, black underline); each result row is a pin icon in a light circle + place name.
+
+`instagram/appstore_07_story_viewer_close_friends.png` (**the moment viewer reference**, 1.95 px/pt):
+- Media is 9:16 full width (767x1365 px = 393x700 pt), starting under the 55 pt status bar. Background `#0C0F14` (Instagram's dark token `#0C1014`).
+- **Progress bar: 2 pt tall (4 px), inset 6.7 pt left and right, played part `#F9F9F9`, unplayed part white at about 50% (`#A0A0A0` over the photo).** One segment per clip, thin gaps between segments.
+- Header row about 26 pt below the bar: round avatar about 40 pt (with ring), name white semibold (about 15 pt), time "2h" light grey right after the name; right side: green close-friends pill 44x26 pt `#1CD264` with a white star and chevron, "•••", and **"✕" 18 pt glyph**.
+- **Reply bar under the media, on `#0C0F14`: outlined pill 280x45 pt, 1 pt `#4B4F52` outline, full radius, placeholder "Send message" `#F8FAF9` (cap 12.3 pt, about 17 pt), then a heart (24 pt) and a send icon (22.5 pt) to its right.**
+- The Close Friends sheet on top: white card, radius about 16 pt, green star badge overlapping the poster's avatar, "Close Friends only" bold, three-line grey body, blue action "Add alex.anyway18 to Your List", rows "Edit Close Friends list" / "Done".
+
+`instagram/appstore_04_story_composer_share_bar.png`: story composer: tool rail on the right, text "meet my best friend" on the photo, bottom bar with two pills "Your story" and "Close friends" (green star) and a blue round send button.
+
+---
+
+## 3. Spot Moments: Snapchat (Snap Map, place stories, portrait story cards)
+
+**Sources**
+- App Store: https://apps.apple.com/us/app/snapchat/id447188370 (4.51 stars, 6,006,021 ratings, v14.29). 5.5" set via the iTunes lookup API.
+- Video (iPhone, 2025): "Snap Map Explore Feature on Snapchat: How to Use 2025" https://www.youtube.com/watch?v=wizASv52Zgk
+- Snap's own launch film "Introducing Snap Map" https://www.youtube.com/watch?v=4Q-gjHtttGQ (official; 1920x1080 composite of real map and story screens).
+- Rejected: TAk7a5agR0M, _SPjajrwrNA, SUtTHuwoliw (dark, small, or settings only).
+
+**Screens**
+
+`snapchat/appstore_04_stories_portrait_cards.png` (2.33 px/pt): Stories page.
+- "Friends" row: round story bubbles **84 pt** with a purple ring `#A15DCC` and a white gap, name under each (about 17 pt).
+- **"Subscriptions >" row of portrait cards: 111x182 pt (w:h 0.61), radius 7.3 pt, gap 9.4 pt, first card 8 pt from the edge, next card peeks. White bold title bottom-left (two lines max, about 17 pt) over the photo, small meta line ("⭐ 17h ago").** Section headers bold, about 17 pt (cap 12.4 pt).
+- "Discover" row: bigger square cards.
+
+`snapchat/appstore_07_snap_map_friends.png`: Snap Map: city name "Madison" in a centered pill at the top with round avatar / search / add-friend / settings buttons; Bitmoji on the map with "Sam 2h"; bottom sheet "Find Your Friends" (avatars with times) and "Recent Moves".
+
+`snapchat/yt_wizASv52Zgk_t025_snap_map_heat_top_picks.png`: 2025 Snap Map: blue to yellow heat blobs where many public Snaps are posted; places as photo bubbles labeled "Top Pick"; "2.5% Explored" purple pill; bottom chips "Memories / Footsteps / Visited / Popular".
+
+`snapchat/yt_wizASv52Zgk_t030_place_category_list_hearts.png`: category sheet "☕ Cafes / 30 Places" with ✕; rows: round place photo, bold name, category, "1.8 mi" or "Open Now" green, and a right-aligned "♡ 52" count pill (place likes), about 79 pt row pitch (visual).
+
+`snapchat/yt_4Q-gjHtttGQ_t030_place_story_header_5m_ago.png` (Snap's official film): **a place story shows the place, not a person, in the header: "The Bootleg Theater" bold white over "5m ago" regular white, top-left, no avatar.** Captions and stickers sit on the video. `yt_4Q-gjHtttGQ_t015_map_place_story_bubbles.png`: on the map, the place appears as a round thumbnail with a white ring and a white label tag "Black Rabbit Rose" over the heat map; tapping it plays that place's Snaps.
+
+`snapchat/appstore_01_snap_capture_send_to.png`: a taken Snap with the right tool rail (text, draw, stickers, scissors, music, paperclip, timer), bottom-left save / story icons and a yellow-ringed blue "Send To ▸" pill bottom-right. `snapchat/appstore_05_spotlight_viewer.png`: full-screen vertical video viewer (Spotlight): creator row bottom-left, hashtag pills, right-side heart / share / more.
+
+---
+
+## 4. Spot Moments: BeReal (camera, location stamp, "post to see")
+
+**Sources**
+- App Store: https://apps.apple.com/us/app/bereal-photos-friends-daily/id1459645446 (4.77 stars, 1,161,190 ratings, v4.97.2).
+- iOS screen recording (2026): "How To Post A Late BeReal In BeReal (Quick Guide)" https://www.youtube.com/watch?v=FMZgxjwSkfo
+- Android: "How To View a BeReal Post (Step-by-Step Guide 2026)" https://www.youtube.com/watch?v=KXVIqgEsm64 (filmed) and "How to Post a BeReal (Full Beginners Guide)" https://www.youtube.com/watch?v=deB84cb-Jsw (screen recording, older 2022 design).
+- Rejected: T11NvCu04EM (filmed, too small).
+
+**Screens**
+
+`bereal/yt_FMZgxjwSkfo_t030_camera_photo_video_shutter.png` (**the camera reference**, 1.25 px/pt):
+- Black screen. Top bar: round "⌄" close button 45 pt, fill `#101012`, top-left; "BeReal." wordmark centered (cap 16.8 pt).
+- **Viewfinder 3:4 (390x530 pt), full width minus a hair, rounded corners**, starting under the top bar.
+- On the viewfinder's bottom edge: flash icon bottom-left, flip-camera icon bottom-right, **"1x" chip: black circle about 35 pt, white bold "1x", centered.**
+- Under the viewfinder: **mode labels "VIDEO" (white) and "PHOTO" (selected, yellow `#DEE532`), bold caps (cap 11 pt), centered as a pair.**
+- **Shutter: white ring 77.6 pt outer diameter, ring stroke about 4 pt, a 2.4 pt black gap, then a white disc 61.6 pt; center 75 pt above the screen bottom.**
+
+`bereal/yt_FMZgxjwSkfo_t062_post_preview_location_on_send.png`: after capture: "Add a caption..." grey placeholder top-left; photo with the front-camera inset top-left; **a chip row along the photo's bottom edge: tag-friends circle, "🔒 My Friends" audience pill, "➤ On" location pill, music circle**; and a huge bold white "SEND ▸" text button below the photo.
+
+`bereal/yt_FMZgxjwSkfo_t020_empty_feed_take_your_bereal.png`: empty feed: "Wow, it's really calm in here!" bold white centered + "Your friends haven't posted their BeReal yet. Be the first one." grey + white pill "Take your BeReal." Tab bar Home / Friends / (camera in a white circle) / Chat / Profile.
+
+`bereal/yt_KXVIqgEsm64_t012_post_location_pill_3h_late.png` (**the "Taken here" stamp reference**, about 1.08 px/dp, filmed):
+- Post header: avatar, username bold white, and under it **"3h late" in grey `#A7A5B7`, small (ink 11 px, about 13 sp)**.
+- Photo card with rounded corners (about 16 dp), front-camera inset top-left 3:4 with rounded corners, "👤+ TAG" and "♫" glass chips on the photo's bottom edge.
+- Under the photo: "Add a caption..." bold white, then **the location pill: fully rounded, about 30 dp tall, fill `#18181C` to `#1F1B28` on black, "➤" arrow glyph + "Kathmandu, Nepal" white bold (cap 12 dp, about 17 sp), centered under the caption.**
+
+`bereal/yt_deB84cb-Jsw_t020_hidden_content_location_1h_late.png` (older design): post header "pollyanamelissa" bold with **"Buenos Aires, Argentina" as a small white line under the name** and **"1h Late 🌐" at the right**; the friend's photo blurred with an eye-slash icon, "Hidden Content / Post a BeReal to discover the picture!" and an outlined "POST A BEREAL" button. `bereal/yt_deB84cb-Jsw_t088_send_options_share_my_position.png`: "Send options" page: "Send to..." My friends only / Everyone (Discovery) with checkmarks, "Other options": "📍 Share my position" (checked), "Save my BeReal on the device"; full-width "Send ▸" bar at the bottom.
+
+`bereal/appstore_05_share_to_view_post_a_bereal.png` (**the blocked-state reference**, about 2.70 px/pt):
+- Header: avatar 24 pt, "tstizzy" white bold, "5 min late" grey `#BABABD` under it.
+- Post card about 356 pt wide, **radius 16.4 pt (44 px)**, the photo blurred heavily.
+- Centered on the blur: **eye-slash icon 33x22 pt, "Share to view" white bold (cap 10.7 pt, about 15 pt), "To view your friend's BeReal, post an update." white regular (about 13 pt), then a white button 117x35 pt, radius about 11 pt (29 px), label "Post a BeReal." black semibold.**
+- A music bar at the bottom of the card ("Golden - Huntrix", green "OPEN" pill, ✕), then two comment lines and "View 7 comments" grey centered.
+
+`bereal/appstore_06_post_realmojis_comments.png`: a post with the RealMoji stack (round selfies + "3+") bottom-right of the photo, send / comment counts, comments with "5 min ago" grey stamps.
+
+---
+
+## 5. Spot rewards wallet: earnings summary and feed
+
+**Sources (App Store)**
+- Ibotta: https://apps.apple.com/us/app/ibotta-save-earn-cash-back/id559887125 (4.80 stars, 1,974,502 ratings, v6.359.0). 6.9" set (1290x2796).
+- Rakuten: https://apps.apple.com/us/app/rakuten-cash-back-deals/id723134859 (4.82 stars, 361,949 ratings, v13.20.0).
+- Uber Driver: https://apps.apple.com/us/app/uber-driver-drive-deliver/id1131342792 (4.42 stars, 657,668 ratings).
+- TikTok Studio: https://apps.apple.com/us/app/tiktok-studio/id6478151677 (4.83 stars, 39,546 ratings).
+- Also checked, not kept: Lyft Driver (weekly earnings chart only), Venmo, PayPal, Cash App, Fetch (App Store sets have no earnings or payout screen).
+
+**Screens**
+
+`ibotta/appstore_05_earnings_withdraw_transactions.png` (**the wallet reference**, 2.47 px/pt):
+- Nav: back chevron left, "Help" link right in teal `#005C65`. Title **"Earnings" bold, centered, `#282F37`, cap 23.1 pt (about 32 pt)**.
+- **Balance box: 330 pt wide, 31 pt side margins, radius 9.7 pt, 1 pt `#C2C2C2` border.**
+  - Top band 41 pt tall, teal `#06A39C`: "Lifetime earnings" left and "$153.23" right, both white (cap 13.4 pt, about 19 pt; the amount bold).
+  - White body 103 pt: "Current earnings" regular black (cap 13.8 pt, about 19 pt) with a teal outlined ⓘ at the right; **"$37.44" bold near-black, cap 34 pt (about 47 pt)**, 21 pt from the box's left edge.
+  - Bottom strip 15 pt, same teal.
+- **"Withdraw" button 30 pt under the box: 343x40 pt, full pill, fill `#0D7888`, white semibold label (cap 13.8 pt, about 19 pt).**
+- Section header **"Transactions" semibold, cap 17.4 pt (about 24 pt), `#010300`**, 41 pt under the button.
+- **Transaction row: pitch 70.5 pt; store logo in a 33 pt circle 25 pt from the screen edge; store name bold `#050A0E` (cap 13 pt, about 18 pt) 66 pt from the edge; amount "$1.85" bold, right-aligned 23.5 pt from the edge; divider 1 pt `#E4E4E4` to `#E8E8E8`, inset 21.5 pt left and 22 pt right.** No dates or sub-lines on the row.
+- Tab bar: floating glass pill (Home selected in teal, Redeem, Bonuses, Arcade) plus a separate round search button.
+
+`rakuten/appstore_04_confirmed_pending_cash_back.png` (1.94 px/pt): profile header "Mark Robinson" bold + "$1,234.56 Lifetime Cash Back" on a lavender band; **balance card fill `#8529CD`, white text: "Confirmed Cash Back" bold (cap 15 pt, about 21 pt), "$60.34" light and large (digits 43 pt tall), then "Pending" bold over "$50.10", and "See Activity →" bold at the right.** Under it a promo card "Get paid instantly / You have $60.34 available to redeem for a gift card."
+
+`rakuten/appstore_03_cha_ching_you_got_paid.png`: payout success card: "Cha-ching! You just got paid." bold, "$32.50" purple, "is on its way to your PayPal account", then a referral block with four round share buttons.
+
+`uber-driver/appstore_06_earnings_balance_cash_out.png` (2.35 px/pt): "Earnings" bold (cap 27.7 pt), "Feb 4 - Feb 10", **"CA$645.99" regular, cap 27.2 pt, with a 7-day mini bar chart in Uber blue `#276EF1` to its right**; rows "Online 23h 32m / 54 Trips / 73 Points" (about 17 pt, label and value on opposite sides); full-width "See details" button `#EEEEEE`; then **"Balance: CA$155.00" (cap 20 pt), "Next payment scheduled for Feb 11" `#545454`, and a black "Cash out" pill 119x52 pt with a white label (cap 14.5 pt)**; "Drive Pass" card below.
+
+`tiktok-studio/appstore_07_monetization_rewards_balance.png`: "Monetization" page: dark card "Estimated rewards in the last 7 days $4,305.28 / Balance: $11,568.75 · View >", "Rewards analytics" two stat tiles with green +% deltas, "Programs for you" rows with a red "Apply" pill.
+
+---
+
+## 6. Spot rewards wallet: payout screen, method rows, confirm and success
+
+**Sources**
+- Venmo, iOS: "How To Instant Transfer Money From Venmo To Bank Account (2026)" https://www.youtube.com/watch?v=wHGzOIg7ayA. App Store https://apps.apple.com/us/app/venmo/id351727428 (4.85 stars, 15,473,393 ratings).
+- DoorDash Dasher, iOS: "How to Cash Out DoorDash (2025)" https://www.youtube.com/watch?v=QtNGm8n4OdE. App Store https://apps.apple.com/us/app/doordash-dasher/id1451754591 (4.68 stars, 2,464,717 ratings).
+- Cash App: "How to Withdraw Money from Cash App to Your Bank, Standard or Instant" https://www.youtube.com/watch?v=AA6w50jncDM. App Store https://apps.apple.com/us/app/cash-app/id711923939 (4.79 stars, 8,771,502 ratings).
+- Rakuten method screen: App Store set above.
+- Rejected: YmN_oaBRUEw (website only), hAPya6gAqyo (filmed, unreadable), uDw8APgLYVM (text slides), SESMzIFCTGY and KjZYRUrl3V8 (web pages), QGOgUuF8gJw (older DoorDash, small).
+
+**Screens**
+
+`venmo/yt_wHGzOIg7ayA_t043_instant_selected_fee.png` (**the payout screen reference**, 1.315 px/pt; the creator blacked out the bank name and drew a red arrow):
+- Nav: blue "✕" left, "Transfer Balance" centered (about 17 pt semibold), hairline under the nav.
+- **Amount: "$75" very large, black (about 55 pt), with a small raised "$", centered, and a grey ⊗ clear button to its right.**
+- **Two method cards side by side: each 172x160 pt, gap 16 pt, about 8 pt side margins, radius about 7.6 pt. Selected: 1 pt Venmo-blue border, icon circle 58 pt filled blue (`#1171B4` to `#2069B8` sampled) with a white bolt, "Instant" bold black (about 17 pt), "In a few minutes" grey. Unselected: 1 pt `#ACACAC` border, grey icon circle (`#929498`) with a bank glyph, "1-3 biz days" bold grey.**
+- Rows: "Fee ............ $1.31" (label left, value right), then "Transfer to" with a bank logo, the masked account and "›".
+- **Confirm button: 359x47 pt, full pill, fill `#137D69` (sampled `#126C5A` to `#137D69`), white bold "Transfer" label**, pinned near the bottom.
+
+`venmo/yt_wHGzOIg7ayA_t028_transfer_balance_instant_or_standard.png`: the same screen with "1-3 biz days" selected: no fee row, the bank icon circle turns blue, the bolt circle turns grey.
+
+`rakuten/appstore_05_choose_how_you_get_paid.png` (**the method rows reference**, 1.94 px/pt):
+- Back chevron in a white circle; title **"Choose how you get paid" bold `#252525` (cap 16.5 pt, about 23 pt)**; subtitle "We'll send your Cash Back every 3 months." `#464356` (about 14 pt).
+- **Method cards: 333 pt wide, 20.6 pt side margins, 92.6 pt tall, gap 17 pt, 1 pt `#DDDDDD` border, radius 7 pt. Inside: logo 22.7 pt at the left, name bold `#22202D` (cap 11.8 pt, about 16 pt), and under it a "Select" link, purple `#8529CD` semibold.** Selected method: the link becomes **"✓ Selected" in green `#33823F`** (the selected PayPal card is drawn enlarged as a marketing callout).
+- Methods: PayPal, American Express Membership Rewards Points (two-line name), Bilt points, Big Fat Check.
+
+`doordash-dasher/yt_QtNGm8n4OdE_t017_earnings_this_week.png` (1.23 px/pt, layout only): Earnings tab: "This week" label, **"$24.69 ›" large bold**, "Active 35 min · Dashed 1 hr, 18 min" grey, full-width grey pill "View payout details", a promo card, "Past weeks" weekly bar chart (labels Nov / Jan / Mar, axis $0.00 to $129.64), then week rows "Mar 24 - Mar 30 ... $24.69 ›".
+`doordash-dasher/yt_QtNGm8n4OdE_t020_payout_menu.png`: rows with chevrons: Change payout method / **Cash out with Fast Pay** / Recent payout history ("Last 90 days of transfers") / Earnings statements / Tax documents.
+`doordash-dasher/yt_QtNGm8n4OdE_t023_fast_pay_confirm.png` (**confirm pattern**): centered "Available for Fast Pay" over **"$24.69" in green**; rows "Fast Pay Fee $1.99" and "Transfer Total $22.70"; a centered two-line note "Funds should arrive in 30 minutes to one day, depending on your bank."; **full-width red pill whose label carries the amount: "Transfer $22.70" (47 pt tall, 349 pt wide)**.
+`doordash-dasher/yt_QtNGm8n4OdE_t038_fast_pay_in_progress.png` (**success pattern**): bank glyph in a ring with a check, **"$22.70" large green, "Fast Pay transfer in progress!"**, and at the bottom "Details about this transfer have been sent to your email."
+
+`cash-app/yt_AA6w50jncDM_t027_withdraw_standard_or_instant_sheet.png` (layout only): dark "Withdraw" screen, "$20" large green, "Cash balance: $50.00" pill, green "Continue" pill, and a sheet "How do you want to withdraw $20?" with two rows: "Standard / Arrives in a few business days ›" and "Instant / Arrives faster ... Fee ›".
+
+---
+
+## 7. Faves Plus paywall
+
+**Beli first:** no Beli Supper Club or Beli premium screen is public. YouTube searches "beli supper club app", "beli app premium", "beli supper club membership" returned nothing from the app, and beliapp.com has no Supper Club page (the paths /supperclub, /supper-club and /premium all fall back to the home page). The catalog's Beli recordings (GlMma4eXe18 and others) show no paywall.
+
+**Sources** (all screenshots from https://www.paywallscreens.com, exact iPhone captures)
+- Meetup+: https://www.paywallscreens.com/apps/meetup-social-events-groups-mobile-paywall-aff8. App Store https://apps.apple.com/us/app/meetup-social-events-groups/id375990038 (4.72 stars, 272,668 ratings).
+- Timeleft: https://www.paywallscreens.com/apps/timeleft-meet-new-people-mobile-paywall-a071. App Store https://apps.apple.com/us/app/timeleft-make-new-friends-irl/id6466442949 (4.62 stars, 8,829 ratings).
+- Duolingo Super: https://www.paywallscreens.com/apps/duolingo-mobile-paywall-4820 (App Store 4.72 stars, 5,528,062 ratings).
+- Letterboxd Pro / Patron: https://www.paywallscreens.com/apps/letterboxd-by-letterboxd-mobile-paywall-7514 (4.82 stars, 88,376 ratings).
+- Snapchat+: https://www.paywallscreens.com/apps/snapchat-mobile-paywall-c966 (4.51 stars).
+- Strava (web plans page, from "Strava Free vs. Paid: Is It Worth the Upgrade?" https://www.youtube.com/watch?v=ho0oWvjUaeY). No in-app Strava or AllTrails paywall was found in a clean capture (eKm3mBt-SCc and Mf9Se0LYF08 are web pages and slides).
+
+**Pick: Meetup+ is THE paywall reference.** It is a social events app selling exactly what Faves Plus sells (better access to real-world events and the people there), it shows every part Faves needs on one white screen with one brand color (feature checklist, free-trial switch, two plan rows with a "MOST POPULAR" badge, one big CTA), and the file is an exact 3x capture. Its screenshot shows no legal line, so the legal line comes from Timeleft, whose product (members-only dinners every Wednesday) is the closest match to Faves Nights.
+
+**Screens**
+
+`meetup/paywallscreens_02_weekly_yearly_rows_free_trial.png` (**the paywall reference**, 1206x2622, 3.0 px/pt, 402 pt):
+- "✕" top-left, 14 pt glyph `#424242`, 23 pt from the edge.
+- Brand logo 80x93 pt centered; **title two lines, centered, bold black, cap 20 pt (about 28 pt): "Connect more / with Meetup+", the product name in the brand pink.**
+- **Feature list: three rows, 36 pt pitch, each a filled purple check circle 18.7 pt (`#7767CA`, white check) + one line semibold black (cap 10 pt, about 14 pt).** No sub-lines.
+- **Free-trial row: card 355x75 pt, radius 16 pt, 1 pt `#CECECE` border, "Not sure yet?" semibold (cap 11.3 pt, about 16 pt) over "Enable free access" `#484848` (cap 10 pt, about 14 pt), empty radio circle 28.7 pt `#A9A9A9` at the right.**
+- **Plan rows: each 355x65 pt, radius 16 pt, 11 pt apart, 24 pt side margins. Unselected: white, 1 pt `#CACACA` border. Selected: fill `#F4F3FB`, 1 pt `#776CB0` border. Plan name left, semibold black (cap 11.3 pt, about 16 pt); price right "$9.99/week" regular `#393840` (cap 10 pt, about 14 pt).** Badge **"MOST POPULAR": orange `#D8884B` pill about 22 pt tall, white caps, sitting on the selected row's top border at the left (x 40 pt).**
+- **CTA "Continue": 62 pt tall, full pill, 24 pt side margins, fill `#D34E6B` (iOS 26 glass gradient), white semibold label (cap 14 pt, about 19 pt).**
+
+`meetup/paywallscreens_01_join_meetup_plus_toggle_features.png` (390 pt): the other Meetup variant: title "Join Meetup+", **Weekly / Yearly segmented toggle (grey track, white selected segment) with an orange "67% OFF" tag on Yearly**, a photo card "Meetup+ $4.99/7 days" with the logo tile, feature rows with a black icon + bold title + grey sub-line, the free-trial row, and a red-pink "Continue" bar.
+
+`timeleft/paywallscreens_01_unlimited_dinners_plan_cards.png` (**the legal line reference**, 1170x2532, 3.0 px/pt, 390 pt):
+- Photo header with dots: "UNLIMITED ACCESS" serif caps + "All dinners, every Wednesday" (the copy closest to Faves Nights).
+- Three plan cards on cream `#FFF2DD`: about 111x132 pt each, 14 pt apart; a 19 pt tag band on top ("Discover" grey `#D1D1D1`, **"Save 28%" orange `#F75936` on the selected card**, "Save 45%" grey); "1 Month / $26.00/m", "3 Months / $18.67/m", "6 Months / $14.33/m"; the selected card has a dark outline about 1.5 pt.
+- **Legal line: five centered lines, about 11 pt regular (cap 7.7 pt), 13 pt line pitch, near-black `#060000` on the page color, 30 pt side margins, "Terms" underlined: "By selecting Subscribe, you will be charged, your subscription will auto-renew for the same price and package length until you cancel via settings, and you agree to our Terms..."** It sits directly above the CTA.
+- **CTA: 358x56 pt pill, fill `#E35F46`, 1 pt dark outline `#220000`, white semibold label carrying the price: "Get 3 months for $56.00"**; under it "Restore" bold underlined.
+
+`timeleft/paywallscreens_02_our_plans_radio_rows.png`: "Our plans" with radio rows (1 Month $19.99 / 3 Months $46.99 with a strikethrough $59.97 and a green "Save 22%" tag, selected / 6 Months), "Members are up to 93% more likely to find long lasting connections", "$46.99 every 3 months" and a black gradient "Continue" pill.
+
+`duolingo/paywallscreens_01_free_week_plan_cards.png`: purple gradient, mascot, "Get started with a **7 day free trial** on Super"; plan cards Family Plan / Individual (selected, "MOST POPULAR" teal tag, white check badge), each with "12 mo • $95.99" and "$7.99 / MO"; "Cancel anytime in the App Store"; white CTA "START MY FREE WEEK"; "VIEW ALL PLANS"; legal paragraph with "automatically renews" in bold.
+
+`letterboxd/paywallscreens_01_pro_patron_upgrade.png`: dark slate "Upgrade Account" sheet with "Close"; two tier cards, each with a colored badge ("PRO" orange, "PATRON" blue), a centered feature paragraph, and a footer row "1 year of Pro ... $18.99" with an outlined price chip; legal text and "ENTER CODE" / "RESTORE PURCHASES" outlined buttons.
+
+`snapchat/paywallscreens_01_snapchat_plus_plans.png`: dark "Save 60% on Snapchat+": a gold "SPECIAL OFFER" header on the selected Monthly card with a check list, then Annual ("BEST VALUE" tag), Friends & Family, Platinum rows; yellow "Subscribe" pill `#FFF90D`; tiny legal text.
+
+`strava/yt_ho0oWvjUaeY_t086_web_plan_cards.png` (web, context only): "Choose the best subscription payment plan for you": a dark selected card with an Annual / Monthly toggle and "US$11.99 /month", plus Student Discount and Family Plan cards, each with a "Try It Free" or "Choose Plan" button and a billing line.
+
+---
+
+## 8. States: offline, error with retry, loading, no results
+
+**Sources**
+- TikTok: "How To FIX TikTok "No Internet Connection" on iPhone" https://www.youtube.com/watch?v=spo0PbcgeOo (filmed iPhone; the editor added a zoomed inset of the message).
+- Spotify: "Spotify Error Fix: You're in Offline Mode" https://www.youtube.com/watch?v=6wqjRrRBzTQ (filmed Android).
+- Instagram and Snapchat loading frames come from q2ASzVtL0YE and wizASv52Zgk above.
+- Searched, nothing usable: Google Maps "You're offline" (iVO92glj_YQ shows a 2018 Android build, ejGtFrPq_OI only offline-map downloads), Instagram not loading (gO9QxzrvblE, spinner only), eoLlSPUS4tc and rp1NDgZxyoI (Spotify, unreadable), RoXGKH3xi7A (Uber Eats, App Store pages only), x0U_-2ous0c (DoorDash, App Store page only), krb2Xwthbcc (download blocked).
+
+**Screens**
+
+`tiktok/yt_spo0PbcgeOo_t004_no_internet_tap_to_retry.png` (**the error + retry reference**, layout and wording only): on the black For You feed, centered: a circular-arrow retry icon, then **"No internet connection. Tap to retry." white semibold**, then **"Connect to the internet and try again." grey, smaller**. There is no button: the whole message is the tap target. The top tabs ("Following / For You") and the tab bar stay in place, so the user is not thrown out of the screen.
+
+`spotify/yt_6wqjRrRBzTQ_t013_offline_bar_above_tab_bar.png` (**the offline banner reference**, layout only): a full-width dark bar sitting directly on top of the tab bar, one bold white line **"Spotify is currently set to offline"** centered; the content above stays visible and scrollable.
+
+`instagram/yt_q2ASzVtL0YE_t089_loading_pill_skeleton_rows.png` (**the skeleton reference**, 1.235 px/dp): while the "Popular nearby" sheet loads:
+- The map's "Search This Area" pill turns into **"· Loading"**.
+- **Skeleton row: a 58 dp circle at the left, three bars stacked to its right (each about 10 dp tall with round ends; widths about 174, 226 and 121 dp, the longest in the middle), then a full-width rounded block 378x121 dp below (the photo row). Fill `#F8F8F8` on white `#FFFFFF`: very low contrast, no shimmer visible in the frame.** The pattern repeats down the sheet with about 24 dp between groups.
+
+`snapchat/yt_wizASv52Zgk_t035_loading_places.png`: Snap list loading: the sheet title stays ("🔍 Cafes") and the sub-line reads **"Loading Places..."** with a small spinner below. `snapchat/yt_wizASv52Zgk_t028_list_placeholder_thumbnails.png`: rows already show real names and counts while thumbnails are grey rounded squares with a generic cup icon (text first, images fill in later).
+
+**No results:** nothing new captured; the catalog's Yelp frame (`discovery/yelp/yelp_empty_no_results_android_vid.png`) stays the reference.
+
+**Search and city picker:** not captured again. The catalog's `beli_search_restaurants_members_vid.jpg`, `beli_onboarding_city_pick_vid.jpg` and Citymapper's city pick already cover them; the only new piece is Instagram's Places search tab (`moments/instagram/yt_q2ASzVtL0YE_t009_search_places_tab.png`): a "Places" tab whose result rows are a pin icon in a light circle + place name.
+
+---
+
+## Element map for Faves
+
+One pick per element. Copy it exactly; values are from the measurements above. Where a reference's color is a brand color, Faves swaps in its own token (`brand`, `score`, etc. in `docs/design_system.md`) and keeps everything else.
+
+| Element | Copy this | Exactly what to copy | Measured values |
+|---|---|---|---|
+| Spot Moments reel on the place page (tiles + tabs Highlights / Right now) | `moments/instagram/yt_q2ASzVtL0YE_t080_location_page_top_recent_grid.png` | Instagram's location page: "Top" / "Recent" becomes "Highlights" / "Right now". Two equal tab halves, labels centered, a short dark underline under the active label only, no divider. Under it a 3-column edge-to-edge grid of square tiles; video tiles carry a reel glyph top-right. Tap a tile to open the viewer at that clip. | 1.235 px/dp. Tab label cap 14.6 dp (about 20 sp); active black, inactive `#44494C`. Underline 2.4 dp tall, 78 dp wide, `#1B181E`, centered on the label. Tiles 1:1, 136x136 dp on a 412 dp screen (1/3 width), 1.6 dp white gutters, no side margin. Reel glyph about 24 dp white. |
+| Full-screen moment viewer | `moments/instagram/appstore_07_story_viewer_close_friends.png` | Instagram's story viewer: one progress segment per clip at the top, header row (avatar, name, time), ✕ top-right, tap right half for next, left half for back; reply pill + heart + send under the media. Faves: the header shows the poster and "2h" exactly like Instagram; for a place's Right now reel, put the place name in the name slot and the relative time after it, the way Snap does for place stories (`snapchat/yt_4Q-gjHtttGQ_t030_...`: "The Bootleg Theater / 5m ago"). | 1.95 px/pt. Media 9:16 full width under the status bar, background `#0C0F14`. Progress bar 2 pt tall, 6.7 pt side insets, played `#F9F9F9`, unplayed white at 50%. Avatar about 40 pt, name white semibold about 15 pt, time light grey. ✕ 18 pt. Reply pill 280x45 pt, 1 pt `#4B4F52` outline, full radius, placeholder `#F8FAF9` about 17 pt; heart 24 pt, send 22.5 pt. |
+| "Taken here" stamp | `moments/bereal/yt_KXVIqgEsm64_t012_post_location_pill_3h_late.png` | BeReal's location pill under the caption plus its grey time line under the username. Faves: "➤ Taken here · Tartine Bakery" in the pill, and "12m ago" (or "Right now") in the grey line. Only clips posted on site get the pill, the way BeReal only shows a location when "Share my position" was on. | About 1.08 px/dp (filmed). Pill fully rounded, about 30 dp tall, fill `#18181C` to `#1F1B28` on dark (on a white Faves screen use `field` `#EBE8EC` with `text`), arrow glyph + bold label (cap 12 dp, about 17 sp), centered under the caption. Time line grey `#A7A5B7`, about 13 sp. |
+| Post-a-moment camera screen | `moments/bereal/yt_FMZgxjwSkfo_t030_camera_photo_video_shutter.png` | BeReal's camera: black screen, round ⌄ close top-left, wordmark centered, 3:4 rounded viewfinder, flash and flip on the viewfinder's bottom corners, "1x" chip centered on its bottom edge, VIDEO / PHOTO labels under it (Faves: VIDEO selected by default), big white ring shutter. After capture, copy the preview chips from `t062` (audience pill, "➤ On" location pill, music) and the "SEND ▸" text button. | 1.25 px/pt. Close button 45 pt, fill `#101012`. Viewfinder 390x530 pt (3:4). "1x" chip about 35 pt black circle. Mode labels bold caps, cap 11 pt; selected yellow `#DEE532` (Faves: `brand` would vanish on black, keep the yellow), unselected white. Shutter ring 77.6 pt outer, 4 pt stroke, 2.4 pt gap, 61.6 pt white disc, center 75 pt above the screen bottom. |
+| "You need to be here to post" blocked state | `moments/bereal/appstore_05_share_to_view_post_a_bereal.png` | BeReal's "Share to view": the content stays visible but blurred, with an eye-slash icon, a short bold title, one plain line, and one white button. Faves: blur the Right now reel's posting entry, title "Be here to post", line "Moments can only be posted from Tartine Bakery (within 150 m)", button "Get directions". If location permission is off, show TikTok's prompt pattern instead (`moments/tiktok/press_01_...`: "Cancel" / "Open settings"). | About 2.70 px/pt. Card radius 16.4 pt. Icon 33x22 pt white. Title white bold, cap 10.7 pt (about 15 pt). Line white regular about 13 pt, centered. Button 117x35 pt, white, radius 11 pt, label black semibold about 13 pt. |
+| Rewards wallet summary | `wallet/ibotta/appstore_05_earnings_withdraw_transactions.png` | Ibotta's Earnings page: centered title, one bordered balance box (colored "Lifetime earnings" band on top, big "Current earnings" number in the white body, thin colored strip at the bottom), a full-width Withdraw pill under it, then "Transactions". Faves: "Lifetime earned $48.20" in the band, "Ready to cash out $12.40" big, button "Cash out" (disabled under $5 with "Cash out at $5" as the label). | 2.47 px/pt. Title bold cap 23.1 pt (about 32 pt) `#282F37`. Box 330 pt wide, 31 pt margins, radius 9.7 pt, 1 pt `#C2C2C2`. Band 41 pt `#06A39C` (Faves: `brand`), white labels about 19 pt. Body 103 pt; amount bold cap 34 pt (about 47 pt). Strip 15 pt. Button 30 pt below: 343x40 pt pill `#0D7888` (Faves: `brand`), white semibold about 19 pt. |
+| Earnings feed row | same Ibotta file, "Transactions" | Ibotta's transaction row: logo circle, bold name, bold amount at the right, inset divider, nothing else. Faves: the spot's photo in the circle, "Sunset in Bernal · 3 people did your day" as the name, "+$1.20" at the right. | 2.47 px/pt. Pitch 70.5 pt. Logo 33 pt circle, 25 pt from the edge. Name bold `#050A0E` cap 13 pt (about 18 pt), 66 pt from the edge. Amount bold, right edge 23.5 pt in. Divider 1 pt `#E4E4E4` to `#E8E8E8`, inset 21.5 pt left and 22 pt right. Header "Transactions" semibold cap 17.4 pt (about 24 pt), 41 pt under the button. |
+| Payout screen | `wallet/venmo/yt_wHGzOIg7ayA_t043_instant_selected_fee.png` | Venmo's Transfer Balance: ✕ + centered title, the amount huge in the middle with a clear button, two side-by-side method cards (icon circle, bold label, grey speed line), a "Fee" row, a "Transfer to" row with "›", one full-width pill pinned at the bottom. Faves: cards "Gift card / Instant" and "Bank / 1-3 days". | 1.315 px/pt. Amount about 55 pt black. Cards 172x160 pt, 16 pt gap, radius 7.6 pt; selected 1 pt blue border + 58 pt filled icon circle (Faves: `brand`), unselected 1 pt `#ACACAC` + grey `#929498` circle. Labels bold about 17 pt, speed line grey about 15 pt. |
+| Payout method rows | `wallet/rakuten/appstore_05_choose_how_you_get_paid.png` | Rakuten's "Choose how you get paid": one bordered card per method (gift cards, bank, PayPal), logo + bold name + a "Select" link; the chosen one reads "✓ Selected" in green. Used for "Change payout method". | 1.94 px/pt. Title bold cap 16.5 pt (about 23 pt) `#252525`, subtitle `#464356` about 14 pt. Cards 333 pt wide, 20.6 pt margins, 92.6 pt tall, 17 pt gap, 1 pt `#DDDDDD`, radius 7 pt. Logo 22.7 pt. Name bold `#22202D` about 16 pt. "Select" `#8529CD` semibold (Faves: `brand`). Selected `#33823F` with a check. |
+| Payout confirm button | same Venmo file (+ DoorDash `wallet/doordash-dasher/yt_QtNGm8n4OdE_t023_fast_pay_confirm.png` for the label) | Venmo's bottom pill, with DoorDash's habit of putting the amount in the label and a one-line arrival note above it: "Cash out $12.40" / "Gift cards arrive in minutes. Bank transfers take 1-3 business days." Success screen copies DoorDash `t038`: icon in a ring, big amount, "Cash out in progress!", "Details were sent to your email." | Venmo: 359x47 pt, full pill, `#137D69` (Faves: `brand`), white bold label. DoorDash: fee and total rows above the note, note centered two lines, button 47 pt tall. |
+| Faves Plus paywall (plan cards, feature list, CTA) | `paywall/meetup/paywallscreens_02_weekly_yearly_rows_free_trial.png` | Meetup+: ✕, logo, two-line title with the product name in the brand color, a 3 to 5 row check list, the "Not sure yet? Enable free trial" switch card, two plan rows ("Monthly $5.79/month" and "Yearly $42.90/year" with the "MOST POPULAR" badge on Yearly, selected by default), one big "Continue" pill. | 3.0 px/pt exact. ✕ 14 pt `#424242`. Logo 80 pt. Title cap 20 pt (about 28 pt) bold. Check circles 18.7 pt `#7767CA` (Faves: `brand`), feature text semibold about 14 pt, 36 pt pitch. Trial card 355x75 pt, radius 16, 1 pt `#CECECE`, radio 28.7 pt `#A9A9A9`. Plan rows 355x65 pt, radius 16, 11 pt gap, 24 pt margins; unselected 1 pt `#CACACA`; selected fill `#F4F3FB` + 1 pt `#776CB0`; name semibold about 16 pt, price `#393840` about 14 pt. Badge `#D8884B`, 22 pt, white caps. CTA 62 pt full pill `#D34E6B` (Faves: `brand`), white semibold about 19 pt. |
+| Paywall legal line | `paywall/timeleft/paywallscreens_01_unlimited_dinners_plan_cards.png` | Timeleft's legal paragraph directly above the CTA, centered, with "Terms" underlined, and "Restore" as an underlined text button under the CTA. | 3.0 px/pt exact. About 11 pt regular (cap 7.7 pt), 13 pt line pitch, 30 pt side margins, `#060000` (Faves: `textMuted` on white). |
+| Offline banner | `states/spotify/yt_6wqjRrRBzTQ_t013_offline_bar_above_tab_bar.png` | Spotify's bar: full width, dark, sitting right on top of the tab bar, one bold centered line; the screen above keeps working from cache. Faves: "You're offline. Showing saved spots." | Layout only (filmed). Use `text` `#222427` for the bar and white bold 14 pt text (DoorDash scale) since the frame cannot be measured. |
+| Error state with retry | `states/tiktok/yt_spo0PbcgeOo_t004_no_internet_tap_to_retry.png` | TikTok's centered message: retry-arrow icon, one bold line that already says the fix ("No internet connection. Tap to retry."), one grey helper line; the whole block is the button, the screen's chrome stays. Faves: "Couldn't load this plan. Tap to retry." / "Check your connection and try again." | Layout and wording only (filmed). Icon above, bold line, smaller grey line, centered vertically in the content area. |
+| Loading skeleton | `states/instagram/yt_q2ASzVtL0YE_t089_loading_pill_skeleton_rows.png` | Instagram's skeleton: grey shapes in the exact layout of the coming rows (circle + three bars + a wide photo block), no spinner; a "Loading" label replaces the map's search pill. Faves: same shapes for place rows and plan stops. | 1.235 px/dp. Circle 58 dp. Bars about 10 dp tall, round ends, widths about 174 / 226 / 121 dp (middle longest). Block 378x121 dp, rounded. Fill `#F8F8F8` on `#FFFFFF`. About 24 dp between groups. |
+| No-results state | `discovery/yelp/yelp_empty_no_results_android_vid.png` (already in the catalog) | Yelp's recovery pattern, unchanged: headline, one helper line, "People also search for" chips, "Notice something missing? Add a spot". | See the Discovery catalog, Yelp. |
