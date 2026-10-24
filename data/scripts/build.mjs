@@ -179,6 +179,8 @@ async function buildCity(city, categoryOf) {
       id: g.placeId,
       name: g.title,
       category: g._category ?? categoryOf.get(clean(g.searchString)) ?? "other",
+      _kindCategory: categoryFor(g),
+      _searchString: g.searchString ?? "",
       kind: g.categoryName ?? null,
       kinds: (g.categories ?? []).slice(0, 4),
       description: g.description ?? null,
@@ -199,6 +201,17 @@ async function buildCity(city, categoryOf) {
       mentions: { reddit: 0, redditVotes: 0, tiktok: 0, tiktokViews: 0 },
       quotes: [],
     }));
+
+  // A park or tourist attraction that a narrow search pulled in ("tennis courts" finding a
+  // whole park, "mini golf" finding a beach) takes the category of what it is, unless its
+  // name says it is the thing searched for ("Alice Marble Tennis Courts").
+  const GENERIC_OUTDOOR = /^(park|city park|state park|national park|tourist attraction|garden|botanical garden|scenic spot|hiking area|beach|nature preserve|playground|plaza|historical landmark|memorial park)$/i;
+  for (const p of places) {
+    const searched = tokens(p._searchString).filter((t) => t.length >= 4 && !["courts", "court", "class", "store", "rental"].includes(t));
+    const nameSays = searched.some((t) => clean(p.name).includes(t));
+    if (p._kindCategory && p._kindCategory !== p.category && GENERIC_OUTDOOR.test(p.kind ?? "") && !nameSays && !p.localPick) p.category = p._kindCategory;
+    delete p._kindCategory; delete p._searchString;
+  }
 
   // The same place sometimes has two Google listings: keep the one with more reviews.
   places.sort((a, b) => (b.ratings.google?.count ?? 0) - (a.ratings.google?.count ?? 0));
