@@ -16,7 +16,6 @@ export default defineConfig({
     browserName: "chromium",
     viewport: { width: 390, height: 844 },
     trace: "retain-on-failure",
-    serviceWorkers: "block",
   },
   webServer: {
     command: "node scripts/serve-web.mjs 8090",
