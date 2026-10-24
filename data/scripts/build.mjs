@@ -100,6 +100,33 @@ function categoryFor(g) {
   return null;
 }
 
+// Narrow Google searches also return things nobody goes out to do ("record store" finds a
+// records storage facility, "views" finds an apartment listing, a museum's bus stop).
+// Dropped by Google's main category. A station, church or campus stays when it is a
+// destination in its own right (5,000+ Google reviews, e.g. Grand Central).
+const NOT_A_SPOT = /apartment|condominium|cottage|real estate|storage|bike sharing|bus stop|transit stop|subway station|parking|corporate office|government office|manufacturer|publisher|media company|record company|web hosting|car rental|construction|food bank|physical therapy|nail salon|day spa|cannabis|adult entertainment|tattoo|hotel$|motel$|hostel$|grocery store$|supermarket|insurance|lawyer|attorney|\bbank\b|consultant|^building$|^university library$/;
+const LANDMARK_KIND = /train station|church|cathedral|religious|university|college/;
+function isSpot(g) {
+  const kind = String(g.categoryName ?? "").toLowerCase();
+  if (g._tiktokPick) return true;
+  if (/gourmet|japanese|asian|korean|mexican|italian|international|specialty/.test(kind)) return true;
+  if (NOT_A_SPOT.test(kind)) return false;
+  if (LANDMARK_KIND.test(kind)) return (g.reviewsCount ?? 0) >= 5000;
+  return true;
+}
+
+// TikTok creators film landmarks Google files under transit or worship ("Grand Central",
+// "Grace Cathedral") and art classes Google calls a school. Only for TikTok-tagged spots;
+// a station or church needs 1,000+ Google reviews to count as a destination.
+function tiktokCategoryFor(g) {
+  const c = categoryFor(g);
+  if (c) return c;
+  const text = [g.categoryName, ...(g.categories ?? [])].join(" ").toLowerCase();
+  if (/art school/.test(text)) return "classes";
+  if (/train station|cathedral/.test(text) && (g.reviewsCount ?? 0) >= 1000) return "culture";
+  return null;
+}
+
 // A TikTok location tag names this exact place (stricter than titleMatches: a tag of
 // "Castro" is the neighborhood, not The Castro Theatre).
 function sameTag(name, tag) {
@@ -176,11 +203,14 @@ async function buildCity(city, categoryOf) {
   // TikTok picks: spots creators tagged in "best view in <city>" style videos, looked up on
   // Google Maps. Same checks as the locals pass (the title is the tagged spot, it maps onto
   // one of our categories, it is new).
+  // A tagged spot we already have keeps its data and gains the TikTok pick flag.
   let tiktokKept = 0;
+  const tiktokIds = new Set();
   for (const g of tiktokSpots) {
-    if (!g.location || g.permanentlyClosed || known.has(g.placeId)) continue;
+    if (!g.location || g.permanentlyClosed) continue;
     if (g.searchString && !titleMatches(g.title, g.searchString)) continue;
-    const category = categoryFor(g);
+    if (known.has(g.placeId)) { tiktokIds.add(g.placeId); continue; }
+    const category = tiktokCategoryFor(g);
     if (!category) continue;
     known.add(g.placeId);
     locals.push({ ...g, _category: category, _tiktokPick: true });
@@ -188,7 +218,7 @@ async function buildCity(city, categoryOf) {
   }
 
   const places = [...google, ...locals]
-    .filter((g) => g.location && !g.permanentlyClosed)
+    .filter((g) => g.location && !g.permanentlyClosed && isSpot(g))
     .map((g) => ({
       id: g.placeId,
       name: g.title,
@@ -199,7 +229,7 @@ async function buildCity(city, categoryOf) {
       kinds: (g.categories ?? []).slice(0, 4),
       description: g.description ?? null,
       localPick: Boolean(g._localPick),
-      tiktokPick: Boolean(g._tiktokPick),
+      tiktokPick: Boolean(g._tiktokPick) || tiktokIds.has(g.placeId),
       lat: g.location.lat,
       lng: g.location.lng,
       address: g.address ?? null,
@@ -352,7 +382,7 @@ async function buildCity(city, categoryOf) {
   const gems = places.filter((p) => p.hiddenGem).length;
   const mentioned = places.filter((p) => p.mentions.reddit + p.mentions.tiktok > 0).length;
   const withMoments = places.filter((p) => p.moments?.length).length;
-  console.log(`${city.slug}: ${places.length} places (${localsKept} locals picks, ${tiktokKept} TikTok picks, ${mentioned} mentioned by locals, ${gems} hidden gems, ${withMoments} with Spot Moments), ${courts.length} court spots, ${out.viewpoints.length} named viewpoints`);
+  console.log(`${city.slug}: ${places.length} places (${localsKept} locals picks, ${tiktokKept} new TikTok picks + ${tiktokIds.size} already known, ${mentioned} mentioned by locals, ${gems} hidden gems, ${withMoments} with Spot Moments), ${courts.length} court spots, ${out.viewpoints.length} named viewpoints`);
 }
 
 const cities = JSON.parse(await readFile(join(root, "config/cities.json"), "utf8"));

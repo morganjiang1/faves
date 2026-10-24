@@ -119,9 +119,14 @@ async function exportCity(city) {
   const data = JSON.parse(await readFile(src, "utf8"));
   // Keep what the app can recommend: decent scores, anything locals talk about, hidden gems,
   // locals picks and every court. The long tail of low-scored, never-mentioned places is dropped.
+  // Spots with a clip in assets/videos/<city>/manifest.json are always kept so their clip shows.
+  const manifest = join(here, "..", "..", "assets", "videos", city.slug, "manifest.json");
+  const clipIds = new Set((await exists(manifest)) ? Object.keys(JSON.parse(await readFile(manifest, "utf8"))) : []);
   const places = data.places.filter((p) => p.category !== "other" && p.lat && p.lng && (
-    p.scores.locals >= 20 || p.mentions.reddit + p.mentions.tiktok > 0 || p.localPick || p.tiktokPick || p.hiddenGem || p.category === "courts"
+    p.scores.locals >= 20 || p.mentions.reddit + p.mentions.tiktok > 0 || p.localPick || p.tiktokPick || p.hiddenGem || p.category === "courts" || clipIds.has(p.id)
   ));
+  const missing = [...clipIds].filter((id) => !places.some((p) => p.id === id));
+  if (missing.length) console.warn(`${city.slug}: ${missing.length} clips have no exported place: ${missing.join(", ")}`);
   // City center: the median of the best-scored places (robust to far-off day-trip spots).
   const top = [...places].sort((a, b) => b.scores.locals - a.scores.locals).slice(0, 200);
   const median = (xs) => xs.sort((a, b) => a - b)[Math.floor(xs.length / 2)];

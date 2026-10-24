@@ -3,10 +3,10 @@
   "slug": "new-york",
   "name": "New York",
   "center": [
-   40.75636,
-   -73.95526
+   40.75628,
+   -73.95575
   ],
-  "places": 1266,
+  "places": 1253,
   "courts": 2375,
   "utcOffset": -5
  },
@@ -15,9 +15,9 @@
   "name": "Los Angeles",
   "center": [
    34.09543,
-   -118.44293
+   -118.44179
   ],
-  "places": 1192,
+  "places": 1152,
   "courts": 2406,
   "utcOffset": -8
  },
@@ -25,10 +25,10 @@
   "slug": "san-francisco",
   "name": "San Francisco",
   "center": [
-   37.78447,
+   37.78513,
    -122.43013
   ],
-  "places": 1199,
+  "places": 1187,
   "courts": 602,
   "utcOffset": -8
  },
@@ -36,10 +36,10 @@
   "slug": "chicago",
   "name": "Chicago",
   "center": [
-   41.88847,
-   -87.6372
+   41.88799,
+   -87.63936
   ],
-  "places": 1175,
+  "places": 1121,
   "courts": 936,
   "utcOffset": -6
  },
@@ -47,10 +47,10 @@
   "slug": "seattle",
   "name": "Seattle",
   "center": [
-   47.61404,
+   47.6139,
    -122.33989
   ],
-  "places": 1097,
+  "places": 1077,
   "courts": 371,
   "utcOffset": -8
  },
@@ -58,10 +58,10 @@
   "slug": "boston",
   "name": "Boston",
   "center": [
-   42.3522,
-   -71.06244
+   42.35208,
+   -71.06338
   ],
-  "places": 1042,
+  "places": 987,
   "courts": 495,
   "utcOffset": -5
  },
@@ -70,9 +70,9 @@
   "name": "Austin",
   "center": [
    30.26578,
-   -97.74455
+   -97.74404
   ],
-  "places": 1158,
+  "places": 1130,
   "courts": 946,
   "utcOffset": -6
  },
@@ -80,10 +80,10 @@
   "slug": "miami",
   "name": "Miami",
   "center": [
-   25.78156,
-   -80.19429
+   25.78241,
+   -80.19464
   ],
-  "places": 946,
+  "places": 881,
   "courts": 217,
   "utcOffset": -5
  },
@@ -91,10 +91,10 @@
   "slug": "washington-dc",
   "name": "Washington, DC",
   "center": [
-   38.90211,
-   -77.03003
+   38.90289,
+   -77.03005
   ],
-  "places": 1071,
+  "places": 1027,
   "courts": 692,
   "utcOffset": -5
  },
@@ -102,10 +102,10 @@
   "slug": "san-diego",
   "name": "San Diego",
   "center": [
-   32.75888,
+   32.75897,
    -117.1609
   ],
-  "places": 1161,
+  "places": 1133,
   "courts": 1385,
   "utcOffset": -8
  }

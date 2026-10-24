@@ -25,7 +25,13 @@ import { useCityClock } from "@/state/device";
 import { actions, useStore } from "@/state/store";
 import { color, font, shadow } from "@/theme/tokens";
 
-const PROMPTS = ["What are we doing?", "first date in the Mission", "pickleball then hot pot", "rainy day with the kids", "sunset and tacos", "my friend loves Gundam"];
+// The date example names a neighborhood the planner knows in each city.
+const DATE_HOOD: Record<string, string> = {
+  "san-francisco": "the Mission", "new-york": "Williamsburg", "los-angeles": "Silver Lake", chicago: "Wicker Park", seattle: "Capitol Hill",
+  boston: "the North End", austin: "East Austin", miami: "Wynwood", "washington-dc": "Penn Quarter", "san-diego": "North Park",
+};
+const promptsFor = (slug: string | undefined) => ["What are we doing?", `first date in ${DATE_HOOD[slug ?? ""] ?? "the city"}`, "pickleball then hot pot", "rainy day with the kids", "sunset and tacos", "my friend loves Gundam"];
+const PROMPT_COUNT = promptsFor(undefined).length;
 export const OCCASIONS = [
   { id: "date", label: "Date", prompt: "date day: something fun, dinner and a view" },
   { id: "friends", label: "Friends", prompt: "me and 3 friends: something fun, food and drinks" },
@@ -53,7 +59,7 @@ export default function Home() {
 
   // DoorDash rotates real example searches in the placeholder.
   useEffect(() => {
-    const t = setInterval(() => setPrompt((n) => (n + 1) % PROMPTS.length), 2600);
+    const t = setInterval(() => setPrompt((n) => (n + 1) % PROMPT_COUNT), 2600);
     return () => clearInterval(t);
   }, []);
   useEffect(() => {
@@ -114,7 +120,7 @@ export default function Home() {
               <View style={styles.searchRow}>
                 <Pressable testID="home-prompt" accessibilityRole="button" accessibilityLabel="What are we doing?" onPress={() => router.push("/builder")} style={[styles.searchPill, shadow.soft]}>
                   <Icon name="sparkles-outline" size={20} tint="#000" />
-                  <Text numberOfLines={1} style={[styles.searchText, prompt === 0 && { color: "#000", fontWeight: "600" }]}>{prompt === 0 ? PROMPTS[0] : `"${PROMPTS[prompt]}"`}</Text>
+                  <Text numberOfLines={1} style={[styles.searchText, prompt === 0 && { color: "#000", fontWeight: "600" }]}>{prompt === 0 ? promptsFor(city.slug)[0] : `"${promptsFor(city.slug)[prompt]}"`}</Text>
                 </Pressable>
                 <Pressable testID="open-map" accessibilityLabel="Map" onPress={() => router.push("/explore")} style={[styles.mapButton, shadow.soft]}>
                   <Icon name="map-outline" size={22} tint="#000" />

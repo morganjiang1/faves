@@ -14,12 +14,17 @@ export function buzz(p: Place): number {
   return p.locals + Math.min(12, Math.log10(1 + p.tiktok.views) * 2) + Math.min(8, p.reddit.mentions * 1.5) + (p.tiktokPick ? 6 : 0) + (hasClip(p) ? 10 : 0);
 }
 
+const nameKey = (p: Place) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+// At most `perCategory` of a kind, and never the same name twice (Google lists some spots twice).
 function diverse(list: Place[], n: number, perCategory = 2): Place[] {
   const counts = new Map<string, number>();
+  const names = new Set<string>();
   const out: Place[] = [];
   for (const p of list) {
     const c = counts.get(p.category) ?? 0;
-    if (c >= perCategory) continue;
+    if (c >= perCategory || names.has(nameKey(p))) continue;
+    names.add(nameKey(p));
     counts.set(p.category, c + 1);
     out.push(p);
     if (out.length >= n) break;
@@ -56,5 +61,5 @@ export function thisWeekend(city: City, exclude: Set<string>, now = new Date()):
 }
 
 export function hiddenGems(city: City, exclude: Set<string>): Place[] {
-  return city.places.filter((p) => showable(p) && p.hiddenGem && !exclude.has(p.id)).sort((a, b) => buzz(b) - buzz(a)).slice(0, 12);
+  return diverse(city.places.filter((p) => showable(p) && p.hiddenGem && !exclude.has(p.id)).sort((a, b) => buzz(b) - buzz(a)), 12, 12);
 }
