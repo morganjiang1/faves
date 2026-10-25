@@ -26,6 +26,7 @@ import { activitiesIn, parseRequest } from "../src/lib/parser";
 import { alternativesFor, findStop, makePlan, planCost, replan, swapStop, type Plan } from "../src/lib/planner";
 import { costOf, scoreOutOf10 } from "../src/lib/score";
 import { formatClock } from "../src/lib/time";
+import { reserveLabel } from "../src/lib/linktext";
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 import { FAVES_ID, inviteCode, type ChatOp } from "../src/chat/reduce.mjs";
@@ -128,7 +129,14 @@ function summarize(id: string, st: Stored) {
   };
 }
 
-async function plan(body: { city?: string; text?: string; friends?: Friend[]; exclude?: string[]; title?: string }) {
+// "now" for a request: callers may pin the clock (tests, the agents' FAVES_NOW); else the real one.
+function nowOf(v: unknown): Date | undefined {
+  if (typeof v !== "string" && typeof v !== "number") return undefined;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+async function plan(body: { city?: string; text?: string; friends?: Friend[]; exclude?: string[]; title?: string; now?: string }) {
   const city = await loadCity(citySlug(body.city));
   const friends = (body.friends ?? []).slice(0, 12);
   const starts = friends.map((f, i) => startFor(city, f, i)).filter(Boolean) as Start[];
@@ -136,7 +144,7 @@ async function plan(body: { city?: string; text?: string; friends?: Friend[]; ex
   if (friends.length && (!req.groupSize || req.groupSize < friends.length)) req.groupSize = friends.length;
   if (!req.who && friends.length > 1) req.who = "friends";
   // exclude: places another option already uses, so a second option is really different.
-  const made = makePlan(req, { city, starts, idSeed: "agent", exclude: new Set(body.exclude ?? []) });
+  const made = makePlan(req, { city, starts, idSeed: "agent", exclude: new Set(body.exclude ?? []), now: nowOf(body.now) });
   if (body.title) made.title = body.title;
   const stored: Stored = { plan: made, city, friends, starts, text: body.text ?? "" };
   plans.set(made.id, stored);
@@ -153,10 +161,10 @@ async function adopt(body: { plan?: Plan; planId?: string }): Promise<string> {
   return body.plan.id;
 }
 
-async function replanApi(body: { plan?: Plan; planId?: string; text: string }) {
+async function replanApi(body: { plan?: Plan; planId?: string; text: string; now?: string }) {
   const id = await adopt(body);
   const st = plans.get(id)!;
-  const r = replan(st.plan, st.city, body.text, { lexicon: activitiesIn });
+  const r = replan(st.plan, st.city, body.text, { lexicon: activitiesIn, now: nowOf(body.now) });
   const stored = { ...st, plan: { ...r.plan, fairness: r.plan.fairness ?? st.plan.fairness } };
   plans.set(id, stored);
   return { ...summarize(id, stored), raw: stored.plan, message: r.message, changed: r.changed };
@@ -212,7 +220,8 @@ async function book(body: { planId?: string; plan?: Plan }) {
     const p = st.city.byId.get(s.placeId) as Place;
     // "phone": the place only takes bookings by phone, so the group gets its number to call.
     const how = p.reserveUrl ? "online" : (p.category === "food" || p.category === "night" || p.category === "classes") && p.phone ? "phone" : "walk-in";
-    return { n: i + 1, name: p.name, time: formatClock(s.start), how, url: p.reserveUrl, phone: how === "phone" ? p.phone : null };
+    // label: what the link says in a chat ("Reserve on Google"), never the raw URL.
+    return { n: i + 1, name: p.name, kind: p.kind ?? null, time: formatClock(s.start), how, url: p.reserveUrl, label: p.reserveUrl ? reserveLabel(p.reserveUrl) : null, phone: how === "phone" ? p.phone : null };
   });
   return { planId: body.planId, day: st.plan.dayLabel, groupSize: st.plan.groupSize, bookings, fee: { amount: "0.5", currency: "FET", why: "Faves booking fee for the whole group's day" } };
 }

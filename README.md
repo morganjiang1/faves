@@ -149,7 +149,7 @@ npm test                                        # unit tests (Jest): planner, fa
 npm run test:relay                              # the chat relay, two phones
 npx expo export --platform web && npx playwright test   # web journeys at iPhone size, chats and the butler on Convex
 cd actors/faves-local-spots && npm test         # the Actor's ranking
-cd agents && .venv/bin/python test_flow.py      # the Fetch.ai Butler end to end
+cd agents && .venv/bin/python test_flow.py      # the Fetch.ai Butler end to end (add --real-clock for today's time)
 ```
 
 Playwright starts the web build and `npm run chat-server`; run `npm run convex` first for the

@@ -73,10 +73,20 @@ def chat_text(text: str, card: dict[str, Any] | None = None, end: bool = False) 
     return ChatMessage(timestamp=datetime.now(timezone.utc), msg_id=uuid4(), content=content)
 
 
+def swap_line(c: dict[str, Any]) -> str:
+    """Which stop changed, by number and name, and what it changed to."""
+    def named(name: str, kind: str | None) -> str:
+        return f"**{name}** ({kind})" if kind else f"**{name}**"
+    what = f"stop {c['stop']}, {named(c['from'], c.get('fromKind'))}, for {named(c['to'], c.get('toKind'))}."
+    if c.get("matched") is False and c.get("asked"):
+        return f"I couldn't find \"{c['asked']}\" in the plan, so I swapped {what}"
+    return f"Swapped {what}"
+
+
 def plan_text(p: dict[str, Any], changed: dict[str, Any] | None = None) -> str:
     lines = []
     if changed:
-        lines.append(f"Swapped **{changed['from']}** for **{changed['to']}** (stop {changed['stop']}).\n")
+        lines.append(swap_line(changed) + "\n")
     lines.append(f"### {p['title']}")
     lines.append(f"**{p['day']} · {p['start']} to {p['end']} · about ${p['costPerPerson']} each**")
     if p.get("travel"):
@@ -91,7 +101,8 @@ def plan_text(p: dict[str, Any], changed: dict[str, Any] | None = None) -> str:
     lines.append("")
     for s in p["stops"]:
         score = f" · Locals Score {s['localsScore']}" if s.get("localsScore") is not None else ""
-        hood = f" ({s['hood']})" if s.get("hood") else ""
+        about = ", ".join(x for x in [s.get("kind") or "", s.get("hood") or ""] if x)
+        hood = f" ({about})" if about else ""
         lines.append(f"{s['n']}. **{s['time']} {s['name']}**{hood}{score} · {s['cost']}")
         if s.get("leg") and s["n"] > 1:
             lines.append(f"   _{s['leg']} from the stop before_")
@@ -135,25 +146,58 @@ def session(ctx: Context, sender: str) -> dict[str, Any]:
     return json.loads(raw) if isinstance(raw, str) else (raw or {})
 
 
-def save(ctx: Context, sender: str, s: dict[str, Any]) -> None:
+def save(ctx: Context, sender: str, **fields: Any) -> None:
+    """Merge fields into the stored session (read fresh, so a payment that lands while a reply
+    is being worked out isn't overwritten)."""
+    s = session(ctx, sender)
+    s.update(fields)
     ctx.storage.set(f"s:{sender}", json.dumps(s))
 
 
-async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
+def reserve_label(url: str) -> str:
+    """A short label for a reservation link (the same words as src/lib/linktext.ts)."""
+    u = url.lower()
+    if "/maps/reserve" in u or "reserve.google." in u:
+        return "Reserve on Google"
+    for host, label in (("opentable.", "Book on OpenTable"), ("resy.com", "Book on Resy"), ("exploretock.com", "Book on Tock"), ("yelp.", "Book on Yelp")):
+        if host in u:
+            return label
+    return "Book a table"
+
+
+def booking_text(res: dict[str, Any], fee_due: bool) -> str:
+    lines = ["Here's how the day gets booked:"]
+    for b in res["bookings"]:
+        if b["how"] == "online":
+            lines.append(f"- **{b['name']}** ({b['time']}): [{b.get('label') or reserve_label(b['url'])}]({b['url']})")
+        elif b["how"] == "phone":
+            lines.append(f"- **{b['name']}** ({b['time']}): books by phone only, call them at {b['phone']}")
+        else:
+            lines.append(f"- **{b['name']}** ({b['time']}): no booking needed, just show up")
+    fee = res.get("fee")
+    if fee and fee_due:
+        lines.append(f"\nFaves charges a {fee['amount']} {fee['currency']} booking fee for the day. The payment request is on its way.")
+    lines.append("\nWant a group chat for your friends? Say **make a group chat**.")
+    return "\n".join(lines)
+
+
+async def handle(ctx: Context, sender: str, text: str) -> list[Any]:
+    """The replies to one message, in order: always a chat message first, then anything else
+    (a payment request after the booking details)."""
     s = session(ctx, sender)
     plan = s.get("plan")
     it = understand(text, has_plan=bool(plan))
     intent = it.get("intent", "plan")
 
     if intent == "help" and not plan:
-        return chat_text(HELP)
+        return [chat_text(HELP)]
 
     if intent == "scout":
         city = it.get("city") or s.get("city") or "san-francisco"
         r = await ask(ctx, "scout", ScoutRequest(city=city, query=it.get("query") or text), ScoutReply)
         spots = r.spots if r and r.ok else (await api.scout(city, it.get("query") or text)).get("spots", [])
         if not spots:
-            return chat_text("I couldn't find that in Faves yet, and live scouting isn't switched on. Try another word, or ask me to plan a day.")
+            return [chat_text("I couldn't find that in Faves yet, and live scouting isn't switched on. Try another word, or ask me to plan a day.")]
         tag = " (fresh finds from a live scout)" if r and r.source == "apify" else ""
         def spot(x: dict[str, Any]) -> str:
             bits = [f"**{x['name']}**"]
@@ -167,57 +211,49 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
                 bits.append("fresh find")
             return "- " + " · ".join(bits)
         lines = [f"Here's what I found{tag}:"] + [spot(x) for x in spots]
-        return chat_text("\n".join(lines) + "\n\nWant me to plan a day around one of them?")
+        return [chat_text("\n".join(lines) + "\n\nWant me to plan a day around one of them?")]
 
     if intent in {"swap", "book", "group"} and not plan:
-        return chat_text("Let's plan the day first. " + HELP)
+        return [chat_text("Let's plan the day first. " + HELP)]
 
     if intent == "swap":
-        stop = str(it.get("stop") or "1")
+        # The stop they named ("the hot pot"); the Planner finds it, or says it fell back.
+        stop = str(it.get("stop") or "").strip()
         r = await ask(ctx, "planner", SwapRequest(plan_id=plan["planId"], stop=stop, want=it.get("want") or ""), PlanReply)
         if r and r.ok:
             new = r.plan
         else:
             new = await api.swap(plan["planId"], int(stop) if stop.isdigit() else stop, it.get("want") or "")
-        s["plan"] = new
-        save(ctx, sender, s)
-        return chat_text(plan_text(new, new.get("changed")), plan_card(new))
+        save(ctx, sender, plan=new)
+        return [chat_text(plan_text(new, new.get("changed")), plan_card(new))]
 
     if intent == "book":
         r = await ask(ctx, "booker", BookRequest(plan_id=plan["planId"]), BookReply)
         res = r.model_dump() if r and r.ok else await api.book(plan["planId"])
-        lines = ["Here's how the day gets booked:"]
-        for b in res["bookings"]:
-            if b["how"] == "online":
-                lines.append(f"- **{b['name']}** ({b['time']}): [reserve online]({b['url']})")
-            elif b["how"] == "phone":
-                lines.append(f"- **{b['name']}** ({b['time']}): books by phone only, call them at {b['phone']}")
-            else:
-                lines.append(f"- **{b['name']}** ({b['time']}): no booking needed, just show up")
-        s["booked"] = True
-        save(ctx, sender, s)
         fee = res.get("fee")
-        if fee and not s.get("paid"):
-            lines.append(f"\nFaves charges a {fee['amount']} {fee['currency']} booking fee for the day; I've sent a payment request.")
-            await ctx.send(sender, RequestPayment(
+        fee_due = bool(fee) and not session(ctx, sender).get("paid")
+        save(ctx, sender, booked=True)
+        # The booking details first, as a chat message anyone can read; the fee follows as a
+        # Payment Protocol request (ASI:One shows it as a pay card).
+        out: list[Any] = [chat_text(booking_text(res, fee_due))]
+        if fee_due:
+            out.append(RequestPayment(
                 accepted_funds=[Funds(amount=fee["amount"], currency=fee["currency"], payment_method="fet_direct")],
                 recipient=str(butler.wallet.address()),
                 deadline_seconds=600,
                 reference=plan["planId"],
                 description="Faves booking fee for the group's day",
             ))
-        lines.append("\nWant a group chat for your friends? Say **make a group chat**.")
-        return chat_text("\n".join(lines))
+        return out
 
     if intent == "group":
         g = await api.group(plan["planId"], s.get("groupName") or "")
-        s["group"] = g
-        save(ctx, sender, s)
-        return chat_text(
+        save(ctx, sender, group=g)
+        return [chat_text(
             f"Your Faves group chat **{g['name']}** is ready, with the plan pinned and me in it.\n\n"
             f"- Invite link: {g['web']}\n- In the app: {g['app']} (or code **{g['code']}**)\n\n"
             "Everyone taps In, Maybe or Out on the ticket and sets where they start from, and I'll keep the first stop fair."
-        )
+        )]
 
     # A new plan (or a re-plan with new details).
     city = it.get("city") or s.get("city") or "san-francisco"
@@ -225,9 +261,8 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
     request = it.get("request") or text
     r = await ask(ctx, "planner", PlanRequest(city=city, text=request, friends=friends), PlanReply)
     new = r.plan if r and r.ok else await api.plan(city, request, friends)
-    s.update({"plan": new, "city": city, "friends": friends})
-    save(ctx, sender, s)
-    return chat_text(plan_text(new), plan_card(new))
+    save(ctx, sender, plan=new, city=city, friends=friends, booked=False)
+    return [chat_text(plan_text(new), plan_card(new))]
 
 
 @chat.on_message(ChatMessage)
@@ -242,11 +277,12 @@ async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
     if not text:
         return
     try:
-        reply = await handle(ctx, sender, text)
+        replies = await handle(ctx, sender, text)
     except Exception as e:
         ctx.logger.exception("couldn't handle a message")
-        reply = chat_text(f"Sorry, something went wrong on my side ({e}). Try asking again in a moment.")
-    await ctx.send(sender, reply)
+        replies = [chat_text(f"Sorry, something went wrong on my side ({e}). Try asking again in a moment.")]
+    for reply in replies:
+        await ctx.send(sender, reply)
 
 
 @chat.on_message(ChatAcknowledgement)
@@ -257,9 +293,7 @@ async def on_ack(ctx: Context, sender: str, msg: ChatAcknowledgement):
 @pay.on_message(CommitPayment)
 async def on_commit(ctx: Context, sender: str, msg: CommitPayment):
     # A real deployment checks the transfer on the ledger before completing.
-    s = session(ctx, sender)
-    s["paid"] = msg.transaction_id
-    save(ctx, sender, s)
+    save(ctx, sender, paid=msg.transaction_id)
     await ctx.send(sender, CompletePayment(transaction_id=msg.transaction_id))
     await ctx.send(sender, chat_text("Thanks, the booking fee came through. Your day is set."))
 

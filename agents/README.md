@@ -45,5 +45,12 @@ To register on Agentverse, start `run.py`, open the Agent inspector link it prin
 ## Test the whole flow locally
 
 ```sh
-.venv/bin/python test_flow.py   # plan -> swap -> book -> group chat, against the local Faves server
+.venv/bin/python test_flow.py               # plan -> swap -> book (and pay) -> group chat, against the local Faves server
+.venv/bin/python test_flow.py --real-clock  # the same conversation at today's real date and time
 ```
+
+The test pins the clock with `FAVES_NOW` (an ISO time the agents send with every plan) to a
+Saturday at 10 PM, so it gives the same answers on any day. It checks that the plan is a day with
+several stops that starts in the future, that "swap the hot pot" changed the hot pot stop, that
+the booking details arrive as a chat message followed by the Payment Protocol request (which the
+test user pays), and that the group chat link arrives.

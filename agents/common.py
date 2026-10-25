@@ -6,6 +6,8 @@ Settings come from faves/.env (never committed):
   ASI_ONE_API_KEY      ASI:One LLM for understanding requests (optional; rules work without it)
   AGENTVERSE_API_KEY   registers the agents on Agentverse so ASI:One can find them
   APIFY_TOKEN          live scouting through Apify Actors (optional)
+  FAVES_NOW            pins the clock the plans are made against (an ISO time, e.g.
+                       2026-10-24T22:00:00-07:00); test_flow.py uses it. Unset = the real clock.
 """
 from __future__ import annotations
 
@@ -35,6 +37,12 @@ FAVES_API_URL = os.getenv("FAVES_API_URL", "http://localhost:8787").rstrip("/")
 ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY") or None
 AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY") or None
 APIFY_TOKEN = os.getenv("APIFY_TOKEN") or None
+
+
+def faves_now() -> Optional[str]:
+    """The pinned clock (FAVES_NOW), or None for the real one. Read on every call, so a test
+    can pin it before or after the agents are made."""
+    return os.getenv("FAVES_NOW") or None
 
 # FAVES_AGENTS_LOCAL=1 keeps the agents off Agentverse (tests run them in one process).
 MAILBOX = os.getenv("FAVES_AGENTS_LOCAL") != "1"
@@ -77,7 +85,10 @@ class FavesAPI:
             return data
 
     async def plan(self, city: str, text: str, friends: list[dict[str, Any]]) -> dict[str, Any]:
-        return await self._post("plan", {"city": city, "text": text, "friends": friends})
+        body: dict[str, Any] = {"city": city, "text": text, "friends": friends}
+        if faves_now():
+            body["now"] = faves_now()
+        return await self._post("plan", body)
 
     async def swap(self, plan_id: str, stop: Any, want: str = "") -> dict[str, Any]:
         return await self._post("swap", {"planId": plan_id, "stop": stop, "want": want})
