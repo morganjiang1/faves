@@ -6,6 +6,7 @@ import type { City, Place } from "@/data/types";
 import type { CategoryId } from "@/theme/tokens";
 import { CATEGORIES } from "@/theme/tokens";
 import { bestLeg, legFor, metersBetween, type LatLng, type Leg, type Mode } from "./geo";
+import { fairnessFor, fairPick, middleOf, type Fairness, type Start } from "./fair";
 import { isOpenAt, nextOpen, openForVisit } from "./hours";
 import type { Activity, PlanRequest, Sport, Who } from "./parser";
 import { costOf, compact, scoreOutOf10 } from "./score";
@@ -56,6 +57,7 @@ export interface Plan {
   revision: number;
   log: string[];
   legModes?: Record<string, Mode>; // a leg's travel mode picked by hand (by stop key)
+  fairness?: Fairness | null; // group plans: each member's trip to the first stop and home
 }
 
 export interface PlanContext {
@@ -67,6 +69,7 @@ export interface PlanContext {
   exclude?: Set<string>;
   idSeed?: string;
   includePlace?: string; // "Add to a day" from a place page: the day is built around it
+  starts?: Start[]; // group plans: everyone's starting point; the first stop is fair to all
 }
 
 // How long people stay, by kind of stop (minutes).
@@ -592,6 +595,14 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     pinned.set(includedAt, included);
     st.exclude = new Set([...st.exclude].filter((x) => x !== included.id));
   }
+  // Meet in the middle: with two or more starting points, the first stop is the fairest
+  // good one (shortest longest trip), and the rest of the day stays near the group.
+  const starts = ctx.starts ?? [];
+  if (starts.length >= 2 && !pinned.has(0)) {
+    const fair = fairPick(rankCandidates(slots[0], null, win.start, { ...free, center: middleOf(starts) }, 40), starts);
+    if (fair) pinned.set(0, fair.place);
+  }
+  if (starts.length >= 2 && !center) st.center = middleOf(starts);
   if (!center) {
     const anchor = included ?? (pinned.size ? [...pinned.values()][0] : rankCandidates(slots[0], null, win.start, st, 1)[0]?.place);
     st.center = anchor ?? city.center;
@@ -627,6 +638,11 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     log: [],
   };
   plan.title = titleFor(req, stops, city);
+  if (starts.length) {
+    const first = city.byId.get(stops[0]?.placeId ?? "") ?? null;
+    const last = city.byId.get(stops[stops.length - 1]?.placeId ?? "") ?? null;
+    plan.fairness = fairnessFor(first, last, starts);
+  }
   return plan;
 }
 
