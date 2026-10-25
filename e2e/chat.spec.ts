@@ -136,3 +136,19 @@ test("rename the butler, then use its quick asks: plan, book it, remind us", asy
   await expect(page.getByTestId("chat-messages")).toContainText("Reminders are set", { timeout: 30_000 });
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("share a plan with friends: a new group with the butler and the ticket, then the invite screen", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/builder", { name: "Morgan", handle: `morgans${run}` });
+  await page.getByTestId("builder-input").fill("me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus");
+  await page.getByTestId("builder-send").click();
+  await expect(page.getByTestId("itinerary")).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("link-friends").click();
+  await page.getByTestId("send-new-group").click();
+  await expect(page.getByTestId("group-info")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("info-code")).toHaveText(/^[A-Z0-9]{6}$/);
+  await page.getByTestId("info-back").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("I'm Fave, this group's butler");
+  await expect(page.locator('[data-testid^="ticket-"][data-testid$="-rsvp-in"]').first()).toBeVisible();
+  expect(problems, problems.join("\n")).toEqual([]);
+});

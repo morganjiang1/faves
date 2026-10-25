@@ -16,6 +16,7 @@ import { DateBadge, LegModeSheet, LegRow, StopCard, SwapSheet } from "@/componen
 import { ViewportProvider, useViewport } from "@/components/video/viewport";
 import { Sheet } from "@/components/Sheet";
 import { ShareSheet } from "@/components/ShareSheet";
+import { SendToChat } from "@/components/chat/SendToChat";
 import { Chip, CircleButton, EmptyState, ErrorState, Grabber, Icon, OfflineBanner, Skeleton, SkeletonRows, Toast } from "@/components/ui";
 import { formatDuration, type Mode } from "@/lib/geo";
 import { openDirections, openUrl, shareUrl } from "@/lib/links";
@@ -50,6 +51,7 @@ export default function Itinerary() {
   const [swapAt, setSwapAt] = useState<number | null>(null);
   const [legAt, setLegAt] = useState<number | null>(null);
   const [share, setShare] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [ask, setAsk] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -184,11 +186,13 @@ export default function Itinerary() {
             {cost.perPerson ? `About $${cost.perPerson} each${cost.estimated ? ` (${cost.estimated} estimated)` : ""}` : "Free"} · {formatDuration(travel.minutes)} of travel, {travel.miles.toFixed(1)} mi
           </Text>
           <View style={styles.links}>
-            <Text testID="link-share" style={styles.link} onPress={() => setShare(true)}>Share</Text>
+            <Text testID="link-friends" style={styles.link} onPress={() => setSendOpen(true)}>Share with friends</Text>
             <Text style={styles.dot}>•</Text>
-            <Text testID="link-vote" style={styles.link} onPress={() => router.push(`/group/new?plan=${plan.id}`)}>Vote with friends</Text>
+            <Text testID="link-share" style={styles.link} onPress={() => setShare(true)}>Link</Text>
             <Text style={styles.dot}>•</Text>
-            <Text testID="link-recap" style={styles.link} onPress={() => router.push(`/recap/${plan.id}`)}>Day recap</Text>
+            <Text testID="link-vote" style={styles.link} onPress={() => router.push(`/group/new?plan=${plan.id}`)}>Vote</Text>
+            <Text style={styles.dot}>•</Text>
+            <Text testID="link-recap" style={styles.link} onPress={() => router.push(`/recap/${plan.id}`)}>Recap</Text>
           </View>
           {chips.length ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
@@ -306,6 +310,7 @@ export default function Itinerary() {
         current={legAt != null ? plan.stops[legAt].leg?.mode ?? plan.transport : plan.transport}
         onPick={(m) => { if (legAt != null) save(setLegMode(plan, city, legAt, m), "Updated the travel time and the times after it."); setLegAt(null); }}
       />
+      <SendToChat open={sendOpen} item={{ kind: "plan", plan }} onClose={() => setSendOpen(false)} />
       <ShareSheet open={share} onClose={() => setShare(false)} subtitle="Anyone with the link can see this day" url={link} cardTitle={plan.title} image={places[0]?.image} category={places[0]?.category} message={`${plan.title}, ${plan.dayLabel}. Planned on Faves:`} />
       <Sheet open={menu} onClose={() => setMenu(false)} title="This day" testID="plan-menu-sheet">
         <MenuRow testID="menu-group" icon="people-outline" label="Vote with friends" onPress={() => { setMenu(false); router.push(`/group/new?plan=${plan.id}`); }} />
