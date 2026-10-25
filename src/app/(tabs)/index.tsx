@@ -1,19 +1,17 @@
-// Home, video first and dark like its Netflix reference (#110F15), in the order people want
-// on open ("what is there to do this week"):
-// Netflix's Top 10 row with outlined rank numerals and 9:16 cards that play a muted clip
-// while on screen, the "What are we doing?" plan prompt (DoorDash's search pill with its
-// rotating examples, kept from the first Home), plain text occasion chips (Uber Eats),
-// then Netflix-style rows of video cards: Tonight, This weekend, the most-done days as
-// vertical story cards (YouTube Shorts / Reels), and hidden gems. References:
-// references/video/* and docs/design_references.md "Video-first Home and itinerary".
-import { router, useIsFocused, useLocalSearchParams } from "expo-router";
+// Home, on cream paper: "this week in <city>" as a hand-dealt deck of postcards (each plays
+// its clip), the plan prompt, your plans as tickets, then rows of postcards for tonight, this
+// weekend and hidden gems, and the most-done days as sample tickets.
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ErrorState, Icon, SampleTag, Skeleton } from "@/components/ui";
-import { CARD, DARK, DayStoryCard, RankCard, STORY, TOP, VideoCard, VideoRow } from "@/components/video/cards";
-import { ViewportProvider, useViewport } from "@/components/video/viewport";
+import { Postcard } from "@/components/postcard/Postcard";
+import { PostcardDeck } from "@/components/postcard/PostcardDeck";
+import { Ticket } from "@/components/ticket/Ticket";
+import { Chip, ErrorState, Icon, SampleTag, SectionHeader, Skeleton } from "@/components/ui";
+import { VideoRow } from "@/components/video/cards";
+import { ViewportProvider, useRowVisible, useViewport } from "@/components/video/viewport";
 import { CITY_INDEX } from "@/data/cities";
 import type { Place } from "@/data/types";
 import { communityDays, type CommunityDay } from "@/lib/community";
@@ -23,14 +21,14 @@ import { formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useCityClock } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { color, font, shadow } from "@/theme/tokens";
+import { font, palette, shadow } from "@/theme/tokens";
 
 // The date example names a neighborhood the planner knows in each city.
 const DATE_HOOD: Record<string, string> = {
   "san-francisco": "the Mission", "new-york": "Williamsburg", "los-angeles": "Silver Lake", chicago: "Wicker Park", seattle: "Capitol Hill",
   boston: "the North End", austin: "East Austin", miami: "Wynwood", "washington-dc": "Penn Quarter", "san-diego": "North Park",
 };
-const promptsFor = (slug: string | undefined) => ["What are we doing?", `first date in ${DATE_HOOD[slug ?? ""] ?? "the city"}`, "pickleball then hot pot", "rainy day with the kids", "sunset and tacos", "my friend loves Gundam"];
+const promptsFor = (slug: string | undefined) => ["what are we doing?", `first date in ${DATE_HOOD[slug ?? ""] ?? "the city"}`, "pickleball then hot pot", "rainy day with the kids", "sunset and tacos", "my friend loves Gundam"];
 const PROMPT_COUNT = promptsFor(undefined).length;
 export const OCCASIONS = [
   { id: "date", label: "Date", prompt: "date day: something fun, dinner and a view" },
@@ -47,6 +45,8 @@ export default function Home() {
   const clock = useCityClock(city?.utcOffset);
   const name = useStore((s) => s.profile.name);
   const currentCity = useStore((s) => s.profile.city);
+  const plans = useStore((s) => s.plans);
+  const planOrder = useStore((s) => s.planOrder);
   // Links can open Home in a given city: /?city=san-francisco
   const { city: cityParam } = useLocalSearchParams<{ city?: string }>();
   useEffect(() => {
@@ -55,9 +55,7 @@ export default function Home() {
   const [prompt, setPrompt] = useState(0);
   const [days, setDays] = useState<CommunityDay[] | null>(null);
   const { vp, onScroll, onLayout } = useViewport();
-  const focused = useIsFocused();
 
-  // DoorDash rotates real example searches in the placeholder.
   useEffect(() => {
     const t = setInterval(() => setPrompt((n) => (n + 1) % PROMPT_COUNT), 2600);
     return () => clearInterval(t);
@@ -78,88 +76,112 @@ export default function Home() {
     const weekend = thisWeekend(city, seen);
     weekend.forEach((p) => seen.add(p.id));
     return { top, night, weekend, gems: hiddenGems(city, seen) };
-    // Recompute when the hour changes (open now / tonight).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [city, Math.floor(clock.minutes / 60)]);
 
+  // Your plans, soonest first (today and later), from the builder and from group chats.
+  const mine = useMemo(() => {
+    if (!city) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return planOrder.map((id) => plans[id]).filter((p) => p && p.citySlug === city.slug && p.dateISO >= today).sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.start - b.start).slice(0, 4);
+  }, [plans, planOrder, city]);
+
   const cityName = CITY_INDEX.find((c) => c.slug === city?.slug)?.name ?? "your city";
   const tonightLine = (p: Place) => {
-    if (p.category === "views" && rows?.night.sunset != null) return `Sunset ${formatClock(rows.night.sunset, { compact: true })}`;
+    if (p.category === "views" && rows?.night.sunset != null) return `sunset ${formatClock(rows.night.sunset, { compact: true })}`;
     const c = closesAt(p.hours, clock.day, rows?.night.from ?? 1200);
-    return c ? `Open till ${formatClock(c, { compact: true })}` : p.hood ?? "";
+    return c ? `open till ${formatClock(c, { compact: true })}` : "";
   };
+  const prompts = promptsFor(city?.slug);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: DARK.bg }} edges={["top"]} testID="home">
-      {focused ? <StatusBar style="light" /> : null}
+    <SafeAreaView style={styles.screen} edges={["top"]} testID="home">
+      <StatusBar style="dark" />
       <View style={styles.topRow}>
-        <Pressable testID="city-switcher" accessibilityRole="button" accessibilityLabel={`City: ${cityName}`} onPress={() => router.push("/city")} style={styles.location}>
-          <Icon name="location-outline" size={22} tint="#fff" />
-          <Text style={styles.locationText}>{city?.name ?? cityName}</Text>
-          <Icon name="chevron-down" size={18} tint="#fff" />
-        </Pressable>
-        <View style={{ flexDirection: "row", gap: 18 }}>
-          <Pressable testID="open-wallet" accessibilityLabel="Spot rewards" hitSlop={8} onPress={() => router.push("/wallet")}><Icon name="wallet-outline" size={25} tint="#fff" /></Pressable>
-          <Pressable testID="open-plus" accessibilityLabel="Faves Plus" hitSlop={8} onPress={() => router.push("/plus")}><Icon name="diamond-outline" size={24} tint="#fff" /></Pressable>
-          <Pressable testID="open-search" accessibilityLabel="Search" hitSlop={8} onPress={() => router.push("/search")}><Icon name="search" size={24} tint="#fff" /></Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.wordmark}>faves</Text>
+          <Pressable testID="city-switcher" accessibilityRole="button" accessibilityLabel={`City: ${cityName}`} onPress={() => router.push("/city")} style={styles.location}>
+            <Text style={styles.locationText}>this week in <Text style={styles.cityWord}>{(city?.name ?? cityName).toLowerCase()}</Text></Text>
+            <Icon name="chevron-down" size={16} tint={palette.roseInk} />
+          </Pressable>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <HeaderButton testID="open-wallet" icon="wallet-outline" label="Spot rewards" onPress={() => router.push("/wallet")} />
+          <HeaderButton testID="open-search" icon="search" label="Search" onPress={() => router.push("/search")} />
         </View>
       </View>
 
-      <ScrollView testID="home-scroll" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }} onScroll={onScroll} scrollEventThrottle={64} onLayout={onLayout}>
+      <ScrollView testID="home-scroll" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }} onScroll={onScroll} scrollEventThrottle={64} onLayout={onLayout}>
         <ViewportProvider vp={vp}>
           {status === "error" ? (
-            <View style={{ paddingTop: 40 }}><ErrorState body={error ?? "We couldn't load this city."} onRetry={retry} /></View>
-          ) : !rows || !city ? (
-            <HomeSkeleton />
+            <View style={{ paddingTop: 40 }}><ErrorState body={error ?? "Check your connection and try again."} onRetry={retry} /></View>
+          ) : !city || !rows ? (
+            <View style={{ alignItems: "center", paddingTop: 30, gap: 18 }} testID="home-loading">
+              <Skeleton style={{ width: 272, height: 380, borderRadius: 18, transform: [{ rotate: "-2deg" }] }} />
+              <Skeleton style={{ width: "90%", height: 60, borderRadius: 16 }} />
+            </View>
           ) : (
             <>
-              <RowTitle title={`Top 10 this week in ${city.name}`} testID="title-top10" />
-              <VideoRow testID="row-top10" data={rows.top} keyOf={(p) => p.id} gap={0} inset={TOP.first - (TOP.pitch - TOP.w) + 8} render={(p, i, active) => <RankCard testID={`top10-${i}`} place={p} rank={i + 1} active={active} />} />
+              <DeckSection places={rows.top} />
 
-              {/* The one plan prompt, with the map one tap away. */}
-              <View style={styles.searchRow}>
-                <Pressable testID="home-prompt" accessibilityRole="button" accessibilityLabel="What are we doing?" onPress={() => router.push("/builder")} style={[styles.searchPill, shadow.soft]}>
-                  <Icon name="sparkles-outline" size={20} tint="#000" />
-                  <Text numberOfLines={1} style={[styles.searchText, prompt === 0 && { color: "#000", fontWeight: "600" }]}>{prompt === 0 ? promptsFor(city.slug)[0] : `"${promptsFor(city.slug)[prompt]}"`}</Text>
+              <View style={styles.promptWrap}>
+                <Pressable testID="home-prompt" accessibilityRole="button" accessibilityLabel="What are we doing?" onPress={() => router.push("/builder")} style={[styles.prompt, shadow.soft]}>
+                  <View style={styles.promptIcon}><Icon name="sparkles" size={18} tint={palette.cream} /></View>
+                  <Text numberOfLines={1} style={[styles.promptText, prompt === 0 && styles.promptFirst]}>{prompt === 0 ? prompts[0] : `"${prompts[prompt]}"`}</Text>
+                  <Pressable testID="open-map" accessibilityLabel="Map" hitSlop={8} onPress={() => router.push("/explore")}><Icon name="map-outline" size={22} tint={palette.ink} /></Pressable>
                 </Pressable>
-                <Pressable testID="open-map" accessibilityLabel="Map" onPress={() => router.push("/explore")} style={[styles.mapButton, shadow.soft]}>
-                  <Icon name="map-outline" size={22} tint="#000" />
-                </Pressable>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                  {OCCASIONS.map((o) => <Chip key={o.id} testID={`occasion-${o.id}`} label={o.label} onPress={() => router.push(`/builder?q=${encodeURIComponent(o.prompt)}`)} />)}
+                </ScrollView>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                {OCCASIONS.map((o) => (
-                  // Spotify's dark chips (social/spotify/appstore_01_home_chips_shortcuts.png): 33 pt, #2A2A2A, white 15 pt.
-                  <Pressable key={o.id} testID={`occasion-${o.id}`} accessibilityRole="button" onPress={() => router.push(`/builder?q=${encodeURIComponent(o.prompt)}`)} style={({ pressed }) => [styles.darkChip, pressed && { opacity: 0.75 }]}>
-                    <Text style={styles.darkChipText}>{o.label}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
+
+              <SectionHeader title="your plans" subtitle={mine.length ? "Tickets for what's coming up" : undefined} />
+              {mine.length ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ticketRow} testID="row-plans">
+                  {mine.map((p, i) => <View key={p.id} style={{ width: 318 }}><Ticket testID={`plan-ticket-${i}`} plan={p} city={city} compact /></View>)}
+                </ScrollView>
+              ) : (
+                <Pressable testID="plans-empty" accessibilityRole="button" onPress={() => router.push("/builder")} style={styles.blankTicket}>
+                  <Icon name="ticket-outline" size={26} tint={palette.roseInk} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.blankTitle}>No plans yet</Text>
+                    <Text style={styles.blankBody}>Plan a day, or plan one with friends in Chats.</Text>
+                  </View>
+                  <Icon name="arrow-forward" size={18} tint={palette.roseInk} />
+                </Pressable>
+              )}
 
               {rows.night.places.length ? (
                 <>
-                  <RowTitle title="Tonight" subtitle={`Open from ${formatClock(rows.night.from, { compact: true })}${rows.night.sunset != null ? `, sunset at ${formatClock(rows.night.sunset, { compact: true })}` : ""}`} onMore={() => router.push("/explore?open=1")} testID="title-tonight" />
-                  <VideoRow testID="row-tonight" data={rows.night.places} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`tonight-${i}`} place={p} active={active} line={tonightLine(p)} />} />
+                  <SectionHeader title="tonight" subtitle={`Open from ${formatClock(rows.night.from, { compact: true })}${rows.night.sunset != null ? `, sunset at ${formatClock(rows.night.sunset, { compact: true })}` : ""}`} onMore={() => router.push("/explore?open=1")} testID="title-tonight" />
+                  <PostcardRow testID="row-tonight" places={rows.night.places} line={tonightLine} prefix="tonight" />
                 </>
               ) : null}
 
-              <RowTitle title="This weekend" subtitle="Open Saturday afternoon" onMore={() => router.push("/explore")} testID="title-weekend" />
-              <VideoRow testID="row-weekend" data={rows.weekend} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`weekend-${i}`} place={p} active={active} />} />
+              <SectionHeader title="this weekend" subtitle="Open Saturday afternoon" onMore={() => router.push("/explore")} testID="title-weekend" />
+              <PostcardRow testID="row-weekend" places={rows.weekend} prefix="weekend" />
 
-              <RowTitle title="Most-done days this week" subtitle={`Popular days in ${city.name}`} onMore={() => router.push("/feed")} testID="more-days" />
+              <SectionHeader title="most-done days" subtitle={`What people did in ${city.name} this week`} onMore={() => router.push("/feed")} testID="more-days" />
               <View style={styles.sampleLine}>
                 <SampleTag text="Sample people" />
                 <Text style={styles.sampleText}>Real spots, placeholder people until real days are posted</Text>
               </View>
               {days ? (
-                <VideoRow testID="row-days" data={days.slice(0, 8)} keyOf={(d) => d.id} gap={7.8} render={(d, i, active) => <DayStoryCard testID={`day-card-${i}`} day={d} city={city} first={i === 0} active={active} />} />
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ticketRow} testID="row-days">
+                  {days.slice(0, 8).map((d, i) => (
+                    <View key={d.id} style={{ width: 318 }}>
+                      <Ticket testID={`day-card-${i}`} plan={d.plan} city={city} compact sample label={i === 0 ? "most done" : `${d.author.name}'s day`} onPress={() => router.push(`/day/${encodeURIComponent(d.id)}`)} people={[{ id: d.author.name, name: d.author.name, answer: "in" }]} />
+                    </View>
+                  ))}
+                </ScrollView>
               ) : (
-                <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: STORY.w, height: STORY.h, backgroundColor: "#2A2830" }} />)}</View>
+                <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 18 }}>{[0, 1].map((i) => <Skeleton key={i} style={{ width: 300, height: 180, borderRadius: 16 }} />)}</View>
               )}
 
               {rows.gems.length ? (
                 <>
-                  <RowTitle title={`Hidden gems in ${city.name}`} subtitle="Locals love them, tourists haven't found them" onMore={() => router.push("/explore?gems=1")} testID="more-gems" />
-                  <VideoRow testID="section-gems" data={rows.gems} keyOf={(p) => p.id} render={(p, i, active) => <VideoCard testID={`gems-${i}`} place={p} active={active} />} />
+                  <SectionHeader title="hidden gems" subtitle="Locals love them, tourists haven't found them" onMore={() => router.push("/explore?gems=1")} testID="more-gems" />
+                  <PostcardRow testID="section-gems" places={rows.gems} prefix="gems" gem />
                 </>
               ) : null}
               <Text style={styles.footer}>{name ? `Made for ${name}. ` : ""}Rankings use Google, Yelp, Reddit and TikTok.</Text>
@@ -171,46 +193,56 @@ export default function Home() {
   );
 }
 
-function RowTitle({ title, subtitle, onMore, testID }: { title: string; subtitle?: string; onMore?: () => void; testID?: string }) {
+function HeaderButton({ icon, label, onPress, testID }: { icon: "wallet-outline" | "search"; label: string; onPress: () => void; testID: string }) {
   return (
-    <Pressable testID={testID} disabled={!onMore} onPress={onMore} style={styles.rowTitle}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowTitleText} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={styles.rowSub} numberOfLines={1}>{subtitle}</Text> : null}
-      </View>
-      {onMore ? <Icon name="chevron-forward" size={20} tint="#fff" /> : null}
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={styles.headerButton}>
+      <Icon name={icon} size={20} tint={palette.ink} />
     </Pressable>
   );
 }
 
-function HomeSkeleton() {
+// The deck plays only while it is on screen.
+function DeckSection({ places }: { places: Place[] }) {
+  const row = useRowVisible();
   return (
-    <View testID="home-loading" style={{ padding: 16, gap: 14 }}>
-      <Skeleton style={{ width: 240, height: 22, backgroundColor: "#2A2830" }} />
-      <View style={{ flexDirection: "row", gap: 8 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h, backgroundColor: "#2A2830" }} />)}</View>
-      <Skeleton style={{ height: 46, borderRadius: 23, backgroundColor: "#2A2830" }} />
-      <Skeleton style={{ width: 160, height: 22, marginTop: 10, backgroundColor: "#2A2830" }} />
-      <View style={{ flexDirection: "row", gap: 8 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ width: CARD.w, height: CARD.h, backgroundColor: "#2A2830" }} />)}</View>
+    <View onLayout={row.onLayout} style={{ paddingTop: 4 }}>
+      <PostcardDeck testID="top10" places={places} active={row.visible} />
     </View>
   );
 }
 
+function PostcardRow({ places, prefix, testID, line, gem }: { places: Place[]; prefix: string; testID: string; line?: (p: Place) => string; gem?: boolean }) {
+  return (
+    <VideoRow testID={testID} data={places} keyOf={(p) => p.id} gap={14} inset={18} render={(p, i, active) => (
+      <View style={{ paddingTop: 12, paddingBottom: 14 }}>
+        <Postcard testID={`${prefix}-${i}`} place={p} active={active} size="row" tilt={i % 2 ? 2 : -2} line={line?.(p)} />
+        {gem ? <View style={styles.gem} pointerEvents="none"><Text style={styles.gemText}>gem</Text></View> : null}
+      </View>
+    )} />
+  );
+}
+
 const styles = StyleSheet.create({
-  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 },
-  location: { flexDirection: "row", alignItems: "center", gap: 6 },
-  locationText: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#fff" },
-  // Netflix row title: bold white ~19 pt, 12.5 pt in, 14 pt above the cards, ~31 pt below the last row.
-  rowTitle: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12.5, paddingTop: 28, paddingBottom: 12 },
-  rowTitleText: { fontFamily: font.sans, fontSize: 19, fontWeight: "800", color: DARK.text },
-  rowSub: { fontFamily: font.sans, fontSize: 13, color: DARK.sub, marginTop: 2 },
-  darkChip: { height: 33, borderRadius: 17, backgroundColor: "#2A2A2A", paddingHorizontal: 14, justifyContent: "center" },
-  darkChipText: { fontFamily: font.sans, fontSize: 15, color: "#fff" },
-  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12.5, paddingTop: 24 },
-  searchPill: { flex: 1, height: 46, borderRadius: 23, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 },
-  searchText: { fontFamily: font.sans, fontSize: 16, color: color.textSub, flex: 1 },
-  mapButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  chipRow: { paddingHorizontal: 12.5, paddingTop: 12, gap: 8 },
-  sampleLine: { paddingHorizontal: 12.5, marginTop: -4, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 6 },
-  sampleText: { fontFamily: font.sans, fontSize: 13, color: DARK.sub, flex: 1 },
-  footer: { fontFamily: font.sans, fontSize: 12, color: DARK.sub, paddingHorizontal: 12.5, paddingTop: 26, lineHeight: 17 },
+  screen: { flex: 1, backgroundColor: palette.paper },
+  topRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingTop: 6, paddingBottom: 4 },
+  wordmark: { fontFamily: font.displayHeavy, fontSize: 30, color: palette.roseInk, letterSpacing: -1, lineHeight: 32 },
+  location: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start" },
+  locationText: { fontFamily: font.display, fontSize: 18, color: palette.ink },
+  cityWord: { color: palette.roseInk },
+  headerButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
+  promptWrap: { paddingHorizontal: 18, paddingTop: 22, gap: 12 },
+  prompt: { height: 60, borderRadius: 18, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12 },
+  promptIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: palette.roseInk, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }] },
+  promptText: { flex: 1, fontFamily: font.sans, fontSize: 17, color: palette.inkMuted },
+  promptFirst: { fontFamily: font.display, fontSize: 19, color: palette.ink },
+  chipRow: { gap: 8, paddingRight: 18 },
+  ticketRow: { paddingHorizontal: 18, gap: 14, paddingBottom: 6 },
+  blankTicket: { marginHorizontal: 18, flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: 16, borderWidth: 2, borderStyle: "dashed", borderColor: palette.rose, backgroundColor: palette.roseTint },
+  blankTitle: { fontFamily: font.display, fontSize: 17, color: palette.ink },
+  blankBody: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft, marginTop: 2 },
+  sampleLine: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18, marginTop: -4, marginBottom: 10 },
+  sampleText: { fontFamily: font.sans, fontSize: 12.5, color: palette.inkMuted, flexShrink: 1 },
+  gem: { position: "absolute", left: 10, top: 4, backgroundColor: palette.lavInk, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, transform: [{ rotate: "-8deg" }] },
+  gemText: { fontFamily: font.sans, fontSize: 11, fontWeight: "800", color: palette.cream, letterSpacing: 0.5 },
+  footer: { fontFamily: font.sans, fontSize: 12.5, color: palette.inkMuted, textAlign: "center", paddingHorizontal: 30, paddingTop: 28 },
 });
