@@ -152,7 +152,7 @@ function Spots() {
       {showMap ? (
         <View style={{ flex: 1 }}>
           <View style={styles.mapArea}>
-            <FavesMap testID="saved-map" style={StyleSheet.absoluteFill} center={from ?? city.center} span={0.08} pins={pins} fitToPins showLabels={false} onPinPress={(id) => router.push(`/place/${encodeURIComponent(id)}`)} />
+            <FavesMap testID="saved-map" creditBottom={28} style={StyleSheet.absoluteFill} center={from ?? city.center} span={0.08} pins={pins} fitToPins showLabels={false} onPinPress={(id) => router.push(`/place/${encodeURIComponent(id)}`)} />
           </View>
           <ScrollView style={styles.overSheet} contentContainerStyle={{ paddingBottom: 24 }} testID="saved-sheet">{sheet}</ScrollView>
         </View>

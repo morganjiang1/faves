@@ -163,7 +163,7 @@ export default function Itinerary() {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }} testID="itinerary">
       <View style={styles.mapBox}>
-        <FavesMap testID="plan-map" style={StyleSheet.absoluteFill} center={places[0] ?? city.center} span={0.04} pins={pins} routes={routes} fitToPins showLabels={false} onPinPress={(pid) => router.push(`/place/${encodeURIComponent(pid)}`)} />
+        <FavesMap testID="plan-map" creditBottom={26} style={StyleSheet.absoluteFill} center={places[0] ?? city.center} span={0.04} pins={pins} routes={routes} fitToPins showLabels={false} onPinPress={(pid) => router.push(`/place/${encodeURIComponent(pid)}`)} />
         <View style={[styles.mapButtons, { top: insets.top + 8 }]} pointerEvents="box-none">
           <CircleButton testID="plan-back" icon="chevron-back" label="Back" light size={40} onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
           <View style={{ flexDirection: "row", gap: 10 }}>

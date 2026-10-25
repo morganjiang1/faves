@@ -47,4 +47,5 @@ export interface FavesMapProps {
   style?: StyleProp<ViewStyle>;
   showLabels?: boolean;
   testID?: string;
+  creditBottom?: number; // lift the map credit above a sheet that overlaps the map's bottom edge
 }

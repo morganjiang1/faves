@@ -1,10 +1,11 @@
-// Web map with no API key: Leaflet with CARTO's light basemap from OpenStreetMap data (the
-// desaturated look of Corner's map). Same pins and route styles as the iPhone map.
+// Web map with no API key: Leaflet drawing the Faves basemap (basemap.ts: OpenStreetMap tiles
+// with a paper wash), the same tiles as the iPhone. Same pins and route styles too.
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useRef } from "react";
 import { View } from "react-native";
-import { color } from "@/theme/tokens";
+import { color, palette } from "@/theme/tokens";
+import { ATTRIBUTION_HTML, TILE_MAX_ZOOM, TILE_URL, WEB_TILE_FILTER } from "./basemap";
 import { declutter, type FavesMapProps, type MapPin } from "./types";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -35,7 +36,7 @@ function iconFor(p: MapPin, showLabel: boolean): L.DivIcon {
   });
 }
 
-export default function FavesMap({ pins, routes = [], center, span = 0.06, fitToPins, fitKey, onPinPress, onMove, style, showLabels = true, testID }: FavesMapProps) {
+export default function FavesMap({ pins, routes = [], center, span = 0.06, fitToPins, fitKey, onPinPress, onMove, style, showLabels = true, testID, creditBottom = 0 }: FavesMapProps) {
   const host = useRef<unknown>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
@@ -47,18 +48,15 @@ export default function FavesMap({ pins, routes = [], center, span = 0.06, fitTo
     if (!el || map.current) return;
     const zoom = Math.round(Math.log2(360 / span));
     const m = L.map(el, { zoomControl: false, attributionControl: true }).setView([center.lat, center.lng], zoom);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      className: "faves-muted-tiles",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(m);
-    // Corner's map is a desaturated light basemap; the OpenStreetMap tiles are muted to match.
+    L.tileLayer(TILE_URL, { maxZoom: TILE_MAX_ZOOM, className: "faves-tiles", attribution: ATTRIBUTION_HTML }).addTo(m);
     if (!document.getElementById("faves-map-style")) {
       const st = document.createElement("style");
       st.id = "faves-map-style";
-      st.textContent = ".faves-muted-tiles{filter:grayscale(0.9) brightness(1.06) contrast(0.92)}.leaflet-container{font-family:inherit;background:#ECECEC}";
+      st.textContent = `.faves-tiles{filter:${WEB_TILE_FILTER}}.leaflet-container{font-family:inherit;background:${palette.paperDeep}}.leaflet-control-attribution{font:9px/1.4 ${SANS}!important;background:rgba(255,248,241,.75)!important;color:${palette.inkMuted}!important;border-radius:3px}.leaflet-control-attribution a{color:${palette.inkMuted}!important}`;
       document.head.appendChild(st);
     }
+    const credit = m.attributionControl?.getContainer();
+    if (credit) credit.style.marginBottom = `${creditBottom}px`;
     m.on("moveend", () => { const c = m.getCenter(); handlers.current.onMove?.({ lat: c.lat, lng: c.lng }); });
     layer.current = L.layerGroup().addTo(m);
     map.current = m;
