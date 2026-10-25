@@ -3,12 +3,13 @@
 // clip). The poster sits underneath so a page is never blank while the clip loads.
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import type { Moment, Place } from "@/data/types";
 import { OwnClip } from "../moments/parts";
 import type { SpotPage } from "../moments/clips";
 import { PlaceImage } from "../ui";
+import { VIDEO_FILL } from "../video/fill";
 
 const NATIVE = Platform.OS !== "web";
 
@@ -22,9 +23,11 @@ function BundledClip({ video, playing, startAt = 0 }: { video: number; playing: 
     if (playing) player.play();
     else player.pause();
   }, [playing, player]);
+  // The poster underneath shows until the first frame (an iPhone video view is black before it).
+  const [shown, setShown] = useState(!NATIVE);
   return (
     <View testID="spot-clip" style={StyleSheet.absoluteFill} pointerEvents="none">
-      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} allowsPictureInPicture={false} playsInline pointerEvents="none" />
+      <VideoView player={player} style={[VIDEO_FILL, { opacity: shown ? 1 : 0 }]} onFirstFrameRender={() => setShown(true)} contentFit="cover" nativeControls={false} allowsPictureInPicture={false} playsInline pointerEvents="none" />
     </View>
   );
 }

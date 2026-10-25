@@ -31,6 +31,7 @@ import { currentLocation, useCityClock, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
 import { shareMoment } from "@/chat/moments";
 import { font, palette } from "@/theme/tokens";
+import { VIDEO_FILL } from "@/components/video/fill";
 
 type Shot = { uri: string; kind: "photo" | "video"; seconds: number };
 const MAX_SECONDS = 15;
@@ -414,7 +415,7 @@ function Capture({ place, demo, onClose, online }: { place: Place; demo: boolean
 
 function PreviewVideo({ uri }: { uri: string }) {
   const player = useVideoPlayer(uri, (p) => { p.loop = true; p.muted = true; p.play(); });
-  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />;
+  return <VideoView player={player} style={VIDEO_FILL} contentFit="cover" nativeControls={false} />;
 }
 
 const styles = StyleSheet.create({

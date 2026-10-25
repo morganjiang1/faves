@@ -147,3 +147,31 @@ test("rank a spot from its page, then vote on a day by link", async ({ page, bro
 
   expect([...problems, ...friendProblems], [...problems, ...friendProblems].join("\n")).toEqual([]);
 });
+
+// Every postcard on Home shows a real picture: the clip's poster, else the spot's photo (never a
+// black or empty frame), and a playing clip fills its card instead of showing its top corner.
+for (const city of ["san-francisco", "new-york", "los-angeles"]) {
+  test(`every Home card in ${city} shows a picture that loaded, and playing clips fill their cards`, async ({ page }) => {
+    const problems = watchConsole(page);
+    await startOnboarded(page, "/", { city });
+    await expect(page.getByTestId("top10-top")).toBeVisible({ timeout: 30_000 });
+    const rows = ["row-tonight", "row-weekend", "section-gems"];
+    for (const id of rows) {
+      const row = page.getByTestId(id);
+      if (!(await row.count())) continue;
+      await row.scrollIntoViewIfNeeded();
+      // Deal through the row so every card renders and loads.
+      for (let x = 0; x <= 2400; x += 300) {
+        await row.evaluate((el, left) => { const s = [el, ...Array.from(el.querySelectorAll("*"))].find((q) => q.scrollWidth > q.clientWidth + 10) ?? el; s.scrollLeft = left; }, x);
+        await page.waitForTimeout(120);
+      }
+    }
+    const cards = page.locator('[data-testid="top10-top"], [data-testid^="tonight-"], [data-testid^="weekend-"], [data-testid^="gems-"]');
+    expect(await cards.count()).toBeGreaterThan(15);
+    await expect.poll(async () => cards.evaluateAll((els) => els.filter((c) => !Array.from(c.querySelectorAll("img")).some((i) => i.complete && i.naturalWidth > 0)).map((c) => c.getAttribute("aria-label"))), { timeout: 30_000 }).toEqual([]);
+    // A playing clip is the size of its card's picture, not the clip's own size.
+    const oversized = await cards.evaluateAll((els) => els.flatMap((c) => Array.from(c.querySelectorAll("video")).filter((v) => v.getBoundingClientRect().width > c.getBoundingClientRect().width).map(() => c.getAttribute("aria-label"))));
+    expect(oversized).toEqual([]);
+    expect(problems, problems.join("\n")).toEqual([]);
+  });
+}

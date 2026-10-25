@@ -4,12 +4,13 @@
 // the web (a muted, inline <video>).
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { CLIPS, type SpotClip } from "@/data/videos";
 import type { Place } from "@/data/types";
-import { font } from "@/theme/tokens";
+import { font, palette } from "@/theme/tokens";
 import { PlaceImage, UserDisc } from "../ui";
+import { VIDEO_FILL } from "./fill";
 
 export const clipFor = (placeId: string | null | undefined): SpotClip | null => (placeId ? CLIPS[placeId] ?? null : null);
 
@@ -24,10 +25,14 @@ function ClipPlayer({ clip, playing }: { clip: SpotClip; playing: boolean }) {
     if (playing) player.play();
     else player.pause();
   }, [playing, player]);
+  // On the iPhone a video view is black until its first frame: keep the poster showing until
+  // then. (On the web a <video> is see-through until it has a frame.)
+  const [shown, setShown] = useState(Platform.OS === "web");
   return (
     <VideoView
       player={player}
-      style={StyleSheet.absoluteFill}
+      style={[VIDEO_FILL, { opacity: shown ? 1 : 0 }]}
+      onFirstFrameRender={() => setShown(true)}
       contentFit="cover"
       nativeControls={false}
       allowsPictureInPicture={false}
@@ -49,11 +54,13 @@ export function SpotMedia({ place, active, style, radius = 0, credit = true, onP
   fallbackUri?: string | null;
 }) {
   const clip = clipFor(place?.id);
+  // Poster first, then the spot's photo, then the designed card (PlaceImage): never blank.
+  const [posterFailed, setPosterFailed] = useState(false);
   // With onPress, the Pressable carries the size and the frame fills it.
   const body = (
     <View style={[styles.frame, { borderRadius: radius }, onPress ? styles.fillParent : style]} testID={onPress ? undefined : testID}>
-      {clip?.poster != null ? (
-        <Image source={clip.poster} style={StyleSheet.absoluteFill} contentFit="cover" />
+      {clip?.poster != null && !posterFailed ? (
+        <Image testID="spot-poster" source={clip.poster} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setPosterFailed(true)} />
       ) : (
         <PlaceImage uri={fallbackUri ?? place?.image} category={place?.category ?? "views"} style={StyleSheet.absoluteFill} emojiSize={36} />
       )}
@@ -77,7 +84,7 @@ export function SpotMedia({ place, active, style, radius = 0, credit = true, onP
 }
 
 const styles = StyleSheet.create({
-  frame: { overflow: "hidden", backgroundColor: "#1A1A1A" },
+  frame: { overflow: "hidden", backgroundColor: palette.paperDeep },
   fillParent: { width: "100%", height: "100%" },
   credit: { position: "absolute", left: 8, bottom: 8, flexDirection: "row", alignItems: "center", gap: 3, maxWidth: "85%" },
   creditText: { fontFamily: font.sans, color: "#fff", fontSize: 11, fontWeight: "600", textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 3 },

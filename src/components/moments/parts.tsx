@@ -12,6 +12,7 @@ import type { Moment } from "@/data/types";
 import { font, palette } from "@/theme/tokens";
 import { Icon } from "../ui";
 import { resolveClip } from "./clipFile";
+import { VIDEO_FILL } from "../video/fill";
 
 // BeReal's location pill: fully rounded, about 30 pt, #18181C on dark, arrow glyph + bold label.
 export function TakenHerePill({ place, demo, light, testID }: { place: string; demo?: boolean; light?: boolean; testID?: string }) {
@@ -69,7 +70,7 @@ function OwnVideo({ uri, paused, onReady, onError }: { uri: string; paused: bool
     return () => sub.remove();
   }, [player, onReady, onError]);
   useEffect(() => { if (paused) player.pause(); else player.play(); }, [paused, player]);
-  return <VideoView testID="own-video" player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />;
+  return <VideoView testID="own-video" player={player} style={VIDEO_FILL} contentFit="cover" nativeControls={false} />;
 }
 
 const styles = StyleSheet.create({
