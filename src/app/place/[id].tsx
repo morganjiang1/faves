@@ -1,268 +1,343 @@
-// Place page: a full-screen vertical player, the way TikTok plays a place's videos
-// (video/tiktok/yt_l4HrrhqS7NY_t045_video_location_anchor_caption_rail.png, 1.71 px/pt on a
-// 390 x 844 pt screen). The spot's clips fill the screen, muted and looping, and swiping up
-// moves through its other posts and then its photos (photos zoom slowly). Measured from the
-// reference:
-// - Caption block bottom left, 12 pt in: the location anchor (26 pt tall, 4 pt radius, a
-//   translucent dark fill, an 18 pt green #40B49A pin square, 13 pt label) that opens the
-//   place's Spot Moments; the bold 17 pt name line (TikTok's username line, here with the
-//   Locals Score as a small green pill where TikTok puts "· 1d ago"); 15 pt caption lines.
-// - Right rail, centered 29 pt from the right edge, about 60 pt per item: TikTok's 44 pt
-//   avatar with a 20 pt red plus (here the spot's photo: Add to a day), then 30 pt glyphs over
-//   13 pt semibold labels (Locals say with its count, Save, Share, Directions).
-// - A 2 pt progress line with a scrub dot 3 pt above the bottom of the video, and TikTok's
-//   black bottom bar with its 37 pt "Add comment..." pill (#363336), here "Been here? Rank it".
-// - Photo-mode "1/7" counter top right (moments/tiktok/press_02_local_feed_grid_place_video.jpg).
-// Details open in a dark sheet copied from TikTok's comments sheet (components/spot/DetailsSheet).
-// Netflix's dark page color and type stay from Home (#110F15, system sans).
+// A spot's page, on cream paper: a big postcard at the top playing the spot's clips (swipe
+// sideways for its other clips and photos), the Locals Score stamp on its corner, then the
+// name, a one-line vibe, open now and cost, the best thing a local said, the logistics, the
+// spot's postcard wall, where the score comes from, and a sticky bar: Add to a plan, Send to
+// a chat.
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { pagesFor, shortAgo, type MomentTab, type SpotPage } from "@/components/moments/clips";
-import { DarkError, DarkMessage } from "@/components/moments/parts";
+import { pagesFor, playCount } from "@/components/moments/clips";
+import { SendToChat, type SendItem } from "@/components/chat/SendToChat";
+import { Postmark } from "@/components/postcard/Postcard";
 import { ShareSheet } from "@/components/ShareSheet";
-import { DetailsSheet, SPOT_DARK, type DetailsTab } from "@/components/spot/DetailsSheet";
-import { PageMedia } from "@/components/spot/media";
-import { Icon, LoadingPill, OfflineBanner, PlaceImage, Toast, UserDisc, type IconName } from "@/components/ui";
-import type { Place } from "@/data/types";
-import { statusAt } from "@/lib/hours";
+import { PageMedia, PageThumb } from "@/components/spot/media";
+import { EmptyState, ErrorState, Icon, OfflineBanner, PrimaryButton, SecondaryButton, Skeleton, Stamp, Toast, UserDisc, type IconName } from "@/components/ui";
+import { services } from "@/lib/adapters";
+import { livePlace, type LivePlace } from "@/lib/adapters/places";
+import { dayHoursText, statusAt, weekLines } from "@/lib/hours";
 import { callNumber, openDirections, openUrl, shareUrl } from "@/lib/links";
-import { costOf, scoreOutOf10 } from "@/lib/score";
+import { compact, costOf, gemLine, scoreOutOf10, signalCount, vibeLine } from "@/lib/score";
+import { DAY_NAMES } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useCityClock, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { categoryInfo, font } from "@/theme/tokens";
-
-const RAIL_RIGHT = 7; // the rail's right edge, in from the screen edge
-const BAR = 45; // TikTok's bottom bar above the home indicator
+import { font, palette, shadow } from "@/theme/tokens";
 
 export default function PlacePage() {
-  const params = useLocalSearchParams<{ id: string; reserve?: string; i?: string; tab?: string; details?: string }>();
-  const placeId = decodeURIComponent(String(params.id));
-  const tab: MomentTab = params.tab === "now" ? "now" : "highlights";
+  const { id, reserve, i } = useLocalSearchParams<{ id: string; reserve?: string; i?: string }>();
+  const placeId = decodeURIComponent(String(id));
   const { city, status, error, retry } = useCity();
   const clock = useCityClock(city?.utcOffset);
   const online = useOnline();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const focused = useIsFocused();
   const saved = useStore((s) => s.saved.includes(placeId));
   const mine = useStore((s) => s.moments[placeId]);
   const hidden = useStore((s) => s.hidden);
   const transport = useStore((s) => s.profile.transport);
-  const me = useStore((s) => s.profile.name);
-  const [current, setCurrent] = useState(Math.max(0, Number(params.i) || 0));
+  const [page, setPage] = useState(Math.max(0, Number(i) || 0));
   const [share, setShare] = useState(false);
-  const [sheet, setSheet] = useState<DetailsTab | null>(params.details === "locals" || params.details === "scores" ? params.details : params.details ? "details" : null);
+  const [send, setSend] = useState<SendItem | null>(null);
+  const [week, setWeek] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [live, setLive] = useState<LivePlace | null>(null);
 
   const place = city?.byId.get(placeId) ?? null;
-  useEffect(() => { if (params.reserve === "1" && place?.reserveUrl) openUrl(place.reserveUrl); }, [params.reserve, place]);
-  const pages = useMemo(() => (place ? pagesFor(place, mine ?? [], hidden, tab) : []), [place, mine, hidden, tab]);
-  const pageH = height - BAR - Math.max(insets.bottom, 8);
+  useEffect(() => { if (reserve === "1" && place?.reserveUrl) openUrl(place.reserveUrl); }, [reserve, place]);
+  useEffect(() => {
+    if (!place || !online || !services.googlePlaces) return;
+    let on = true;
+    livePlace(place.id).then((g) => { if (on) setLive(g); });
+    return () => { on = false; };
+  }, [place, online]);
+  const pages = useMemo(() => (place ? pagesFor(place, mine ?? [], hidden) : []), [place, mine, hidden]);
+  const onViewable = useMemo(() => ({ viewableItems }: { viewableItems: ListViewToken[] }) => { const f = viewableItems[0]; if (f?.index != null) setPage(f.index); }, []);
 
-  const onViewable = useRef(({ viewableItems }: { viewableItems: ListViewToken[] }) => {
-    const first = viewableItems[0];
-    if (first?.index != null) setCurrent(first.index);
-  }).current;
-  const close = useCallback(() => (router.canGoBack() ? router.back() : router.replace("/")), []);
-
-  const shell = (body: ReactNode, testID: string) => (
-    <View style={[styles.screen, { paddingTop: insets.top }]} testID={testID}>
-      <StatusBar style="light" />
-      <View style={styles.bareTop}>
-        <Pressable testID="place-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={close}><Icon name="chevron-back" size={28} tint="#fff" /></Pressable>
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/"));
+  if (status === "loading") {
+    return (
+      <View style={[styles.screen, { paddingTop: insets.top + 60, alignItems: "center", gap: 16 }]} testID="place-loading">
+        <Skeleton style={{ width: width - 36, height: (width - 36) * 1.2, borderRadius: 20 }} />
+        <Skeleton style={{ width: "70%", height: 26 }} />
       </View>
-      <View style={{ flex: 1, justifyContent: "center", paddingBottom: 60 }}>{body}</View>
-      {!online ? <OfflineBanner /> : null}
-    </View>
-  );
-  if (status === "loading") return shell(<LoadingPill text="Loading this spot" />, "place-loading");
-  if (status === "error") return shell(<DarkError testID="place-error" title="Couldn't load this spot. Tap to retry." body={error ?? "Check your connection and try again."} onRetry={retry} />, "place-error-screen");
-  if (!place || !city) return shell(<DarkMessage testID="place-missing" title="Spot not found" body={`We couldn't find this spot in ${city?.name ?? "this city"}. It may be in another city you've switched away from.`} cta="Back to Home" onCta={() => router.replace("/")} />, "place-missing-screen");
+    );
+  }
+  if (status === "error") return <View style={[styles.screen, { justifyContent: "center" }]}><ErrorState body={error ?? "Check your connection and try again."} onRetry={retry} /></View>;
+  if (!place || !city) {
+    return <View style={[styles.screen, { justifyContent: "center" }]} testID="place-missing"><EmptyState icon="location-outline" title="Spot not found" body={`We couldn't find this spot in ${city?.name ?? "this city"}. It may be in another city you've switched away from.`} cta="Back to Home" onCta={() => router.replace("/")} /></View>;
+  }
 
-  const toggleSave = () => { actions.toggleSave(place.id); setToast(saved ? "Removed from Saved" : `${place.name} saved`); };
+  const cardW = Math.min(width, 520) - 36;
+  const mediaW = cardW - 16;
+  const st = statusAt(place, clock.day, clock.minutes);
+  const cost = costOf(place);
+  const gem = gemLine(place);
+  const quote = place.quotes[0] ?? null;
+  const clipPages = pages.filter((p) => p.kind === "clip");
+  const current = pages[Math.min(page, pages.length - 1)];
+  const poster = current?.kind === "clip" ? current.moment : null;
   const directions = () => openDirections({ ...place }, transport);
-  const rank = () => { setSheet(null); router.push(`/rank?place=${encodeURIComponent(place.id)}`); };
-  const posts = pages.filter((p) => p.kind === "clip").length;
-  const idx = Math.min(current, pages.length - 1);
+  const toggleSave = () => { actions.toggleSave(place.id); setToast(saved ? "Removed from Saved" : `${place.name} saved`); };
 
   return (
     <View style={styles.screen} testID="place-page">
-      <StatusBar style="light" />
-      <FlatList
-        data={pages}
-        keyExtractor={(p) => p.key}
-        pagingEnabled
-        showsVerticalScrollIndicator={false}
-        initialScrollIndex={Math.min(current, Math.max(0, pages.length - 1))}
-        getItemLayout={(_, index) => ({ length: pageH, offset: pageH * index, index })}
-        onViewableItemsChanged={onViewable}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 70 }}
-        style={{ height: pageH, flexGrow: 0 }}
-        renderItem={({ item, index }) => (
-          <View style={{ width, height: pageH, overflow: "hidden" }} testID={`place-page-${index}`}>
-            <PageMedia page={item} place={place} active={focused && index === idx && !share} />
-            <LinearGradient pointerEvents="none" colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.6)"]} style={styles.scrim} />
-            <Caption page={item} place={place} subreddit={city.subreddit} day={clock.day} minute={clock.minutes} posts={posts} index={index}
-              onMoments={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} onDetails={(t) => setSheet(t)} />
-            <Rail place={place} saved={saved} index={index} onAdd={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)} onLocals={() => setSheet("locals")} onSave={toggleSave} onShare={() => setShare(true)} onDirections={directions} />
-            {item.kind === "clip" ? <Progress seconds={item.moment.duration} active={focused && index === idx} /> : null}
+      <StatusBar style="dark" />
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 58, paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+        {!online ? <OfflineBanner /> : null}
+        {/* The postcard */}
+        <View style={{ alignItems: "center" }}>
+          <View style={[styles.card, { width: cardW }, shadow.card]}>
+            <View style={{ width: mediaW, height: Math.round(mediaW * 1.25), borderRadius: 14, overflow: "hidden" }}>
+              <FlatList
+                data={pages}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(p) => p.key}
+                initialScrollIndex={Math.min(page, Math.max(0, pages.length - 1))}
+                getItemLayout={(_, index) => ({ length: mediaW, offset: mediaW * index, index })}
+                onViewableItemsChanged={onViewable}
+                viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
+                renderItem={({ item, index }) => (
+                  <View style={{ width: mediaW, height: Math.round(mediaW * 1.25) }} testID={`place-media-${index}`}>
+                    <PageMedia page={item} place={place} active={focused && index === page && !share && !send} />
+                  </View>
+                )}
+              />
+              {poster ? (
+                <View style={styles.poster} pointerEvents="none">
+                  <UserDisc name={poster.mine ? "you" : poster.creator} size={20} />
+                  <Text style={styles.posterText}>{poster.mine ? "You" : `@${poster.creator}`}</Text>
+                  {poster.views ? <Text style={styles.posterMeta}>· {playCount(poster.views)} plays</Text> : null}
+                </View>
+              ) : null}
+            </View>
+            <View style={styles.cardFoot}>
+              <Postmark text={[place.hood, place.kind].filter(Boolean).join(" · ")} />
+              {pages.length > 1 ? (
+                <View style={styles.dots} testID="place-dots">
+                  {pages.map((p, k) => <View key={p.key} style={[styles.dot, k === page && styles.dotOn]} />)}
+                </View>
+              ) : null}
+            </View>
+          </View>
+          {place.unrated ? null : (
+            <View style={[styles.stamp, { right: 4 }]} testID="locals-score-row">
+              <Stamp score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} size={70} tilt={9} />
+            </View>
+          )}
+        </View>
+
+        {/* The name and the essentials */}
+        <View style={styles.head}>
+          <Text testID="place-name" style={styles.name}>{place.name}</Text>
+          <Text style={styles.vibe}>{vibeLine(place)}{gem ? ` · ${gem}` : ""}</Text>
+          <View style={styles.facts}>
+            <Fact icon="time-outline" testID="open-status" tint={st.state === "open" ? palette.open : st.state === "closed" ? palette.sunsetInk : palette.inkSoft}
+              text={st.state === "unknown" ? (place.court ? (place.court.lit ? "Lit at night" : "Daylight only") : "Hours not listed") : `${st.word}${st.detail ? ` · ${st.detail}` : ""}`} />
+            <Fact icon="cash-outline" text={cost.dollars ?? (cost.perPerson === 0 && !cost.estimated ? "Free" : cost.estimated ? `About $${cost.perPerson} each` : cost.label)} />
+            {clipPages.length ? <Fact icon="film-outline" text={`${clipPages.length} ${clipPages.length === 1 ? "clip" : "clips"}`} /> : null}
+          </View>
+        </View>
+
+        {quote ? (
+          <View style={styles.quote} testID="quotes-section">
+            <Text style={styles.quoteMark}>“</Text>
+            <Text style={styles.quoteText} testID="quote-0">{quote.text}</Text>
+            <Pressable accessibilityRole="link" onPress={() => openUrl(quote.url)} hitSlop={6}>
+              <Text style={styles.quoteSource}>r/{city.subreddit} · read the thread</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Logistics */}
+        <View style={styles.block} testID="details-section">
+          <Text style={styles.blockTitle}>getting there</Text>
+          <Pressable testID="hours-row" onPress={() => setWeek((w) => !w)} style={styles.row}>
+            <Icon name="time-outline" size={20} tint={palette.inkSoft} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowText}>
+                {st.state !== "unknown" ? <Text style={{ fontWeight: "800", color: st.state === "open" ? palette.open : palette.sunsetInk }}>{st.state === "open" ? "Open" : "Closed"}  </Text> : null}
+                {place.hours ? `${DAY_NAMES[clock.day]}: ${dayHoursText(place.hours, clock.day)}` : place.court ? "No posted hours. Public courts are usually open dawn to dusk." : "Hours not listed. Call ahead."}
+              </Text>
+              {live?.openNow != null ? <Text style={styles.rowSub} testID="live-hours">Live from Google: {live.openNow ? "open now" : "closed now"}</Text> : null}
+              {week && place.hours ? (
+                <View style={{ marginTop: 8, gap: 3 }}>
+                  {weekLines(place.hours).map((l, k) => (
+                    <View key={l.day} style={{ flexDirection: "row" }}>
+                      <Text style={[styles.week, { width: 96 }, k === clock.day && styles.weekToday]}>{l.day}</Text>
+                      <Text style={[styles.week, { flex: 1 }, k === clock.day && styles.weekToday]}>{l.text}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+            {place.hours ? <Icon name={week ? "chevron-up" : "chevron-down"} size={16} tint={palette.inkMuted} /> : null}
+          </Pressable>
+          {place.court ? <Row icon="tennisball-outline" text={`${place.court.count} ${place.court.sport} ${place.court.count === 1 ? "court" : "courts"}${place.court.surface ? `, ${place.court.surface}` : ""}${place.court.lit ? ", lit at night" : ", no lights"}`} /> : null}
+          <Row icon="cash-outline" text={cost.label} sub={cost.estimated ? `We plan on about $${cost.perPerson} per person.` : undefined} />
+          <Row icon="location-outline" text={place.address ?? place.hood ?? `${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}`} action="Directions" onPress={directions} testID="address-row" />
+          {place.phone ? <Row icon="call-outline" text={place.phone} action="Call" onPress={() => callNumber(place.phone)} testID="phone-row" /> : null}
+          {place.website ? <Row icon="globe-outline" text={place.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")} action="Open" onPress={() => openUrl(place.website)} testID="website-row" /> : null}
+          {place.reserveUrl ? <Row icon="calendar-outline" text="Book a table" action="Reserve" onPress={() => openUrl(place.reserveUrl)} testID="reserve-row" /> : null}
+          {place.description ? <Text style={styles.description}>{place.description}</Text> : null}
+        </View>
+
+        {/* The postcard wall */}
+        <View style={styles.block}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={[styles.blockTitle, { flex: 1 }]}>postcard wall</Text>
+            <Pressable testID="moments-anchor" accessibilityRole="button" onPress={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} hitSlop={8} style={styles.seeAll}>
+              <Text style={styles.seeAllText}>see all</Text>
+              <Icon name="arrow-forward" size={15} tint={palette.roseInk} />
+            </Pressable>
+          </View>
+          <View style={styles.wall}>
+            {pages.slice(0, 3).map((p, k) => (
+              <Pressable key={p.key} testID={`wall-${k}`} accessibilityRole="button" onPress={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} style={[styles.wallCard, { transform: [{ rotate: `${[-4, 3, -2][k]}deg` }] }]}>
+                <View style={{ flex: 1, borderRadius: 7, overflow: "hidden" }}><PageThumb page={p} place={place} /></View>
+              </Pressable>
+            ))}
+            <Pressable testID="post-moment" accessibilityRole="button" onPress={() => router.push(`/post-moment/${encodeURIComponent(place.id)}`)} style={[styles.wallCard, styles.wallPost]}>
+              <View style={styles.record}><View style={styles.recordDot} /></View>
+              <Text style={styles.wallPostText}>post one</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.rowSub}>Only from here, while it's open.</Text>
+        </View>
+
+        {/* Where the score comes from */}
+        {place.unrated ? null : (
+          <View style={styles.block} testID="scores-section">
+            <Text style={styles.blockTitle}>where the score comes from</Text>
+            <View style={styles.sources}>
+              <Source testID="src-google" label="Google" value={place.google ? `★ ${place.google.rating.toFixed(1)}` : "-"} sub={place.google ? `${compact(place.google.count)} reviews` : "not rated"} />
+              <Source testID="src-yelp" label="Yelp" value={place.yelp ? `★ ${place.yelp.rating.toFixed(1)}` : "-"} sub={place.yelp ? `${compact(place.yelp.count)} reviews` : "not listed"} />
+              <Source testID="src-reddit" label="Reddit" value={place.reddit.mentions ? String(place.reddit.mentions) : "-"} sub={place.reddit.mentions ? "mentions" : "no mentions"} />
+              <Source testID="src-tiktok" label="TikTok" value={place.tiktok.views ? compact(place.tiktok.views) : "-"} sub={place.tiktok.mentions ? "views" : "no posts"} />
+            </View>
+            <Text style={styles.rowSub}>Ratings from Google, Yelp and TripAdvisor; local mentions from r/{city.subreddit} and TikTok.</Text>
           </View>
         )}
-      />
-      <LinearGradient pointerEvents="none" colors={["rgba(0,0,0,0.45)", "rgba(0,0,0,0)"]} style={[styles.topShade, { height: insets.top + 64 }]} />
-      <View style={[styles.top, { top: insets.top + 6 }]} pointerEvents="box-none">
-        <Pressable testID="place-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={close} style={styles.backHit}>
-          <Icon name="chevron-back" size={28} tint="#fff" />
+        <Pressable testID="action-rank" accessibilityRole="button" onPress={() => router.push(`/rank?place=${encodeURIComponent(place.id)}`)} style={styles.rank}>
+          <Icon name="ribbon-outline" size={20} tint={palette.lavInk} />
+          <Text style={styles.rankText}>Been here? Rank it</Text>
+          <Icon name="chevron-forward" size={16} tint={palette.lavInk} />
         </Pressable>
-        {pages.length > 1 ? <Text testID="place-counter" style={styles.counter}>{idx + 1}/{pages.length}</Text> : null}
-      </View>
-      {!online ? <View style={{ position: "absolute", left: 0, right: 0, top: insets.top + 48 }}><OfflineBanner /></View> : null}
+      </ScrollView>
 
-      {/* TikTok's bottom bar: its "Add comment..." pill becomes "Been here? Rank it". */}
-      <View style={[styles.bottomBar, { height: BAR + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <Pressable testID="action-rank" accessibilityRole="button" onPress={rank} style={styles.bottomPill}>
-          <Text style={styles.bottomPillText}>Been here? Rank it</Text>
-          <Icon name="ribbon-outline" size={20} tint="#fff" />
-        </Pressable>
+      {/* Top buttons over the paper */}
+      <View style={[styles.top, { paddingTop: insets.top + 6 }]}>
+        <Round testID="place-back" icon="chevron-back" label="Back" onPress={back} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Round testID="action-save" icon={saved ? "bookmark" : "bookmark-outline"} label={saved ? "Remove from Saved" : "Save"} onPress={toggleSave} tint={saved ? palette.roseInk : palette.ink} />
+          <Round testID="action-share" icon="share-outline" label="Share" onPress={() => setShare(true)} />
+          <Round testID="action-directions" icon="navigate-outline" label="Directions" onPress={directions} />
+        </View>
       </View>
 
-      <Toast text={toast} onHide={() => setToast(null)} top={insets.top + 48} />
-      <DetailsSheet open={sheet != null} tab={sheet ?? "details"} place={place} subreddit={city.subreddit} day={clock.day} minute={clock.minutes} me={me}
-        onClose={() => setSheet(null)} onDirections={directions} onCall={() => callNumber(place.phone)} onReserve={() => openUrl(place.reserveUrl)} onRank={rank} />
+      {/* The sticky bar */}
+      <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <PrimaryButton testID="add-to-day" label="Add to a plan" icon="ticket" onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)} style={{ flex: 1 }} />
+        <SecondaryButton testID="send-to-chat" compact label="Send to a chat" icon="paper-plane-outline" onPress={() => setSend({ kind: "place", placeId: place.id, name: place.name })} style={{ flex: 1, height: 52 }} />
+      </View>
+
+      <Toast text={toast} onHide={() => setToast(null)} top={insets.top + 54} />
+      <SendToChat open={send != null} item={send} onClose={() => setSend(null)} onSent={setToast} />
       <ShareSheet open={share} onClose={() => setShare(false)} subtitle="Anyone with the link can see this spot" url={shareUrl(`/place/${encodeURIComponent(place.id)}`)} cardTitle={place.name} image={place.image} category={place.category} message={`${place.name} has a Locals Score of ${scoreOutOf10(place.locals)} on Faves`} />
     </View>
   );
 }
 
-// Bottom-left caption: Spot Moments anchor, name + score, what it is, open now, one real
-// quote, and the poster's username for a clip.
-function Caption({ page, place, subreddit, day, minute, posts, index, onMoments, onDetails }: {
-  page: SpotPage; place: Place; subreddit: string; day: number; minute: number; posts: number; index: number;
-  onMoments: () => void; onDetails: (t: DetailsTab) => void;
-}) {
-  const cost = costOf(place);
-  const st = statusAt(place, day, minute);
-  const kindLine = [place.kind ?? categoryInfo(place.category).label, cost.dollars ?? (cost.perPerson === 0 && !cost.estimated ? "Free" : null), place.hood].filter(Boolean).join(" · ");
-  const quote = place.quotes.find((q) => q.source === "reddit") ?? null;
-  const m = page.kind === "clip" ? page.moment : null;
-  const first = index === 0 ? "" : `-${index}`;
+function Round({ icon, label, onPress, testID, tint = palette.ink }: { icon: IconName; label: string; onPress: () => void; testID: string; tint?: string }) {
   return (
-    <View style={styles.caption} pointerEvents="box-none">
-      <Pressable testID={`moments-anchor${first}`} accessibilityRole="button" accessibilityLabel="Open Spot Moments" onPress={onMoments} style={styles.anchor}>
-        <View style={styles.anchorPin}><Icon name="location" size={12} tint="#fff" /></View>
-        <Text style={styles.anchorText} numberOfLines={1}>Spot Moments · {posts ? `${posts} ${posts === 1 ? "post" : "posts"}` : "post the first"}</Text>
-      </Pressable>
-      <Pressable testID={index === 0 ? "place-caption" : undefined} accessibilityRole="button" accessibilityLabel={`${place.name} details`} onPress={() => onDetails("details")}>
-        <View style={styles.nameRow} testID={index === 0 ? "locals-score-row" : undefined}>
-          <Text testID={index === 0 ? "place-name" : undefined} style={styles.name} numberOfLines={2}>{place.name}</Text>
-          {place.unrated ? null : <View style={styles.scorePill}><Text style={styles.scorePillText}>{scoreOutOf10(place.locals)}</Text></View>}
-        </View>
-        <Text style={styles.line} numberOfLines={1}>{kindLine}</Text>
-        <Text style={styles.line} numberOfLines={1} testID={index === 0 ? "open-status" : undefined}>
-          {st.state !== "unknown" ? <Text style={{ fontWeight: "700", color: st.state === "open" ? SPOT_DARK.green : SPOT_DARK.orange }}>{st.word}</Text> : null}
-          {st.state !== "unknown" && st.detail ? " · " : ""}{st.state === "unknown" ? (place.court ? (place.court.lit ? "Lit at night" : "Daylight only") : "Hours not listed") : st.detail}
-        </Text>
-      </Pressable>
-      {quote ? (
-        <Pressable accessibilityRole="button" onPress={() => onDetails("locals")}>
-          <Text style={styles.quote} numberOfLines={2}>“{quote.text}” <Text style={styles.quoteSource}>r/{subreddit}</Text></Text>
-        </Pressable>
-      ) : null}
-      {m ? (
-        <View style={styles.poster}>
-          <UserDisc name={m.mine ? "you" : m.creator} size={18} />
-          <Text style={styles.posterName} numberOfLines={1}>{m.mine ? "You" : `@${m.creator}`}</Text>
-          {m.postedAt ? <Text style={styles.posterWhen}>· {shortAgo(m.postedAt)} ago</Text> : null}
-          {m.demo ? <Text style={styles.posterWhen}>· Demo, not verified</Text> : m.takenHere ? <Text style={styles.posterWhen}>· Taken here</Text> : null}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function Rail({ place, saved, index, onAdd, onLocals, onSave, onShare, onDirections }: {
-  place: Place; saved: boolean; index: number; onAdd: () => void; onLocals: () => void; onSave: () => void; onShare: () => void; onDirections: () => void;
-}) {
-  const id = (s: string) => (index === 0 ? s : `${s}-${index}`);
-  return (
-    <View style={styles.rail} pointerEvents="box-none">
-      <Pressable testID={id("add-to-day")} accessibilityRole="button" accessibilityLabel="Add to a day" onPress={onAdd} style={styles.avatarWrap}>
-        <View style={styles.avatar}><PlaceImage uri={place.image} category={place.category} style={{ width: 42, height: 42, borderRadius: 21 }} emojiSize={20} /></View>
-        <View style={styles.plus}><Icon name="add" size={15} tint="#fff" /></View>
-      </Pressable>
-      <RailItem testID={id("action-locals")} icon="chatbubble-ellipses" label={place.quotes.length ? `${place.quotes.length}` : "Locals"} a11y="What locals say" onPress={onLocals} />
-      <RailItem testID={id("action-save")} icon="bookmark" tint={saved ? "#FACE15" : "#fff"} label={saved ? "Saved" : "Save"} a11y={saved ? "Remove from Saved" : "Save"} onPress={onSave} />
-      <RailItem testID={id("action-share")} icon="arrow-redo" label="Share" a11y="Share" onPress={onShare} />
-      <RailItem testID={id("action-directions")} icon="navigate" label="Go" a11y="Directions" onPress={onDirections} />
-    </View>
-  );
-}
-
-function RailItem({ icon, label, a11y, onPress, testID, tint = "#fff" }: { icon: IconName; label: string; a11y: string; onPress: () => void; testID: string; tint?: string }) {
-  return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={a11y} onPress={onPress} style={styles.railItem}>
-      <Icon name={icon} size={30} tint={tint} />
-      <Text style={styles.railLabel}>{label}</Text>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={[styles.round, shadow.soft]}>
+      <Icon name={icon} size={20} tint={tint} />
     </Pressable>
   );
 }
 
-// TikTok's progress line: played white with a scrub dot, the rest translucent; loops with the clip.
-function Progress({ seconds, active }: { seconds: number | null; active: boolean }) {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    v.setValue(0);
-    if (!active) return;
-    const loop = Animated.loop(Animated.timing(v, { toValue: 1, duration: Math.max(1, seconds ?? 4) * 1000, easing: Easing.linear, useNativeDriver: false }));
-    loop.start();
-    return () => loop.stop();
-  }, [active, seconds, v]);
-  const w = v.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] });
+function Fact({ icon, text, tint = palette.inkSoft, testID }: { icon: IconName; text: string; tint?: string; testID?: string }) {
   return (
-    <View style={styles.track} pointerEvents="none" testID="place-progress">
-      <Animated.View style={[styles.played, { width: w }]} />
-      <Animated.View style={[styles.dot, { left: w }]} />
+    <View style={styles.fact} testID={testID}>
+      <Icon name={icon} size={15} tint={tint} />
+      <Text style={[styles.factText, { color: tint }]}>{text}</Text>
+    </View>
+  );
+}
+
+function Row({ icon, text, sub, action, onPress, testID }: { icon: IconName; text: string; sub?: string; action?: string; onPress?: () => void; testID?: string }) {
+  return (
+    <Pressable testID={testID} disabled={!onPress} onPress={onPress} style={styles.row}>
+      <Icon name={icon} size={20} tint={palette.inkSoft} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowText}>{text}</Text>
+        {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
+      </View>
+      {action ? <Text style={styles.rowAction}>{action}</Text> : null}
+    </Pressable>
+  );
+}
+
+function Source({ label, value, sub, testID }: { label: string; value: string; sub: string; testID: string }) {
+  return (
+    <View style={styles.source} testID={testID}>
+      <Text style={styles.sourceLabel}>{label}</Text>
+      <Text style={[styles.sourceValue, value === "-" && { color: palette.inkMuted }]}>{value}</Text>
+      <Text style={styles.sourceSub} numberOfLines={1}>{sub}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#000" },
-  bareTop: { height: 48, justifyContent: "center", paddingHorizontal: 12 },
-  scrim: { position: "absolute", left: 0, right: 0, bottom: 0, height: 300 },
-  topShade: { position: "absolute", top: 0, left: 0, right: 0 },
-  top: { position: "absolute", left: 6, right: 14, height: 36, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  backHit: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  counter: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: "#fff", textShadowColor: "rgba(0,0,0,0.4)", textShadowRadius: 3 },
-  caption: { position: "absolute", left: 12, right: 76, bottom: 12, gap: 4 },
-  anchor: { alignSelf: "flex-start", height: 26, borderRadius: 4, backgroundColor: "rgba(40,36,38,0.72)", flexDirection: "row", alignItems: "center", gap: 6, paddingLeft: 4, paddingRight: 8, marginBottom: 6, maxWidth: "100%" },
-  anchorPin: { width: 18, height: 18, borderRadius: 3, backgroundColor: "#40B49A", alignItems: "center", justifyContent: "center" },
-  anchorText: { fontFamily: font.sans, fontSize: 13, color: "#fff", flexShrink: 1 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  name: { fontFamily: font.sans, fontSize: 17, lineHeight: 21, fontWeight: "700", color: "#fff", flexShrink: 1, textShadowColor: "rgba(0,0,0,0.35)", textShadowRadius: 3 },
-  scorePill: { height: 18, borderRadius: 3, backgroundColor: SPOT_DARK.green, paddingHorizontal: 5, justifyContent: "center" },
-  scorePillText: { fontFamily: font.sans, fontSize: 12, fontWeight: "800", color: "#06301C" },
-  line: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: "#fff", marginTop: 2, textShadowColor: "rgba(0,0,0,0.35)", textShadowRadius: 3 },
-  quote: { fontFamily: font.sans, fontSize: 14, lineHeight: 19, color: "rgba(255,255,255,0.92)", marginTop: 4 },
-  quoteSource: { fontWeight: "700", color: "rgba(255,255,255,0.7)" },
-  poster: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-  posterName: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: "#fff", flexShrink: 1 },
-  posterWhen: { fontFamily: font.sans, fontSize: 13, color: "rgba(255,255,255,0.72)" },
-  rail: { position: "absolute", right: RAIL_RIGHT, bottom: 70, width: 58, alignItems: "center", gap: 14 },
-  avatarWrap: { width: 48, height: 56, alignItems: "center" },
-  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: "#fff", alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundColor: "#222" },
-  plus: { position: "absolute", top: 34, width: 20, height: 20, borderRadius: 10, backgroundColor: SPOT_DARK.red, alignItems: "center", justifyContent: "center" },
-  railItem: { alignItems: "center", gap: 3, minWidth: 48 },
-  railLabel: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: "#fff", textShadowColor: "rgba(0,0,0,0.35)", textShadowRadius: 3 },
-  track: { position: "absolute", left: 12, right: 12, bottom: 3, height: 2, borderRadius: 1, backgroundColor: "rgba(255,255,255,0.25)" },
-  played: { position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: "#fff", borderRadius: 1 },
-  dot: { position: "absolute", top: -2, width: 6, height: 6, marginLeft: -3, borderRadius: 3, backgroundColor: "#fff" },
-  bottomBar: { backgroundColor: "#000", paddingHorizontal: 12, justifyContent: "center", paddingTop: 4 },
-  bottomPill: { height: 37, borderRadius: 18.5, backgroundColor: "#363336", flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingLeft: 16, paddingRight: 14 },
-  bottomPillText: { fontFamily: font.sans, fontSize: 15, color: "#A8A8A8" },
+  screen: { flex: 1, backgroundColor: palette.paper },
+  top: { position: "absolute", left: 0, right: 0, top: 0, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 14, paddingBottom: 6 },
+  round: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
+  card: { backgroundColor: palette.card, borderRadius: 22, borderWidth: 1, borderColor: palette.line, padding: 8, transform: [{ rotate: "-1deg" }] },
+  cardFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 6, paddingTop: 10, paddingBottom: 4 },
+  dots: { flexDirection: "row", gap: 5 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: palette.line },
+  dotOn: { backgroundColor: palette.roseInk, width: 16 },
+  stamp: { position: "absolute", top: -14 },
+  poster: { position: "absolute", left: 10, bottom: 10, flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(30,21,48,0.6)", borderRadius: 999, paddingLeft: 3, paddingRight: 10, paddingVertical: 3 },
+  posterText: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.cream },
+  posterMeta: { fontFamily: font.sans, fontSize: 12, color: palette.creamSoft },
+  head: { paddingHorizontal: 20, paddingTop: 22, gap: 6 },
+  name: { fontFamily: font.displayHeavy, fontSize: 32, lineHeight: 36, color: palette.ink, letterSpacing: -0.8 },
+  vibe: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft },
+  facts: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  fact: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: palette.card, borderRadius: 999, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 10, paddingVertical: 6 },
+  factText: { fontFamily: font.sans, fontSize: 13.5, fontWeight: "700" },
+  quote: { marginHorizontal: 18, marginTop: 20, padding: 16, paddingTop: 10, borderRadius: 16, backgroundColor: palette.sunsetTint, transform: [{ rotate: "0.6deg" }] },
+  quoteMark: { fontFamily: font.displayHeavy, fontSize: 44, lineHeight: 44, color: palette.sunset },
+  quoteText: { fontFamily: font.display, fontSize: 18, lineHeight: 24, color: palette.ink, marginTop: -8 },
+  quoteSource: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.sunsetInk, marginTop: 10 },
+  block: { marginHorizontal: 18, marginTop: 20, padding: 14, borderRadius: 16, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, gap: 4 },
+  blockTitle: { fontFamily: font.display, fontSize: 19, color: palette.ink, marginBottom: 4 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line },
+  rowText: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: palette.ink },
+  rowSub: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 2 },
+  rowAction: { fontFamily: font.sans, fontSize: 15, fontWeight: "800", color: palette.roseInk },
+  week: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft },
+  weekToday: { color: palette.ink, fontWeight: "800" },
+  description: { fontFamily: font.sans, fontSize: 15, lineHeight: 21, color: palette.inkSoft, paddingTop: 8 },
+  seeAll: { flexDirection: "row", alignItems: "center", gap: 3 },
+  seeAllText: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.roseInk },
+  wall: { flexDirection: "row", gap: 10, paddingVertical: 10 },
+  wallCard: { flex: 1, aspectRatio: 0.78, backgroundColor: palette.card, borderRadius: 9, borderWidth: 1, borderColor: palette.line, padding: 4 },
+  wallPost: { alignItems: "center", justifyContent: "center", gap: 6, borderStyle: "dashed", borderColor: palette.rose, backgroundColor: palette.roseTint },
+  wallPostText: { fontFamily: font.sans, fontSize: 12.5, fontWeight: "800", color: palette.roseInk },
+  record: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(201,42,79,0.25)", alignItems: "center", justifyContent: "center" },
+  recordDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: palette.roseInk },
+  sources: { flexDirection: "row", gap: 8, paddingVertical: 6 },
+  source: { flex: 1, backgroundColor: palette.paper, borderRadius: 12, padding: 8, gap: 1 },
+  sourceLabel: { fontFamily: font.sans, fontSize: 11.5, fontWeight: "800", color: palette.inkMuted, letterSpacing: 0.3 },
+  sourceValue: { fontFamily: font.display, fontSize: 18, color: palette.ink },
+  sourceSub: { fontFamily: font.sans, fontSize: 11, color: palette.inkMuted },
+  rank: { marginHorizontal: 18, marginTop: 14, flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 14, backgroundColor: palette.lavTint },
+  rankText: { flex: 1, fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.lavInk },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingTop: 12, backgroundColor: palette.paper, borderTopWidth: 1, borderTopColor: palette.line },
 });
