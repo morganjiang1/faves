@@ -67,3 +67,12 @@ export function costOf(p: Place): Cost {
   if (FREE_KIND.test(p.kind ?? "") && !/museum|club|gym|studio|center for/i.test(p.kind ?? "")) return { label: "Free to visit", perPerson: 0, estimated: true, dollars: null };
   return { label: "Price not listed", perPerson: TYPICAL[p.category] ?? 15, estimated: true, dollars: null };
 }
+
+// The local quote worth showing: a real sentence, not just the place's name.
+export function bestQuote<Q extends { text: string }>(place: { name: string; quotes: Q[] }): Q | null {
+  const name = place.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return place.quotes.find((q) => {
+    const t = q.text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    return t.length >= 24 && t !== name && t.split(" ").length >= 5;
+  }) ?? null;
+}

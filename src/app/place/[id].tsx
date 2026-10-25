@@ -19,7 +19,7 @@ import { services } from "@/lib/adapters";
 import { livePlace, type LivePlace } from "@/lib/adapters/places";
 import { dayHoursText, statusAt, weekLines } from "@/lib/hours";
 import { callNumber, openDirections, openUrl, shareUrl } from "@/lib/links";
-import { compact, costOf, gemLine, scoreOutOf10, signalCount, vibeLine } from "@/lib/score";
+import { compact, costOf, gemLine, scoreOutOf10, signalCount, vibeLine, bestQuote } from "@/lib/score";
 import { DAY_NAMES } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useCityClock, useOnline } from "@/state/device";
@@ -77,7 +77,7 @@ export default function PlacePage() {
   const st = statusAt(place, clock.day, clock.minutes);
   const cost = costOf(place);
   const gem = gemLine(place);
-  const quote = place.quotes[0] ?? null;
+  const quote = bestQuote(place);
   const clipPages = pages.filter((p) => p.kind === "clip");
   const current = pages[Math.min(page, pages.length - 1)];
   const poster = current?.kind === "clip" ? current.moment : null;
