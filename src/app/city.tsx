@@ -87,9 +87,9 @@ export default function CityPicker() {
             accessibilityState={{ disabled: !changed }}
             disabled={!changed || Boolean(switching)}
             onPress={go}
-            style={({ pressed }) => [styles.cta, { backgroundColor: changed ? color.brand : "#A2B8BB" }, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [styles.cta, { backgroundColor: changed ? palette.roseInk : palette.paperDeep }, pressed && { opacity: 0.85 }]}
           >
-            <Text style={styles.ctaLabel}>Continue</Text>
+            <Text style={[styles.ctaLabel, { color: changed ? palette.cream : palette.inkMuted }]}>Continue</Text>
           </Pressable>
         )}
       </View>
@@ -111,5 +111,5 @@ const styles = StyleSheet.create({
   fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 110 },
   footer: { height: 96, alignItems: "center", justifyContent: "center" },
   cta: { width: 300, height: 49, borderRadius: 24.5, alignItems: "center", justifyContent: "center" },
-  ctaLabel: { fontFamily: font.sans, color: "#fff", fontSize: 18, fontWeight: "600" },
+  ctaLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "800" },
 });
