@@ -257,6 +257,7 @@ interface PickState {
   windowEnd: number;
   center: LatLng | null;
   toward?: LatLng | null; // the next stop when it is already fixed: pick things on the way
+  ahead?: LatLng[]; // fixed stops later in the day (after the next one): don't stop near them now
 }
 
 function baseScore(p: Place, s: Slot, req: PlanRequest): number {
@@ -343,18 +344,29 @@ export function rankCandidates(s: Slot, prev: LatLng | null, time: number, st: P
     if (budget != null && budget > 0 && cost.perPerson > budget * 0.9) { if (!cost.estimated) continue; score -= 10; }
     if (leg) score -= Math.max(0, leg.minutes - 6) * (st.mode === "walk" ? 1.8 : 1.4);
     if (st.center && prev) score -= Math.min(12, metersBetween(st.center, p) / 800);
-    if (st.toward) score -= Math.min(30, bestLeg(p, st.toward, st.mode).minutes * 0.9);
+    if (st.toward) score -= Math.min(40, bestLeg(p, st.toward, st.mode).minutes * 1.3);
     if (st.center && !prev) score -= Math.min(40, metersBetween(st.center, p) / 250);
     if (req.hood) {
       if (p.hood === req.hood) score += 15;
       else if (st.center) score -= Math.min(25, metersBetween(st.center, p) / 300);
     }
+    // No doubling back: a stop that returns within 1 km of an earlier stop (not the one you
+    // just left) costs points, so the route keeps moving forward.
+    if (prev && usedPlaces.some((u) => (u.lat !== prev.lat || u.lng !== prev.lng) && metersBetween(u, p) < 1000)) score -= 14;
+    // ...and the same ahead: stopping next to where you'll be later means coming back.
+    if (st.ahead?.some((a) => metersBetween(a, p) < 1000)) score -= 14;
     if (relaxed) warnings.push(`No ${s.label} spot in our data, so this is the closest match`);
     const closing = p.hours ? closingWithin(p, st.day, arrive, dur) : null;
     if (closing != null) warnings.push(`Closes at ${formatClock(closing)}, ${closing - arrive} min after you arrive`);
     out.push({ place: p, score, arrive, leg, reasons, warnings });
   }
   out.sort((x, y) => y.score - x.score);
+  // When scores are close (within 4 points), the one nearer the previous stop goes first.
+  if (prev && out.length > 1) {
+    const top = out[0].score;
+    const near = out.filter((c) => c.score >= top - 4).sort((x, y) => (x.leg?.minutes ?? 0) - (y.leg?.minutes ?? 0))[0];
+    if (near !== out[0] && (out[0].leg?.minutes ?? 0) - (near.leg?.minutes ?? 0) >= 5) out.splice(out.indexOf(near), 1), out.unshift(near);
+  }
   // Keep the alternatives distinct (no two branches of the same chain).
   const seen = new Set<string>();
   const distinct: Candidate[] = [];
@@ -415,9 +427,14 @@ const DEFAULT_HOURS: Record<string, number> = { date: 5, friends: 6, family: 5, 
 export function planWindow(req: PlanRequest, ctx: PlanContext): { date: Date; weekday: number; start: number; end: number; isToday: boolean } {
   const now = ctx.now ?? new Date();
   const off = ctx.city.utcOffset;
-  const date = wallDateFor(off, req.day ?? { offsetDays: 0 }, now);
+  let date = wallDateFor(off, req.day ?? { offsetDays: 0 }, now);
   const clock = cityClock(off, now);
-  const isToday = date.getUTCDate() === clock.wall.getUTCDate() && date.getUTCMonth() === clock.wall.getUTCMonth();
+  let isToday = date.getUTCDate() === clock.wall.getUTCDate() && date.getUTCMonth() === clock.wall.getUTCMonth();
+  // "Saturday afternoon" asked on Saturday evening means next Saturday.
+  if (isToday && req.day?.weekday != null && req.start != null) {
+    const until = req.end ?? req.start + (req.durationHours ?? 3) * 60;
+    if (until <= clock.minutes + 60) { date = new Date(date.getTime() + 7 * 24 * 3600_000); isToday = false; }
+  }
   let start = req.start;
   if (start == null) {
     if (req.who === "family") start = 10 * 60 + 30;
@@ -483,8 +500,10 @@ function schedule(slots: Slot[], st: PickState, start: number, origin: LatLng | 
     }
     const nextPin = pinned.get(i + 1);
     st.toward = nextPin && !pinned.get(i) ? nextPin : null;
+    st.ahead = [...pinned.entries()].filter(([k]) => k > i + 1).map(([, p]) => p);
     const ranked = rankCandidates(s, prev, time, st, 4);
     st.toward = null;
+    st.ahead = [];
     const pin = pinned.get(i);
     let pick = (pin && ranked.find((c) => c.place.id === pin.id)) || ranked[0];
     if (pin && pick?.place.id !== pin.id && s.mustDo && s.label === pin.name) {
@@ -515,6 +534,24 @@ function schedule(slots: Slot[], st: PickState, start: number, origin: LatLng | 
     prevName = pick.place.name;
   }
   return stops;
+}
+
+// When each slot is likely to happen (the same lingering rules as schedule()), so the day's
+// anchor stops are checked against their own hours, not the start of the day: a hot pot
+// that opens at 5 PM is fine for dinner.
+function slotTimes(slots: Slot[], start: number, end: number, sunset: number | null): number[] {
+  const times: number[] = [];
+  let t = start;
+  for (let i = 0; i < slots.length; i++) {
+    const s = slots[i];
+    if (s.anchor === "meal" || s.anchor === "sunset") {
+      const slack = idealTime(s, i, start, end, sunset) - t - 12;
+      if (slack > 10) t += Math.min(slack, s.anchor === "sunset" ? 75 : 45);
+    }
+    times.push(t);
+    t += s.duration + 15;
+  }
+  return times;
 }
 
 // Something to do that fills a long gap before dinner or sunset.
@@ -586,8 +623,9 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
   // first, as a close-together pair when there are two, then build the route around them.
   let stops: PlanStop[];
   const free = { ...st, used: new Set<string>() };
+  const at = slotTimes(slots, win.start, win.end, sun?.sunset ?? null);
   const constrained = slots
-    .map((s, i) => ({ s, i, cands: (s.keywords.length && (s.mustDo || s.interest)) || s.sport ? rankCandidates(s, null, win.start, free, 40) : null }))
+    .map((s, i) => ({ s, i, cands: (s.keywords.length && (s.mustDo || s.interest)) || s.sport ? rankCandidates(s, null, at[i], free, 40) : null }))
     .filter((c): c is { s: Slot; i: number; cands: Candidate[] } => Boolean(c.cands?.length))
     .sort((x, y) => x.cands.length - y.cands.length);
   const pinned = new Map<number, Place>();
@@ -607,7 +645,7 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     if (best) { pinned.set(a.i, best[0]); pinned.set(b.i, best[1]); }
   } else if (constrained.length === 1) {
     const c = constrained[0];
-    const pick = groupStarts.length >= 2 && c.i === 0 ? fairPick(c.cands, groupStarts)?.place : center ? rankCandidates(c.s, null, win.start, free, 1)[0]?.place : c.cands[0].place;
+    const pick = groupStarts.length >= 2 && c.i === 0 ? fairPick(c.cands, groupStarts)?.place : center ? rankCandidates(c.s, null, at[c.i], free, 1)[0]?.place : c.cands[0].place;
     if (pick) pinned.set(c.i, pick);
   }
   if (included) {
@@ -628,6 +666,7 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     if (!pinned.size && anchor) pinned.set(0, anchor);
   }
   stops = schedule(slots, st, win.start, origin, pinned);
+  stops = untangle(stops, city, { weekday: win.weekday, mode, start: win.start, from: origin ?? (starts.length >= 2 ? middleOf(starts) : null) });
 
   const notes: string[] = [];
   if (sun) notes.push(`Sunset is at ${formatClock(sun.sunset)}.`);
@@ -663,6 +702,55 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     plan.fairness = fairnessFor(first, last, starts);
   }
   return plan;
+}
+
+// Re-order the day's free stops (the ones with no fixed hour and no order you asked for) to
+// cut travel: every order of them is tried (a day has at most a handful), from the group's
+// fair start point when there is one, and kept only if every stop is still open when you
+// get there and the day stays inside its window. Your "X then Y", dinner at dinner time and a
+// view at sunset never move.
+export function untangle(stops: PlanStop[], city: City, o: { weekday: number; mode: Mode; start: number; from: LatLng | null }): PlanStop[] {
+  const movable = stops.map((s, i) => (!s.slot.anchor && !s.slot.mustDo && !s.slot.interest ? i : -1)).filter((i) => i >= 0);
+  if (movable.length < 1 || stops.length < 3) return stops;
+  const places = stops.map((s) => city.byId.get(s.placeId)!);
+  const lastEnd = stops[stops.length - 1].end;
+  const walk = (order: number[]) => {
+    let t = o.start, prev: LatLng | null = o.from, travel = 0;
+    const out: PlanStop[] = [];
+    for (const i of order) {
+      const s = stops[i], p = places[i];
+      const leg = prev ? bestLeg(prev, p, o.mode) : null;
+      travel += leg?.minutes ?? 0;
+      let arrive = t + (leg?.minutes ?? 0);
+      // Fixed-hour stops keep their time if we get there early.
+      if (s.slot.anchor && arrive < s.start) arrive = s.start;
+      if (openForVisit(p.hours, o.weekday, arrive, Math.min(s.slot.duration, 45)) === false) return null;
+      const dur = s.end - s.start;
+      // The "N min from <previous stop>" line follows the new order.
+      const oldPrev = i > 0 ? places[i - 1].name : o.from ? "you" : null;
+      const prevName = out.length ? places[order[out.length - 1]].name : o.from ? "you" : null;
+      const why = s.leg && oldPrev ? s.why.replace(`${s.leg.minutes} min from ${oldPrev}.`, leg && prevName ? `${leg.minutes} min from ${prevName}.` : "").trim() : s.why;
+      out.push({ ...s, why, leg: out.length || o.from ? leg : null, start: arrive, end: arrive + dur });
+      t = arrive + dur;
+      prev = p;
+    }
+    if (t > lastEnd + 20) return null;
+    return { out, travel };
+  };
+  const base = walk(stops.map((_, i) => i));
+  if (!base) return stops;
+  let best = base;
+  const perms = (xs: number[]): number[][] => (xs.length <= 1 ? [xs] : xs.flatMap((x, k) => perms([...xs.slice(0, k), ...xs.slice(k + 1)]).map((r) => [x, ...r])));
+  for (const perm of perms(movable).slice(0, 120)) {
+    const order = stops.map((_, i) => i);
+    movable.forEach((pos, k) => { order[pos] = perm[k]; });
+    const r = walk(order);
+    if (r && r.travel < best.travel - 4) best = r;
+  }
+  if (best === base) return stops;
+  // The first stop's leg is from the start point only when there is one.
+  if (!o.from && best.out[0]) best.out[0] = { ...best.out[0], leg: null };
+  return best.out;
 }
 
 export function planCost(plan: Plan, city: City): { perPerson: number; estimated: number } {
