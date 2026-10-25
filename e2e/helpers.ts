@@ -3,6 +3,8 @@ import { expect, type Page } from "@playwright/test";
 // Console errors and warnings fail the test, except network noise from third-party
 // map tiles and images that the test machine may not reach.
 const IGNORE = [/tile\.openstreetmap\.org/, /Failed to load resource/, /tiktok\.com/, /ERR_/, /net::/];
+// A browser notice, not an app error: a clip scrolled away while it was starting to play.
+const BENIGN_PAGE_ERRORS = [/The play\(\) request was interrupted/];
 
 export function watchConsole(page: Page, expected: RegExp[] = []) {
   const problems: string[] = [];
@@ -12,7 +14,7 @@ export function watchConsole(page: Page, expected: RegExp[] = []) {
     if (from && !from.startsWith("http://localhost")) return;
     if ((m.type() === "error" || m.type() === "warning") && ![...IGNORE, ...expected].some((re) => re.test(m.text()) || re.test(from))) problems.push(`${m.type()}: ${m.text()}`);
   });
-  page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+  page.on("pageerror", (e) => { if (!BENIGN_PAGE_ERRORS.some((re) => re.test(e.message))) problems.push(`pageerror: ${e.message}`); });
   return problems;
 }
 
