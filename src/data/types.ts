@@ -63,7 +63,7 @@ export interface Moment {
   caption: string;
   duration: number | null;
   uri?: string; // local clip file for moments posted on this phone
-  asset?: { video: number; poster: number | null }; // a bundled clip
+  asset?: { video: number; poster: number | null; startAt?: number }; // a bundled clip
   kind?: "video" | "photo";
   takenHere?: boolean;
   demo?: boolean; // posted in demo mode: location not verified

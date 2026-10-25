@@ -27,7 +27,7 @@ export function spotMoments(placeId: string): Moment[] {
   if (!first) return [];
   return [first, ...(MORE_CLIPS[placeId] ?? [])].map((c, i) => ({
     id: `clip-${placeId}-${i}`, source: "faves" as const, creator: (c.creator ?? "").replace(/^@/, ""), views: c.plays ?? 0, likes: 0, postedAt: c.postedAt,
-    caption: "", duration: c.seconds, asset: { video: c.video, poster: c.poster }, kind: "video" as const, takenHere: true,
+    caption: "", duration: c.seconds, asset: { video: c.video, poster: c.poster, startAt: c.startAt }, kind: "video" as const, takenHere: true,
   }));
 }
 

@@ -17,6 +17,8 @@ function ClipPlayer({ clip, playing }: { clip: SpotClip; playing: boolean }) {
   const player = useVideoPlayer(clip.video, (p) => {
     p.loop = true;
     p.muted = true;
+    // Start on the clip's best frame (the poster), not a dark or empty first second.
+    if (clip.startAt) p.currentTime = clip.startAt;
   });
   useEffect(() => {
     if (playing) player.play();

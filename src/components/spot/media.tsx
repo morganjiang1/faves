@@ -12,10 +12,11 @@ import { PlaceImage } from "../ui";
 
 const NATIVE = Platform.OS !== "web";
 
-function BundledClip({ video, playing }: { video: number; playing: boolean }) {
+function BundledClip({ video, playing, startAt = 0 }: { video: number; playing: boolean; startAt?: number }) {
   const player = useVideoPlayer(video, (p) => {
     p.loop = true;
     p.muted = true;
+    if (startAt) p.currentTime = startAt;
   });
   useEffect(() => {
     if (playing) player.play();
@@ -57,7 +58,7 @@ export function PageMedia({ page, place, active, onFail }: { page: SpotPage; pla
     return (
       <View style={StyleSheet.absoluteFill}>
         {m.asset.poster != null ? <Image source={m.asset.poster} style={StyleSheet.absoluteFill} contentFit="cover" /> : <PlaceImage uri={place.image} category={place.category} style={StyleSheet.absoluteFill} />}
-        {active ? <BundledClip video={m.asset.video} playing={active} /> : null}
+        {active ? <BundledClip video={m.asset.video} playing={active} startAt={m.asset.startAt} /> : null}
       </View>
     );
   }
