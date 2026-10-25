@@ -287,8 +287,12 @@ export function rankCandidates(s: Slot, prev: LatLng | null, time: number, st: P
   const { req } = st;
   const budget = req.budget;
   const strictKeywords = s.keywords.length > 0 && (s.mustDo || s.interest);
+  // One stop per spot: a court named after its park ("Randall Museum pickleball courts") is
+  // the same outing as the park itself.
+  const usedNames = [...st.used].map((id) => st.city.byId.get(id)?.name.toLowerCase()).filter(Boolean) as string[];
+  const sameSpot = (p: Place) => { const n = p.name.toLowerCase(); return usedNames.some((u) => n.startsWith(u) || u.startsWith(n)); };
   const pool = st.city.places.filter((p) => {
-    if (st.used.has(p.id) || st.exclude.has(p.id) || p.temporarilyClosed) return false;
+    if (st.used.has(p.id) || st.exclude.has(p.id) || p.temporarilyClosed || sameSpot(p)) return false;
     const catOk = s.categories.includes(p.category);
     if (s.sport) return sportMatch(p, s.sport);
     if (p.court && !s.categories.includes("courts")) return false;

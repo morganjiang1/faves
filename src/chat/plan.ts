@@ -35,7 +35,7 @@ export function groupRequestText(group: Group, users: Record<string, Member>, my
 export function planForGroup(city: City, group: Group, users: Record<string, Member>, text: string, opts: { meetInMiddle: boolean; now?: Date }): Plan {
   const req = parseRequest(text, { hoods: city.hoods });
   if (!req.groupSize || req.groupSize < group.members.length) req.groupSize = group.members.length;
-  if (!req.who) req.who = group.members.length <= 2 ? "date" : "friends";
+  if (!req.who) req.who = group.members.length <= 2 ? "catch-up" : "friends";
   const starts = opts.meetInMiddle ? groupStarts(group, users) : [];
   return makePlan(req, { city, now: opts.now, starts, idSeed: `g-${group.id}` });
 }

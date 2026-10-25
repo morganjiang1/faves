@@ -117,6 +117,7 @@ export default function ChatThread() {
           placeholderTextColor={palette.inkMuted}
           style={styles.input}
           multiline
+          numberOfLines={1}
           maxLength={1000}
           onSubmitEditing={send}
           blurOnSubmit={false}
