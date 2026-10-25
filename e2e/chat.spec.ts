@@ -152,3 +152,22 @@ test("share a plan with friends: a new group with the butler and the ticket, the
   await expect(page.locator('[data-testid^="ticket-"][data-testid$="-rsvp-in"]').first()).toBeVisible();
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("a phone-only stop gets Call to book: a confirm sheet first, and the server refuses until Cartesia is set up", async ({ page, request }) => {
+  const problems = watchConsole(page, [/api\/call/, /status of 400/]);
+  const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text: "pickleball then hot pot saturday 1pm to 7pm", city: "san-francisco" } })).json();
+  const group = await (await request.post("http://localhost:8787/api/group", { data: { planId: plan.planId } })).json();
+  await startOnboarded(page, `/join/${group.code}`, { name: "Ana", handle: `anac${run}` });
+  await expect(page.getByTestId("chat-screen")).toBeVisible({ timeout: 20_000 });
+  const call = page.locator('[data-testid^="ticket-"][data-testid$="-call"]').first();
+  await expect(call).toBeVisible();
+  await call.click();
+  await expect(page.getByTestId("call-what")).toContainText("says it's an AI");
+  await page.getByTestId("call-confirm").click();
+  await expect(page.getByTestId("chat-messages")).toContainText(/set up yet|Set FAVES_CALL_NUMBER|Calling/);
+  // Never without a confirm: the server turns down a call nobody confirmed.
+  const bare = await request.post("http://localhost:8787/api/call", { data: { groupId: group.groupId, placeName: "M Pot", day: "Sat", time: "5 PM" } });
+  expect(bare.status()).toBe(400);
+  expect((await bare.json()).error).toContain("confirm");
+  expect(problems, problems.join("\n")).toEqual([]);
+});

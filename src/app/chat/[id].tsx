@@ -10,6 +10,8 @@ import { countdown } from "@/chat/calendar";
 import { groupRequestText, groupStarts, planForGroup } from "@/chat/plan";
 import { FAVES_ID, type Message, type Ticket as TicketT } from "@/chat/reduce.mjs";
 import { chat, present, serverButler, useChat } from "@/chat/store";
+import { hush, say, transcribe, voiceStatus } from "@/chat/voice";
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from "expo-audio";
 import { ChatTicket } from "@/components/chat/ChatTicket";
 import { Postcard } from "@/components/postcard/Postcard";
 import { Sheet } from "@/components/Sheet";
@@ -36,6 +38,22 @@ export default function ChatThread() {
   const [planOpen, setPlanOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  // Voice: the butler's replies read aloud, and voice notes typed out (Cartesia when set up).
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [canListen, setCanListen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [hearing, setHearing] = useState(false);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const spoken = useRef<string | null>(null);
+  useEffect(() => { voiceStatus().then((v) => setCanListen(v.ready)).catch(() => {}); }, []);
+  useEffect(() => {
+    if (!voiceOn) return;
+    const last = [...(messages ?? [])].reverse().find((m) => m.authorId === FAVES_ID && m.kind === "agent" && m.text);
+    if (!last || last.id === spoken.current) return;
+    if (spoken.current !== null) say(last.text!).catch(() => {});
+    spoken.current = last.id;
+  }, [voiceOn, messages]);
+  useEffect(() => () => hush(), []);
 
   useEffect(() => { if (group) chat.markRead(groupId); }, [groupId, group, messages?.length]);
   const [here, setHere] = useState<string[]>([]);
@@ -68,6 +86,31 @@ export default function ChatThread() {
     }
   };
 
+  const listen = async () => {
+    try {
+      if (!recording) {
+        const perm = await requestRecordingPermissionsAsync();
+        if (!perm.granted) return;
+        await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        setRecording(true);
+        return;
+      }
+      await recorder.stop();
+      setRecording(false);
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+      if (!recorder.uri) return;
+      setHearing(true);
+      const words = await transcribe(recorder.uri, Platform.OS === "web" ? "audio/webm" : "audio/m4a");
+      if (words) setText((t) => (t ? `${t} ${words}` : words));
+    } catch {
+      setRecording(false);
+    } finally {
+      setHearing(false);
+    }
+  };
+
   const live = v.status === "live";
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined} testID="chat-screen">
@@ -83,6 +126,9 @@ export default function ChatThread() {
               {group.members.length} {group.members.length === 1 ? "person" : "people"} · <Text style={{ color: live ? palette.open : palette.sunsetInk }}>{live ? (here.length > 1 ? `${here.length} here now` : "live") : "only on this phone"}</Text>
             </Text>
           </View>
+        </Pressable>
+        <Pressable testID="chat-voice" accessibilityRole="switch" accessibilityState={{ checked: voiceOn }} accessibilityLabel={voiceOn ? `${butler} reads replies aloud. Tap to stop.` : `Have ${butler} read replies aloud`} hitSlop={8} onPress={() => { if (voiceOn) hush(); else spoken.current = [...(messages ?? [])].reverse().find((m) => m.authorId === FAVES_ID && m.kind === "agent")?.id ?? ""; setVoiceOn(!voiceOn); }} style={[styles.voice, voiceOn && styles.voiceOn]}>
+          <Icon name={voiceOn ? "volume-high" : "volume-mute-outline"} size={19} tint={voiceOn ? palette.cream : palette.ink} />
         </Pressable>
         <Pressable testID="chat-add" accessibilityRole="button" accessibilityLabel="Add people" hitSlop={8} onPress={() => router.push(`/chat/info/${groupId}?add=1`)}>
           <Icon name="person-add-outline" size={22} tint={palette.ink} />
@@ -144,9 +190,15 @@ export default function ChatThread() {
           returnKeyType="send"
           submitBehavior="submit"
         />
-        <Pressable testID="composer-send" accessibilityRole="button" accessibilityLabel="Send" disabled={!text.trim()} onPress={() => send()} style={[styles.send, !text.trim() && { opacity: 0.4 }]}>
-          <Icon name="arrow-up" size={20} tint={palette.cream} />
-        </Pressable>
+        {canListen && !text.trim() ? (
+          <Pressable testID="composer-mic" accessibilityRole="button" accessibilityLabel={recording ? "Stop and type it out" : "Voice note"} onPress={listen} disabled={hearing} style={[styles.send, { backgroundColor: recording ? palette.rose : palette.ink }, hearing && { opacity: 0.5 }]}>
+            <Icon name={recording ? "stop" : "mic"} size={20} tint={palette.cream} />
+          </Pressable>
+        ) : (
+          <Pressable testID="composer-send" accessibilityRole="button" accessibilityLabel="Send" disabled={!text.trim()} onPress={() => send()} style={[styles.send, !text.trim() && { opacity: 0.4 }]}>
+            <Icon name="arrow-up" size={20} tint={palette.cream} />
+          </Pressable>
+        )}
       </View>
 
       {city ? <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} defaultText={groupRequestText(group, v.data.users, interests)} canBalance={groupStarts(group, v.data.users).length >= 2}
@@ -295,6 +347,8 @@ const styles = StyleSheet.create({
   theirs: { backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, borderBottomLeftRadius: 5 },
   faves: { backgroundColor: palette.roseTint, borderBottomLeftRadius: 5 },
   text: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.ink },
+  voice: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", marginRight: 10, borderWidth: 1, borderColor: palette.line },
+  voiceOn: { backgroundColor: palette.roseInk, borderColor: palette.roseInk },
   asks: { flexGrow: 0, backgroundColor: palette.paper },
   asksRow: { paddingHorizontal: 10, paddingTop: 6, paddingBottom: 2, gap: 6, alignItems: "center" },
   asksLabel: { flexDirection: "row", alignItems: "center", gap: 4, paddingRight: 2 },

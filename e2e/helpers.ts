@@ -4,13 +4,13 @@ import { expect, type Page } from "@playwright/test";
 // map tiles and images that the test machine may not reach.
 const IGNORE = [/tile\.openstreetmap\.org/, /Failed to load resource/, /tiktok\.com/, /ERR_/, /net::/];
 
-export function watchConsole(page: Page) {
+export function watchConsole(page: Page, expected: RegExp[] = []) {
   const problems: string[] = [];
   page.on("console", (m) => {
     // Messages from third-party frames are not ours.
     const from = m.location()?.url ?? "";
     if (from && !from.startsWith("http://localhost")) return;
-    if ((m.type() === "error" || m.type() === "warning") && !IGNORE.some((re) => re.test(m.text()))) problems.push(`${m.type()}: ${m.text()}`);
+    if ((m.type() === "error" || m.type() === "warning") && ![...IGNORE, ...expected].some((re) => re.test(m.text()) || re.test(from))) problems.push(`${m.type()}: ${m.text()}`);
   });
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
   return problems;

@@ -123,6 +123,12 @@ async function remindUs(ctx: ActionCtx, g: GroupView): Promise<string> {
   return `Reminders are set:\n${left.map((r) => `• ${r.when}: ${r.text}`).join("\n")}`;
 }
 
+// Calls never start from a message: someone taps Call to book on the ticket and confirms.
+function callFirst(g: GroupView): string {
+  if (!g.ticket) return "There's no plan to call about yet. Ask me to plan something first.";
+  return "I can call to book. Tap Call to book on the ticket and confirm, and I'll ring them. I always say I'm an AI.";
+}
+
 function summary(g: GroupView) {
   const p = g.ticket?.plan;
   const when = p?.dateISO && p.start != null ? ` on ${dayWord(p.dateISO)} at ${formatClock(p.start)}` : "";
@@ -154,6 +160,7 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
       findSpot: createTool({ description: "Find spots in the city that match a vibe or a niche ask and drop them in the chat.", inputSchema: z.object({ vibe: z.string() }), execute: async (ctx, { vibe }): Promise<string> => findByVibe(ctx, g, vibe) }),
       summarize: createTool({ description: "Sum up the chat (tl;dr).", inputSchema: z.object({}), execute: async (): Promise<string> => summary(g) }),
       book: createTool({ description: "Book the current plan: post how to book each stop (reservation links, phone, walk-in).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => (await bookIt(ctx, g)) || "Posted the booking details." }),
+      callToBook: createTool({ description: "When someone asks you to phone a place to book: explain how to confirm the call (you never dial without a confirm tap).", inputSchema: z.object({}), execute: async (): Promise<string> => callFirst(g) }),
       remind: createTool({ description: "Set or list reminders for the locked-in plan (the evening before, and leave-now for each person).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => remindUs(ctx, g) }),
     },
     stopWhen: stepCountIs(4),
@@ -166,6 +173,7 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
 async function rules(ctx: ActionCtx, g: GroupView, text: string, askedBy: string): Promise<string> {
   const t = text.replace(/@\w+/g, "").trim();
   if (/\b(tl;?dr|summary|sum up|recap)\b/i.test(t)) return summary(g);
+  if (/\b(call|phone|ring)\b/i.test(t)) return callFirst(g);
   if (/\bbook\b/i.test(t) && !/\b(book ?store|books)\b/i.test(t)) return bookIt(ctx, g);
   if (/\bremind\b/i.test(t)) return remindUs(ctx, g);
   if (g.ticket && /\b(rain|raining|late|cheaper|remove|skip)\b/i.test(t)) return changePlan(ctx, g, t, askedBy);
