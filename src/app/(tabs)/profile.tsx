@@ -1,11 +1,7 @@
-// Profile. Copies Beli's own profile (social/beli/yt_GlMma4eXe18_t192_profile_new_user.png for
-// the order: name + menu, centered 96 pt avatar with a 1 pt #D3D3D3 ring, @handle, "Member
-// since", outlined "Edit profile" / "Share profile" (33 pt, radius 5), the stats trio) with the
-// measured values of social/beli/appstore_06_profile_stats.png (43 pt rows with bold label +
-// bold count + chevron, 2-up stat cards radius 12 with a teal icon, grey label and teal bold
-// value), then Beli's iPad "Recent Activity" tab (discovery/beli/beli_appstore_ipad_profile_
-// activity.png). Works from saved data, so offline it keeps working (the tab bar shows
-// Spotify's offline bar).
+// You: a Faves passport (your initial as a stamp, name, handle, what you're into) with your
+// days, saved spots and rankings as passport stamps, then your lists in a card-stock panel,
+// rewards and streak as ticket stubs, and your recent activity. Works from saved data offline.
+// A stats row of days, saved and ranked is inspired by Beli's profile.
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -66,27 +62,35 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]} testID="profile-screen">
       <View style={styles.nav}>
-        <Text style={styles.navName} numberOfLines={1} accessibilityRole="header">{profile.name || "Your profile"}</Text>
+        <Text style={styles.navName} numberOfLines={1} accessibilityRole="header">you</Text>
         <View style={{ flexDirection: "row", gap: 20 }}>
           <Pressable testID="profile-share-icon" accessibilityRole="button" accessibilityLabel="Share profile" hitSlop={8} onPress={() => setShare(true)}><Icon name="share-outline" size={25} tint={palette.ink} /></Pressable>
           <Pressable testID="profile-menu" accessibilityRole="button" accessibilityLabel="Settings" hitSlop={8} onPress={() => router.push("/settings")}><Icon name="menu-outline" size={28} tint={palette.ink} /></Pressable>
         </View>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }} testID="profile-scroll">
-        <View style={styles.center}>
-          <Avatar name={profile.name || "You"} size={96} />
-          <Text style={styles.handle}>@{handle}</Text>
-          <Text style={styles.since}>Member since {monthYear(profile.memberSince)}</Text>
-          {interests.length ? <Text style={styles.interests} numberOfLines={2}>{interests.map((c) => `${c.emoji} ${c.short[0].toUpperCase()}${c.short.slice(1)}`).join("  ·  ")}</Text> : null}
-          <View style={styles.buttons}>
-            <OutlineButton testID="profile-edit" label="Edit profile" onPress={() => router.push("/settings")} />
-            <OutlineButton testID="profile-share" label="Share profile" onPress={() => setShare(true)} />
+        <View style={styles.passport} testID="profile-passport">
+          <View style={styles.passportTop}>
+            <View style={styles.initial}><Text style={styles.initialText}>{(profile.name || "You").slice(0, 1).toUpperCase()}</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name} numberOfLines={1}>{profile.name || "You"}</Text>
+              <Text style={styles.handle}>@{handle}</Text>
+              <Text style={styles.since}>on Faves since {monthYear(profile.memberSince)}</Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.stats}>
-          <Stat testID="stat-days" value={String(daysDone)} label="Days done" onPress={() => router.push("/saved?tab=days")} />
-          <Stat testID="stat-saved" value={String(saved.length)} label="Saved" onPress={() => router.push("/saved?tab=spots")} />
-          <Stat testID="stat-ranked" value={String(rankings.length)} label="Ranked" onPress={() => router.push("/rankings")} />
+          {interests.length ? (
+            <View style={styles.chips}>{interests.map((c) => <View key={c.id} style={styles.chip}><Text style={styles.chipText}>{c.emoji} {c.short}</Text></View>)}</View>
+          ) : null}
+          <View style={styles.perf} />
+          <View style={styles.stats}>
+            <Stat testID="stat-days" value={String(daysDone)} label="days out" tilt={-6} onPress={() => router.push("/saved?tab=days")} />
+            <Stat testID="stat-saved" value={String(saved.length)} label="saved" tilt={4} onPress={() => router.push("/saved?tab=spots")} />
+            <Stat testID="stat-ranked" value={String(rankings.length)} label="ranked" tilt={-3} onPress={() => router.push("/rankings")} />
+          </View>
+          <View style={styles.buttons}>
+            <OutlineButton testID="profile-edit" label="Edit" onPress={() => router.push("/settings")} />
+            <OutlineButton testID="profile-share" label="Share" onPress={() => setShare(true)} />
+          </View>
         </View>
 
         <View style={styles.rows}>
@@ -100,7 +104,7 @@ export default function Profile() {
 
         <View style={styles.cards}>
           <StatCard testID="card-rewards" icon="cash-outline" label="Spot rewards" value={money(cash)} onPress={() => router.push("/wallet")} tag={testWallet ? <SampleTag text="Test data" /> : null} />
-          <StatCard testID="card-streak" icon="flame" label="Weekend streak" value={`${streak} ${streak === 1 ? "weekend" : "weekends"}`} onPress={() => router.push("/saved?tab=days")} />
+          <StatCard testID="card-streak" icon="flame" label="Weekend streak" value={`${streak} in a row`} onPress={() => router.push("/saved?tab=days")} />
         </View>
 
         <View style={{ marginTop: 22 }}>
@@ -148,8 +152,7 @@ export default function Profile() {
   );
 }
 
-// Beli's activity row: avatar, "**You** ranked **La Giostra**", grey place line, score circle
-// at the right, grey date.
+// An activity row: avatar, "**You** ranked **La Giostra**", the place line, a score circle, the date.
 function ActivityRow({ a, name, testID }: { a: Activity; name: string; testID: string }) {
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={`You ${a.verb} ${a.name}`} onPress={a.onPress} style={({ pressed }) => [styles.activity, pressed && { backgroundColor: palette.paperDeep }]}>
@@ -159,31 +162,38 @@ function ActivityRow({ a, name, testID }: { a: Activity; name: string; testID: s
         {a.sub ? <Text style={styles.actSub} numberOfLines={1}>{a.sub}</Text> : null}
         <Text style={styles.actDate}>{postDate(new Date(a.at))}</Text>
       </View>
-      {a.score ? <ScoreBadge score={a.score.value} tint={a.score.tint} size={40} /> : <View style={styles.actIcon}><Icon name={a.icon === "post" ? "megaphone-outline" : "calendar-outline"} size={18} tint={color.brandDeep} /></View>}
+      {a.score ? <ScoreBadge score={a.score.value} tint={a.score.tint} size={40} /> : <View style={styles.actIcon}><Icon name={a.icon === "post" ? "megaphone-outline" : "calendar-outline"} size={18} tint={palette.roseInk} /></View>}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.paper },
-  nav: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
-  navName: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: palette.ink, flex: 1, marginRight: 12 },
-  center: { alignItems: "center", paddingHorizontal: 20, paddingTop: 2 },
-  handle: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: color.text, marginTop: 12 },
-  since: { fontFamily: font.sans, fontSize: 16, color: color.textMuted, marginTop: 3 },
-  interests: { fontFamily: font.sans, fontSize: 15, color: palette.ink, marginTop: 6, textAlign: "center" },
-  buttons: { flexDirection: "row", gap: 5, marginTop: 12, width: 245 },
-  stats: { flexDirection: "row", paddingHorizontal: 16, marginTop: 22, marginBottom: 18 },
-  rows: { borderTopWidth: 1, borderTopColor: palette.line, borderBottomWidth: 1, borderBottomColor: palette.line },
-  cards: { flexDirection: "row", gap: 10, paddingHorizontal: 12, marginTop: 18 },
-  activity: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: color.divider },
+  nav: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
+  navName: { fontFamily: font.displayHeavy, fontSize: 34, color: palette.ink, flex: 1, marginRight: 12, letterSpacing: -1 },
+  passport: { marginHorizontal: 16, marginTop: 4, backgroundColor: palette.card, borderRadius: 18, borderWidth: 1, borderColor: palette.line, padding: 16, shadowColor: palette.ink, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+  passportTop: { flexDirection: "row", alignItems: "center", gap: 14 },
+  initial: { width: 68, height: 68, borderRadius: 34, backgroundColor: palette.rose, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }], borderWidth: 3, borderColor: palette.roseTint },
+  initialText: { fontFamily: font.displayHeavy, fontSize: 32, color: palette.ink },
+  name: { fontFamily: font.display, fontSize: 24, color: palette.ink },
+  handle: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.roseInk, marginTop: 1 },
+  since: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 2 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  chip: { backgroundColor: palette.paperDeep, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  chipText: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.ink },
+  perf: { borderTopWidth: 2, borderStyle: "dashed", borderColor: palette.line, marginVertical: 14, marginHorizontal: -16 },
+  stats: { flexDirection: "row" },
+  buttons: { flexDirection: "row", gap: 8, marginTop: 14 },
+  rows: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: palette.line },
+  cards: { flexDirection: "row", gap: 10, paddingHorizontal: 16, marginTop: 14 },
+  activity: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: palette.line },
   actText: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.ink },
-  actSub: { fontFamily: font.sans, fontSize: 14, color: color.textMuted, marginTop: 2 },
+  actSub: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted, marginTop: 2 },
   actDate: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 6 },
-  actIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: color.border, alignItems: "center", justifyContent: "center" },
+  actIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   emptyActivity: { alignItems: "center", paddingHorizontal: 32, paddingVertical: 28 },
-  emptyTitle: { fontFamily: font.serif, fontSize: 20, color: color.text },
-  emptyBody: { fontFamily: font.sans, fontSize: 15, color: color.emptyBody, textAlign: "center", marginTop: 6 },
-  emptyCta: { marginTop: 14, height: 40, borderRadius: 20, backgroundColor: color.brand, paddingHorizontal: 22, alignItems: "center", justifyContent: "center" },
-  emptyCtaText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600" },
+  emptyTitle: { fontFamily: font.display, fontSize: 20, color: palette.ink },
+  emptyBody: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft, textAlign: "center", marginTop: 6 },
+  emptyCta: { marginTop: 14, height: 42, borderRadius: 14, backgroundColor: palette.roseInk, paddingHorizontal: 22, alignItems: "center", justifyContent: "center" },
+  emptyCtaText: { fontFamily: font.sans, color: palette.cream, fontSize: 16, fontWeight: "800" },
 });
