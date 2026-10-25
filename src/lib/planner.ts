@@ -591,19 +591,23 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     .filter((c): c is { s: Slot; i: number; cands: Candidate[] } => Boolean(c.cands?.length))
     .sort((x, y) => x.cands.length - y.cands.length);
   const pinned = new Map<number, Place>();
+  // Group plans: a stop that opens the day costs points for the longest trip to it.
+  const groupStarts = ctx.starts ?? [];
+  const worstTrip = (p: Place) => (groupStarts.length >= 2 ? Math.max(...groupStarts.map((g) => bestLeg(g, p, g.mode).minutes)) : 0);
   if (constrained.length >= 2) {
     const [a, b] = constrained;
     let best: [Place, Place] | null = null, bestScore = -Infinity;
-    for (const x of a.cands.slice(0, 8)) for (const y of b.cands.slice(0, 10)) {
+    for (const x of a.cands.slice(0, groupStarts.length >= 2 ? 20 : 8)) for (const y of b.cands.slice(0, groupStarts.length >= 2 ? 20 : 10)) {
       if (sameOuting(x.place, y.place)) continue;
       const leg = bestLeg(x.place, y.place, mode);
-      const score = x.score + y.score - leg.minutes * 1.5 - (center ? (metersBetween(center, x.place) + metersBetween(center, y.place)) / 400 : 0);
+      const first = a.i < b.i ? x.place : y.place;
+      const score = x.score + y.score - leg.minutes * 1.5 - (center ? (metersBetween(center, x.place) + metersBetween(center, y.place)) / 400 : 0) - worstTrip(first) * 2.5;
       if (score > bestScore) { bestScore = score; best = [x.place, y.place]; }
     }
     if (best) { pinned.set(a.i, best[0]); pinned.set(b.i, best[1]); }
   } else if (constrained.length === 1) {
     const c = constrained[0];
-    const pick = center ? rankCandidates(c.s, null, win.start, free, 1)[0]?.place : c.cands[0].place;
+    const pick = groupStarts.length >= 2 && c.i === 0 ? fairPick(c.cands, groupStarts)?.place : center ? rankCandidates(c.s, null, win.start, free, 1)[0]?.place : c.cands[0].place;
     if (pick) pinned.set(c.i, pick);
   }
   if (included) {
