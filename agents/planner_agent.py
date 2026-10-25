@@ -17,7 +17,7 @@ async def on_plan(ctx: Context, sender: str, msg: PlanRequest):
     try:
         plan = await api.plan(msg.city, msg.text, msg.friends)
         await ctx.send(sender, PlanReply(ok=True, plan=plan))
-    except Exception as e:  # the Butler falls back to the API itself
+    except Exception as e:  # the Faves Agent falls back to the API itself
         await ctx.send(sender, PlanReply(ok=False, error=str(e)))
 
 

@@ -1,5 +1,5 @@
-// Links in the butler's messages. A reservation link is hundreds of characters long, so the
-// butler writes it as a short label ("[Reserve on Google](https://...)") and the chat shows
+// Links in the agent's messages. A reservation link is hundreds of characters long, so the
+// agent writes it as a short label ("[Reserve on Google](https://...)") and the chat shows
 // just the label, tappable. Bare links (older messages) are shortened the same way, and phone
 // numbers become tappable too. Pure functions: the app, the server and Convex all use them.
 

@@ -1,4 +1,4 @@
-// Cartesia: the butler's voice (Sonic text-to-speech) and voice notes to text (Ink speech-to-text).
+// Cartesia: the agent's voice (Sonic text-to-speech) and voice notes to text (Ink speech-to-text).
 // Both need CARTESIA_API_KEY; without it each request says so and nothing is sent.
 const BASE = "https://api.cartesia.ai";
 const VERSION = "2026-08-14";

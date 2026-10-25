@@ -1,11 +1,11 @@
-"""Faves Butler: plans a fair hangout for a group of friends, in a chat.
+"""Faves Agent: plans a fair hangout for a group of friends, in a chat.
 
 Speaks the Agent Chat Protocol (so it works in ASI:One) and coordinates three agents:
 Faves Planner (the day, fair to everyone's starting point), Faves Scout (niche asks, live
 Apify runs) and Faves Booker (reservation links, walk-ins, numbers to call). The whole flow
 works in one conversation: ask -> a fair plan with each friend's travel time -> swap a stop ->
 book -> a Faves group chat invite link. It charges a small booking fee through the Payment Protocol.
-If an agent doesn't answer, the Butler calls the Faves API itself, so the chat never stalls.
+If an agent doesn't answer, the Faves Agent calls the Faves API itself, so the chat never stalls.
 """
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ chat = Protocol(spec=chat_protocol_spec)
 pay = Protocol(spec=payment_protocol_spec, role="seller")
 
 HELP = (
-    "Hi, I'm the Faves Butler. I plan hangouts that are fair for everyone.\n\n"
+    "Hi, I'm the Faves Agent. I plan hangouts that are fair for everyone.\n\n"
     "Try: **plan a Saturday in SF for me and 3 friends, we live in the Mission, the Richmond and Oakland, "
     "we like pickleball and hot pot, under $40 each**\n\n"
     "Then you can say **swap the hot pot for ramen**, **book it**, or **make a group chat**."

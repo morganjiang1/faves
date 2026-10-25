@@ -40,7 +40,7 @@ export default function ChatThread() {
   const [planOpen, setPlanOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
-  // Voice: the butler's replies read aloud, and voice notes typed out (Cartesia when set up).
+  // Voice: the agent's replies read aloud, and voice notes typed out (Cartesia when set up).
   const [voiceOn, setVoiceOn] = useState(false);
   const [canListen, setCanListen] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -81,7 +81,7 @@ export default function ChatThread() {
     if (!t) return;
     if (raw == null) setText("");
     await chat.sendText(groupId, t);
-    // With Convex the group's butler answers from the server; otherwise this phone answers.
+    // With Convex the group's agent answers from the server; otherwise this phone answers.
     if (mentionsFaves(t, group.butlerName) && city && !serverButler()) {
       setThinking(true);
       try { await answer({ city, group, users: v.data.users, tickets: v.data.tickets, text: t }); } finally { setThinking(false); }
@@ -161,7 +161,7 @@ export default function ChatThread() {
       />
 
       {!text ? (
-        // Quick asks for the group's butler.
+        // Quick asks for the group's agent.
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.asks} contentContainerStyle={styles.asksRow} testID="butler-chips">
           <View style={styles.asksLabel}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
           <Chip testID="butler-plan" label="Plan something" onPress={() => { setText(`${at} plan `); inputRef.current?.focus(); }} />
@@ -277,7 +277,7 @@ function MessageRow({ m, mine, showName, city, tickets, render }: { m: Message; 
   );
 }
 
-// Links and phone numbers in the butler's messages are tappable: a reservation link shows as
+// Links and phone numbers in the agent's messages are tappable: a reservation link shows as
 // its short label ("Reserve on Google"), never the long URL, and a number ("books by phone
 // only, call them at (415) 555-0101") calls the place, so anyone can book it themselves.
 function withLinks(text: string) {

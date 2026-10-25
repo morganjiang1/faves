@@ -1,4 +1,4 @@
-// Voice for the group chat: the butler's replies read aloud (Cartesia Sonic through the Faves
+// Voice for the group chat: the agent's replies read aloud (Cartesia Sonic through the Faves
 // server, or the phone's own voice when Cartesia isn't set up) and voice notes typed out
 // (Cartesia Ink). Keys stay on the server; the app only calls /api/tts, /api/stt, /api/voice.
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";

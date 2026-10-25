@@ -1,5 +1,5 @@
 // The chat relay as a module: state (in memory and in a JSON file), the WebSocket protocol,
-// and apply(), which the Faves API uses to act as the butler. See chat-server.mjs.
+// and apply(), which the Faves API uses to act as the agent. See chat-server.mjs.
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { WebSocketServer } from "ws";
@@ -30,7 +30,7 @@ export function createRelay({ file }) {
     for (const [ws, id] of sockets) if (who.has(id) && ws.readyState === 1) ws.send(text);
   };
 
-  // Apply one op as a member (the WebSocket clients, or the butler through the API).
+  // Apply one op as a member (the WebSocket clients, or the agent through the API).
   const apply = (actorId, op) => {
     let out;
     try { out = applyOp(state, op, { now: Date.now(), actorId }); } catch (e) { out = { events: [], error: String(e?.message || e) }; }

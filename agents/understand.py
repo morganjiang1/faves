@@ -18,7 +18,7 @@ CITIES = {
 INTENTS = {"plan", "swap", "book", "group", "scout", "help"}
 MODES = {"walk": "walk", "walking": "walk", "transit": "transit", "bus": "transit", "bart": "transit", "muni": "transit", "train": "transit", "car": "drive", "drive": "drive", "driving": "drive", "bike": "bike", "biking": "bike"}
 
-SYSTEM = """You turn a message to the Faves Butler (a group hangout planner) into JSON. Reply with JSON only:
+SYSTEM = """You turn a message to the Faves Agent (a group hangout planner) into JSON. Reply with JSON only:
 {"intent": "plan"|"swap"|"book"|"group"|"scout"|"help" ("book" also when they ask you to call a place: you share its number, you never phone anyone),
  "city": city name or null,
  "request": the plan request in plain words (what, when, budget), e.g. "saturday 1pm to 7pm, pickleball then hot pot, under $40 each",

@@ -9,8 +9,8 @@ import { components, internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 
-const MENTION = /(^|\s)@(faves?|butler)\b/i;
-// "@jarvis" when the group renamed its butler Jarvis.
+const MENTION = /(^|\s)@(faves?|agent|butler)\b/i;
+// "@jarvis" when the group renamed its agent Jarvis.
 const mentions = (text: string, name?: string) => Boolean(name) && new RegExp(`(^|\\s)@${name!.split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text);
 
 async function groupJson(ctx: QueryCtx, g: Doc<"groups">): Promise<Group> {
@@ -162,7 +162,7 @@ async function persist(ctx: MutationCtx, e: ChatEvent) {
   }
 }
 
-// Any change, from any member (or the butler).
+// Any change, from any member (or the agent).
 export const apply = mutation({
   args: { actorId: v.string(), op: v.any() },
   handler: async (ctx, { actorId, op }) => {

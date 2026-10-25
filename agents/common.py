@@ -48,7 +48,8 @@ def faves_now() -> Optional[str]:
 MAILBOX = os.getenv("FAVES_AGENTS_LOCAL") != "1"
 
 PORTS = {"butler": 8101, "planner": 8102, "scout": 8103, "booker": 8104}
-NAMES = {"butler": "Faves Butler", "planner": "Faves Planner", "scout": "Faves Scout", "booker": "Faves Booker"}
+# The orchestrator's role key stays "butler" so its seed, and so its address, never change.
+NAMES = {"butler": "Faves Agent", "planner": "Faves Planner", "scout": "Faves Scout", "booker": "Faves Booker"}
 
 
 def seed_for(role: str) -> str:

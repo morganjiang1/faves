@@ -21,7 +21,7 @@ Tokens live in `src/theme/tokens.ts`. The shared pieces live in `src/components/
 | `inkMuted` | `#6E6280` | meta text | 5.4:1 on paper |
 | `rose` | `#FF4F6D` | the Heart Pin: fills, stamps, hearts, the + tab | ink on rose 5.5:1 |
 | `roseInk` | `#C92A4F` | rose as text and as the primary button fill | cream on it 5.1:1 |
-| `roseTint` | `#FFE3E8` | the butler's bubbles, selected fills | |
+| `roseTint` | `#FFE3E8` | the agent's bubbles, selected fills | |
 | `sunset` | `#FF9A4D` | the ticket stub, highlights | ink on it 8.3:1 |
 | `sunsetInk` | `#B4501C` | "closed", warnings as text | 4.9:1 |
 | `sunsetTint` | `#FFE7D4` | warm bands | |
@@ -67,9 +67,9 @@ TikTok in the Scores section) keep their own colors because they identify the so
 | Place page | `place/[id]` | one big 4:5 postcard (clips and photos, swipe with dots), the facts written on paper below, a postcard wall of Spot Moments, sticky "Add to a plan" and "Send to a chat" |
 | Plan ticket | itinerary, chats, Home "your plans" | the ticket above; in a chat it carries In / Maybe / Out, a thumbs up, Swap a stop, Lock it in, Itinerary |
 | Pinned hangout | top of a chat | the next locked plan as a stub with a countdown, tap for directions |
-| The butler | every group chat | "Fave" (renamable), rose-tint bubbles with a heart; change notes in lavender pills say who changed what; a phone number in its message is bold and underlined, tap it to call |
+| The agent | every group chat | "Fave" (renamable), rose-tint bubbles with a heart; change notes in lavender pills say who changed what; a phone number in its message is bold and underlined, tap it to call |
 | Quick asks | above the chat composer | Plan something, Find a spot, Book it, Remind us, Running late, tl;dr |
-| Voice | chat header and composer | a speaker that reads the butler's replies aloud, a mic for voice notes |
+| Voice | chat header and composer | a speaker that reads the agent's replies aloud, a mic for voice notes |
 | Map | Explore, itinerary, day page, saved | OpenStreetMap tiles under a paper wash, emoji spot pins with names, numbered plum teardrops on the route |
 | Onboarding | first run | three of the city's postcards fanned on paper, the rose wordmark, one question per screen with postcard-framed photo tiles |
 | Empty states | everywhere | a blank tilted postcard with a dashed stamp holding the icon, a display title, one line, one button |

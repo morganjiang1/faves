@@ -64,7 +64,7 @@ export function applyOp(state, op, ctx) {
       state.groups[g.id] = group;
       const events = [{ type: "group", group }];
       if (op.patch.name && op.patch.name !== g.name) events.push(note(state, g.id, `${firstName(actor)} renamed the group to ${op.patch.name}`, now, seed));
-      if (patch.butlerName && patch.butlerName !== (g.butlerName || "Fave")) events.push(note(state, g.id, `${firstName(actor)} named the butler ${patch.butlerName}`, now, seed));
+      if (patch.butlerName && patch.butlerName !== (g.butlerName || "Fave")) events.push(note(state, g.id, `${firstName(actor)} named the agent ${patch.butlerName}`, now, seed));
       return { events, result: group };
     }
     case "setStart": {
@@ -118,7 +118,7 @@ export function applyOp(state, op, ctx) {
     case "postTicket": {
       const g = state.groups[op.ticket.groupId];
       if (!g || (!isMember(g, ctx.actorId) && ctx.actorId !== FAVES_ID)) return { events: [], error: "not-a-member" };
-      // Whoever proposes a plan is in, unless the proposer says otherwise (the butler proposes for everyone).
+      // Whoever proposes a plan is in, unless the proposer says otherwise (the agent proposes for everyone).
       const ticket = state.tickets[op.ticket.id] || { ...op.ticket, rsvps: op.ticket.rsvps || { [ctx.actorId]: "in" }, thumbs: op.ticket.thumbs || {}, createdAt: now, updatedAt: now, revision: 1 };
       state.tickets[ticket.id] = ticket;
       const message = { ...op.message, createdAt: now };
@@ -204,15 +204,15 @@ export function inviteCode(rand = Math.random) {
   return s;
 }
 
-// Is a message addressed to the group's butler? "@fave", "@faves", "@butler", or the butler's
+// Is a message addressed to the group's agent? "@fave", "@faves", "@agent", or the agent's
 // own name when the group renamed it ("@jarvis plan something").
 export function mentionsButler(text, butlerName) {
   const own = butlerName ? String(butlerName).split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
-  return new RegExp(`(^|\\s)@(faves?|butler${own ? `|${own}` : ""})\\b`, "i").test(text || "");
+  return new RegExp(`(^|\\s)@(faves?|agent|butler${own ? `|${own}` : ""})\\b`, "i").test(text || "");
 }
 
-// What people said lately, for the butler's tl;dr: only what members said to each other, never
-// the asks addressed to the butler ("@fave book it") or the butler's own messages.
+// What people said lately, for the agent's tl;dr: only what members said to each other, never
+// the asks addressed to the agent ("@fave book it") or the agent's own messages.
 export function chatterFor(messages, butlerName) {
   return messages.filter((m) => m.text && m.kind === "text" && m.authorId !== FAVES_ID && !mentionsButler(m.text, butlerName));
 }

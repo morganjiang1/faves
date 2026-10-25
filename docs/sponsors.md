@@ -9,11 +9,11 @@ Event rules that apply to everything:
 
 | Requirement | How Faves meets it |
 |---|---|
-| At least one agent registered on Agentverse | The Faves Butler (orchestrator) plus Scout, Planner and Booker agents, built with uAgents in `agents/`, connected to Agentverse through mailboxes |
-| Agent Chat Protocol (ACP) | The Butler includes the chat protocol (`chat_protocol_spec`), acknowledges every message, handles start and end of session |
+| At least one agent registered on Agentverse | The Faves Agent (orchestrator) plus Scout, Planner and Booker agents, built with uAgents in `agents/`, connected to Agentverse through mailboxes |
+| Agent Chat Protocol (ACP) | The Faves Agent includes the chat protocol (`chat_protocol_spec`), acknowledges every message, handles start and end of session |
 | Discoverable and usable through ASI:One | Published manifest, a clear agent description and keywords ("plan a hangout", "things to do with friends", "meet in the middle") |
-| Meaningful tool use or multi-agent orchestration | Butler -> Scout (Faves data + live Apify Actors) -> Planner (Locals Score, fair meet-in-the-middle, hours, sunset, routes) -> Booker (reservation links, walk-ins, the number to call for phone-only places) |
-| Complete primary workflow inside an ASI:One conversation | In ASI:One: "plan a Saturday in SF for me and 3 friends, we live in the Mission, the Richmond and Oakland, we like pickleball and hot pot, under $40 each" -> the Butler returns a day plan with each friend's travel time, lets you swap a stop, books, and creates a Faves group chat link for the friends |
+| Meaningful tool use or multi-agent orchestration | Faves Agent -> Scout (Faves data + live Apify Actors) -> Planner (Locals Score, fair meet-in-the-middle, hours, sunset, routes) -> Booker (reservation links, walk-ins, the number to call for phone-only places) |
+| Complete primary workflow inside an ASI:One conversation | In ASI:One: "plan a Saturday in SF for me and 3 friends, we live in the Mission, the Richmond and Oakland, we like pickleball and hot pot, under $40 each" -> the Faves Agent returns a day plan with each friend's travel time, lets you swap a stop, books, and creates a Faves group chat link for the friends |
 | Public GitHub repo with run and test instructions | Needs Morgan's decision (see "Needed from Morgan") |
 | README: agent names and addresses, Innovation Lab badges | `agents/README.md` with every agent's name and address and both badges |
 | Demo video, 3 to 5 minutes | Recorded at the end |
@@ -31,7 +31,7 @@ Event rules that apply to everything:
 | Convex feature | Where it shows |
 |---|---|
 | Live queries | Group chats, RSVPs, stop votes and the pinned plan ticket update on every phone instantly |
-| Agent component | The in-app Butler's threads, messages and tool calls |
+| Agent component | The in-app agent's threads, messages and tool calls |
 | Workflow component | Durable plan -> vote -> lock -> book -> remind flow that survives failures |
 | Scheduled functions and crons | Day-before and leave-now reminders with each person's travel time |
 | Vector search | "Find a spot by vibe" over the city's places |
@@ -45,9 +45,9 @@ Event rules that apply to everything:
 
 | Requirement | How Faves meets it |
 |---|---|
-| Voice is core | Voice mode: talk to your group's Butler hands-free while you're out. A voice note becomes text the Butler acts on ("@fave we're running 15 minutes late", "@fave find somewhere warm nearby, it's raining"), it updates the plan for everyone, and its replies are read aloud, so nobody has to stop and read the screen |
-| Cartesia features | Ink speech-to-text (`ink-whisper`) turns voice notes into text; Sonic text-to-speech (`sonic-3`) reads the Butler's replies aloud in the chat |
-| A working demo, one complete flow | Group chat with the speaker on -> voice note "@fave we're running 15 minutes late" -> typed out and sent -> the Butler moves the locked plan's times and the reminders and says so out loud |
+| Voice is core | Voice mode: talk to your group's agent hands-free while you're out. A voice note becomes text the agent acts on ("@fave we're running 15 minutes late", "@fave find somewhere warm nearby, it's raining"), it updates the plan for everyone, and its replies are read aloud, so nobody has to stop and read the screen |
+| Cartesia features | Ink speech-to-text (`ink-whisper`) turns voice notes into text; Sonic text-to-speech (`sonic-3`) reads the agent's replies aloud in the chat |
+| A working demo, one complete flow | Group chat with the speaker on -> voice note "@fave we're running 15 minutes late" -> typed out and sent -> the agent moves the locked plan's times and the reminders and says so out loud |
 | 2-minute demo-first presentation | Script in `docs/demo_script.md` |
 | README: setup, Cartesia features used, known limitations | Section in the main README |
 | No API keys in the repo | Keys only in `.env` (gitignored) and Convex env vars |

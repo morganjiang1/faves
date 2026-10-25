@@ -18,8 +18,8 @@ import type { Group, Member, Ticket } from "./reduce.mjs";
 import { chat } from "./store";
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-// "@fave", "@faves", "@butler", or the butler's own name when the group renamed it.
-export const mentionRe = (name?: string) => new RegExp(`(^|\\s)@(faves?|butler${name ? `|${esc(name.split(/\s+/)[0])}` : ""})\\b`, "i");
+// "@fave", "@faves", "@agent", or the agent's own name when the group renamed it.
+export const mentionRe = (name?: string) => new RegExp(`(^|\\s)@(faves?|agent|butler${name ? `|${esc(name.split(/\s+/)[0])}` : ""})\\b`, "i");
 export const mentionsFaves = (text: string, name?: string) => mentionRe(name).test(text);
 
 export function currentTicket(tickets: Record<string, Ticket>, groupId: string): Ticket | null {

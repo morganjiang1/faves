@@ -1,4 +1,4 @@
-// Each group's butler ("Fave" unless the group renames it), built on the Convex Agent
+// Each group's agent ("Fave" unless the group renames it), built on the Convex Agent
 // component: one thread per group, tools that plan, re-plan, find spots by vibe and sum up
 // the chat. It reasons with ASI:One (asi1-mini) when ASI_ONE_API_KEY is set; without a key it
 // answers with plain rules and the same tools, so it always works. Every change it makes to
@@ -55,7 +55,7 @@ export const view = internalQuery({
       members: members.map((m) => ({ id: m.userId, name: m.name })),
       starts: locs.map((l) => ({ id: l.userId, name: members.find((m) => m.userId === l.userId)?.name ?? "Someone", hood: l.hood, lat: l.lat, lng: l.lng, mode: l.mode })),
       ticket: t ? { ticketId: t.ticketId, plan: t.plan, status: t.status, going } : null,
-      // tl;dr's "Lately": what people said to each other, not the asks to the butler.
+      // tl;dr's "Lately": what people said to each other, not the asks to the agent.
       recent: chatterFor(recent, g.butlerName ?? "Fave").map((m) => ({ author: m.authorName, text: m.text! })),
     };
   },
@@ -74,7 +74,7 @@ export const setThread = internalMutation({
   },
 });
 
-// ---- What the butler can do (shared by the model's tools and the rules) --------------------
+// ---- What the agent can do (shared by the model's tools and the rules) --------------------
 
 async function planDay(ctx: ActionCtx, g: GroupView, text: string, askedBy: string, opts: { exclude?: string[]; label?: string; quiet?: boolean } = {}) {
   const friends = g.starts.map((s) => ({ id: s.id, name: s.name, from: s.hood ?? undefined, lat: s.lat, lng: s.lng, mode: s.mode }));
@@ -185,7 +185,7 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
   const options: any = {
     name: g.butlerName,
     languageModel: asi().chat("asi1-mini"),
-    instructions: `You are ${g.butlerName}, the butler in the Faves group chat "${g.name}" (${g.members.length} people). You plan hangouts that are fair for everyone's starting point, change plans when asked (rain, running late, cheaper, swap a stop), find spots by vibe, book the plan, set reminders, and sum up the chat. Use the tools to act; then answer in one or two short, warm sentences. No markdown.`,
+    instructions: `You are ${g.butlerName}, the agent in the Faves group chat "${g.name}" (${g.members.length} people). You plan hangouts that are fair for everyone's starting point, change plans when asked (rain, running late, cheaper, swap a stop), find spots by vibe, book the plan, set reminders, and sum up the chat. Use the tools to act; then answer in one or two short, warm sentences. No markdown.`,
     tools: {
       planDay: createTool({ description: "Plan a day or hangout for the group and post it as a ticket.", inputSchema: z.object({ request: z.string().describe("what, when, budget, e.g. 'saturday 1pm to 6pm, pickleball then hot pot'") }), execute: async (ctx, { request }): Promise<string> => planDay(ctx, g, request, askedBy) }),
       changePlan: createTool({ description: "Change the current plan: rain, running late, cheaper, remove or add something.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => changePlan(ctx, g, request, askedBy) }),

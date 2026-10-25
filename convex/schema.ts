@@ -1,4 +1,4 @@
-// Faves on Convex: group chats, plan tickets and the butler. Shapes match the plain JSON in
+// Faves on Convex: group chats, plan tickets and the agent. Shapes match the plain JSON in
 // src/chat/reduce.d.mts (ids made on the phone; Convex keeps its own _creationTime too).
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";

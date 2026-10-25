@@ -1,5 +1,5 @@
 // The plan flow, as a durable Convex workflow: a plan is proposed in a chat, everyone answers,
-// it gets locked in, then the butler books it and schedules reminders (the day before, and a
+// it gets locked in, then the agent books it and schedules reminders (the day before, and a
 // leave-now nudge for each person with their own travel time). Survives restarts.
 import { WorkflowManager } from "@convex-dev/workflow";
 import { v } from "convex/values";

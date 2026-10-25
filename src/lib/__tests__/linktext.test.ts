@@ -1,4 +1,4 @@
-// The butler's links: short labels in the chat, never a raw reservation URL.
+// The agent's links: short labels in the chat, never a raw reservation URL.
 import { messagePieces, plainText, reserveLabel, reserveLink } from "../linktext";
 
 const GOOGLE = "https://www.google.com/maps/reserve/v/dine/c/nqP8Fyd4GUQ?source=pa&opi=79508299&hl=en-US&sourceurl=https://www.google.com/search?q%3DEPIC%2BSteak%2B(Embarcadero)%26psi%3D" + "x".repeat(600);

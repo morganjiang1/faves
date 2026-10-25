@@ -74,18 +74,18 @@ test("typing works in the plan builder and search", async ({ page }) => {
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("the group's butler plans in the chat, and locking the plan books it and sets reminders", async ({ page }) => {
+test("the group's agent plans in the chat, and locking the plan books it and sets reminders", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganb${run}` });
   await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
   await page.getByTestId("chats-new").click();
-  await typeInto(page, "group-name", "Butler test");
+  await typeInto(page, "group-name", "Agent test");
   await page.getByTestId("add-samples").click();
   await page.getByTestId("create-group").click();
   await expect(page.getByTestId("chat-screen")).toBeVisible();
   await typeInto(page, "composer-input", "@fave plan pickleball then hot pot on saturday afternoon");
   await page.getByTestId("composer-send").click();
-  // The butler (on the server) answers with a ticket.
+  // The agent (on the server) answers with a ticket.
   const lock = page.locator('[data-testid^="ticket-"][data-testid$="-lock"]').first();
   await expect(lock).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("chat-messages")).toContainText(/Here's a plan/);
@@ -97,22 +97,22 @@ test("the group's butler plans in the chat, and locking the plan books it and se
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("an agent's plan becomes a group chat: the invite link opens it with the ticket and the butler's hello", async ({ page, request }) => {
+test("an agent's plan becomes a group chat: the invite link opens it with the ticket and the agent's hello", async ({ page, request }) => {
   const problems = watchConsole(page);
-  // What the Fetch.ai Butler does at the end of a chat in ASI:One.
+  // What the Fetch.ai Faves Agent does at the end of a chat in ASI:One.
   const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text: "pickleball then hot pot saturday 1pm to 7pm", city: "san-francisco", friends: [{ name: "Ana", from: "Inner Richmond" }, { name: "Ben", from: "Mission" }] } })).json();
   const group = await (await request.post("http://localhost:8787/api/group", { data: { planId: plan.planId } })).json();
   expect(group.code).toMatch(/^[A-Z0-9]{6}$/);
   expect(group.web).toContain(`/join/${group.code}`);
   await startOnboarded(page, `/join/${group.code}`, { name: "Ana", handle: `anaj${run}` });
   await expect(page.getByTestId("chat-screen")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByTestId("chat-messages")).toContainText("I'm Fave, this group's butler");
+  await expect(page.getByTestId("chat-messages")).toContainText("I'm Fave, this group's agent");
   await expect(page.locator('[data-testid^="ticket-"][data-testid$="-rsvp-in"]').first()).toBeVisible();
   await expect(page.getByTestId("chat-messages")).toContainText("Ana joined with the invite link");
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("rename the butler, then use its quick asks: plan, book it, remind us", async ({ page }) => {
+test("rename the agent, then use its quick asks: plan, book it, remind us", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganc${run}` });
   await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
@@ -121,14 +121,15 @@ test("rename the butler, then use its quick asks: plan, book it, remind us", asy
   await page.getByTestId("add-samples").click();
   await page.getByTestId("create-group").click();
   await expect(page.getByTestId("chat-screen")).toBeVisible();
-  // Name the butler Jarvis in group info.
+  // Name the agent Jarvis in group info.
   await page.getByTestId("chat-info").click();
   const name = page.getByTestId("info-butler-name");
   await name.fill("Jarvis");
   await name.blur();
   await expect(page.getByTestId("group-info")).toContainText("Ask with @jarvis");
+  await expect(page.getByTestId("group-info")).toContainText("THE GROUP'S AGENT");
   await page.getByTestId("info-back").click();
-  await expect(page.getByTestId("chat-messages")).toContainText("named the butler Jarvis");
+  await expect(page.getByTestId("chat-messages")).toContainText("named the agent Jarvis");
   await expect(page.getByTestId("butler-chips")).toContainText("Jarvis");
   // "Plan something" starts the ask; finish it and send.
   await page.getByTestId("butler-plan").click();
@@ -150,7 +151,7 @@ test("rename the butler, then use its quick asks: plan, book it, remind us", asy
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("share a plan with friends: a new group with the butler and the ticket, then the invite screen", async ({ page }) => {
+test("share a plan with friends: a new group with the agent and the ticket, then the invite screen", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/builder", { name: "Morgan", handle: `morgans${run}` });
   await page.getByTestId("builder-input").fill("me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus");
@@ -161,7 +162,7 @@ test("share a plan with friends: a new group with the butler and the ticket, the
   await expect(page.getByTestId("group-info")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("info-code")).toHaveText(/^[A-Z0-9]{6}$/);
   await page.getByTestId("info-back").click();
-  await expect(page.getByTestId("chat-messages")).toContainText("I'm Fave, this group's butler");
+  await expect(page.getByTestId("chat-messages")).toContainText("I'm Fave, this group's agent");
   await expect(page.locator('[data-testid^="ticket-"][data-testid$="-rsvp-in"]').first()).toBeVisible();
   expect(problems, problems.join("\n")).toEqual([]);
 });
@@ -199,7 +200,7 @@ test("a moment posted at a spot is stored in Convex and shows on that spot for e
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("the butler posts two options, the group votes with thumbs, and the butler locks in the winner", async ({ page }) => {
+test("the agent posts two options, the group votes with thumbs, and the agent locks in the winner", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganv${run}` });
   await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
@@ -226,7 +227,7 @@ test("the butler posts two options, the group votes with thumbs, and the butler 
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("running late after the plan is locked: the butler moves the times and the reminders", async ({ page }) => {
+test("running late after the plan is locked: the agent moves the times and the reminders", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganl${run}` });
   await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
@@ -253,7 +254,7 @@ test("running late after the plan is locked: the butler moves the times and the 
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("a long chat keeps the butler's quick-ask chips full height", async ({ page }) => {
+test("a long chat keeps the agent's quick-ask chips full height", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganq${run}` });
   await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
@@ -272,7 +273,7 @@ test("a long chat keeps the butler's quick-ask chips full height", async ({ page
   await expect(page.getByTestId("chat-messages")).toContainText("message 24:");
   await expect(page.getByTestId("butler-tldr")).toBeVisible();
   expect((await chips.boundingBox())!.height).toBeGreaterThanOrEqual(full - 1);
-  // The tl;dr sums up what people said, not the asks to the butler.
+  // The tl;dr sums up what people said, not the asks to the agent.
   await typeInto(page, "composer-input", "@fave remind us");
   await page.getByTestId("composer-send").click();
   await expect(page.getByTestId("chat-messages")).toContainText("There's no plan yet", { timeout: 30_000 });
@@ -284,7 +285,7 @@ test("a long chat keeps the butler's quick-ask chips full height", async ({ page
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("the butler's booking shows a reservation as a short tappable label, not the long URL", async ({ page, request }) => {
+test("the agent's booking shows a reservation as a short tappable label, not the long URL", async ({ page, request }) => {
   const problems = watchConsole(page);
   // A plan with a stop that takes reservations online.
   let planId = "";

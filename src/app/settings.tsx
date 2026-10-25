@@ -140,7 +140,7 @@ export default function Settings() {
           </Pressable>
         </Section>
         <Text style={styles.version}>Faves 0.1.0</Text>
-        <Text style={styles.credits} testID="settings-powered-by">Powered by Convex (live chats, the butler, reminders), Fetch.ai (agents on Agentverse and ASI:One), Cartesia (the butler's voice and voice notes) and Apify (live local scouting). Maps © OpenStreetMap contributors.</Text>
+        <Text style={styles.credits} testID="settings-powered-by">Powered by Convex (live chats, the agent, reminders), Fetch.ai (agents on Agentverse and ASI:One), Cartesia (the agent's voice and voice notes) and Apify (the agent's live scouting). Maps © OpenStreetMap contributors.</Text>
       </ScrollView>
 
       <Sheet open={confirm} onClose={() => setConfirm(false)} title="Reset app data?" background={BG} testID="settings-reset-sheet">

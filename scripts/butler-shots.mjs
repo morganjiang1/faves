@@ -1,7 +1,7 @@
-// The group butler end to end, for screenshots: node scripts/butler-shots.mjs [base]
+// The group agent end to end, for screenshots: node scripts/butler-shots.mjs [base]
 // Needs the web build on :8090 (built with EXPO_PUBLIC_CONVEX_URL), Convex (npm run convex) and
-// the Faves server (npm run chat-server). Two people set where they start from, ask the butler
-// for a plan, answer it, lock it in; the butler books and schedules reminders.
+// the Faves server (npm run chat-server). Two people set where they start from, ask the agent
+// for a plan, answer it, lock it in; the agent books and schedules reminders.
 // Writes docs/screens/butler-1-plan.png, butler-2-vote.png, butler-3-locked.png, butler-4-tldr.png.
 import { chromium } from "@playwright/test";
 import { join, dirname } from "node:path";

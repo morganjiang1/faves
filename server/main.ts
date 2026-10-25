@@ -226,8 +226,8 @@ async function book(body: { planId?: string; plan?: Plan }) {
   return { planId: body.planId, day: st.plan.dayLabel, groupSize: st.plan.groupSize, bookings, fee: { amount: "0.5", currency: "FET", why: "Faves booking fee for the whole group's day" } };
 }
 
-// A group chat for a plan, with the butler in it and the plan pinned as a ticket. On Convex the
-// butler isn't a member (it's the group's butler); on the relay it joins as a member.
+// A group chat for a plan, with the agent in it and the plan pinned as a ticket. On Convex the
+// agent isn't a member (it's the group's agent); on the relay it joins as a member.
 async function group(body: { planId: string; name?: string }) {
   const st = plans.get(body.planId);
   if (!st) throw new Error("No plan with that id. Plan again first.");
@@ -240,7 +240,7 @@ async function group(body: { planId: string; name?: string }) {
   await chatApply(actor, { op: "createGroup", group: { id, name, emoji: "🎟️", city: st.city.slug, members: convex ? [] : [BUTLER], inviteCode: code } } as ChatOp);
   const ticketId = `t-${Date.now().toString(36)}`;
   await chatApply(actor, { op: "postTicket", ticket: { id: ticketId, groupId: id, plan: st.plan, status: "proposed", createdBy: actor, rsvps: {} }, message: { id: `m-${ticketId}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "ticket", ticketId } } as ChatOp);
-  await chatApply(actor, { op: "send", message: { id: `m-hi-${id}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "agent", text: `Hi! I'm Fave, this group's butler. Here's the plan for ${st.plan.dayLabel}. Tap In, Maybe or Out, and set where you're starting from in group info so I can keep the first stop fair for everyone.` } } as ChatOp);
+  await chatApply(actor, { op: "send", message: { id: `m-hi-${id}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "agent", text: `Hi! I'm Fave, this group's agent. Here's the plan for ${st.plan.dayLabel}. Tap In, Maybe or Out, and set where you're starting from in group info so I can keep the first stop fair for everyone.` } } as ChatOp);
   return { groupId: id, name, code, web: `${WEB}/join/${code}`, app: `faves://join/${code}`, expoGo: `exp://${lan}:${EXPO_PORT}/--/join/${code}`, backend: convex ? "convex" : "relay" };
 }
 

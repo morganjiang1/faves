@@ -62,11 +62,12 @@ test("a group made on one phone shows up live on the other, messages and RSVPs t
   a.close(); b.close(); ren.close();
 });
 
-// The butler's tl;dr ("Lately, ...") sums up what people said to each other: never the asks
-// addressed to the butler, by any of its names, and never its own messages.
-test("tl;dr chatter leaves out @fave commands and the butler's own messages", () => {
+// The agent's tl;dr ("Lately, ...") sums up what people said to each other: never the asks
+// addressed to the agent, by any of its names, and never its own messages.
+test("tl;dr chatter leaves out @fave commands and the agent's own messages", () => {
   assert.equal(mentionsButler("@fave book it", "Fave"), true);
   assert.equal(mentionsButler("ok @faves plan saturday", "Fave"), true);
+  assert.equal(mentionsButler("@agent plan saturday", "Fave"), true);
   assert.equal(mentionsButler("@Jarvis running 15 min late", "Jarvis"), true);
   assert.equal(mentionsButler("email me at maya@fave.com", "Fave"), false);
   assert.equal(mentionsButler("who's bringing paddles?", "Jarvis"), false);

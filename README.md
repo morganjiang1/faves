@@ -2,7 +2,7 @@
 
 Never know what to do? Tell Faves who's coming and what you're into. It finds the spots locals
 actually love (courts, food, views, hidden gems), plans the whole day so it's fair for everyone's
-starting point, and lets your group chat plan it together with a butler that books and reminds.
+starting point, and lets your group chat plan it together with an agent that books and reminds.
 
 - **Spots are postcards.** Home opens on "this week in <city>", a deck of the spots locals love,
   each with a short clip and a Locals Score stamp. A spot's page is one big postcard with the
@@ -19,7 +19,7 @@ starting point, and lets your group chat plan it together with a butler that boo
 - **Plans are tickets in group chats.** Make a group, add friends by username, contacts, link or
   QR. Plans arrive as tickets with In / Maybe / Out, swaps post a note saying who changed what,
   and the next locked plan is pinned with a countdown and an add-to-calendar.
-- **Every group has a butler** ("Fave", rename it): ask it to plan, post two options and run the
+- **Every group has an agent** ("Fave", rename it): ask it to plan, post two options and run the
   vote, find a spot by vibe, book, set reminders (the evening before, and a leave-now nudge with
   each person's own travel time), handle running late (times and reminders move), or sum up the
   chat. Moments people post at a spot show up on its postcard wall for everyone. When a stop only
@@ -44,7 +44,7 @@ npm install
 Three things run side by side. Each works without the others, with less:
 
 ```sh
-npm run convex          # 1. Convex: live group chats, the butler, reminders (local, no account needed)
+npm run convex          # 1. Convex: live group chats, the agent, reminders (local, no account needed)
 npm run chat-server     # 2. the Faves server: planner API for the agents, voice (port 8787)
 npx expo start          # 3. the app
 ```
@@ -76,7 +76,7 @@ node scripts/serve-web.mjs 8090 # http://localhost:8090
 
 Invite links on the web are `http://<host>:8090/join/<code>`.
 
-### The Fetch.ai agents (Butler, Planner, Scout, Booker)
+### The Fetch.ai agents (Faves Agent, Planner, Scout, Booker)
 
 ```sh
 cd agents && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -85,7 +85,7 @@ cd agents && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python register.py     # Agentverse mailboxes (needs AGENTVERSE_API_KEY)
 ```
 
-Names, addresses and badges are in `agents/README.md`. In ASI:One the Butler plans a fair day
+Names, addresses and badges are in `agents/README.md`. In ASI:One the Faves Agent plans a fair day
 with everyone's travel times, swaps stops, books (reservation links, walk-ins, and the number to
 call for places that only book by phone), charges a booking fee through the Payment Protocol and
 makes the group chat with an invite link.
@@ -93,16 +93,16 @@ makes the group chat with an invite link.
 ### Voice (Cartesia)
 
 1. Put `CARTESIA_API_KEY` in `.env` and restart `npm run chat-server`.
-2. In a chat, tap the speaker and the butler's replies are read aloud in Cartesia's voice, so you
+2. In a chat, tap the speaker and the agent's replies are read aloud in Cartesia's voice, so you
    can plan hands-free while you're out. Tap the mic, talk, tap again, and your voice note is
-   typed out for you to send to the group or the butler ("@fave we're running 15 minutes late").
+   typed out for you to send to the group or the agent ("@fave we're running 15 minutes late").
 
 Without Cartesia the speaker uses the phone's own voice and the mic stays hidden.
 
 **Cartesia features used**
 
-- **Sonic text-to-speech** (`sonic-3`): the butler's replies read aloud in the group chat, so you can plan hands-free while you're out.
-- **Ink speech-to-text** (`ink-whisper`): voice notes in the chat become text the butler acts on ("we're running 15 minutes late").
+- **Sonic text-to-speech** (`sonic-3`): the agent's replies read aloud in the group chat, so you can plan hands-free while you're out.
+- **Ink speech-to-text** (`ink-whisper`): voice notes in the chat become text the agent acts on ("we're running 15 minutes late").
 - The API key stays on the Faves server (`server/cartesia.ts`); the app never sees it.
 
 **Known limitations**
@@ -116,7 +116,7 @@ Without Cartesia the speaker uses the phone's own voice and the mic stays hidden
 `actors/faves-local-spots` is our Apify Actor: plain words ("cozy bookstore") to OpenStreetMap
 places, ranked by what locals say on the city's subreddit, with a Locals Score and hidden-gem
 flags. `cd actors/faves-local-spots && npm install && npm test`, then `apify push` and set
-`APIFY_ACTOR` and `APIFY_TOKEN`. The Scout agent and the butler use it for asks Faves' own data
+`APIFY_ACTOR` and `APIFY_TOKEN`. The Scout agent and the group's agent use it for asks Faves' own data
 doesn't cover yet.
 
 ### Spot clips
@@ -135,9 +135,9 @@ Nothing is required. Copy `.env.example` to `.env` to turn things on. Secrets st
 |---|---|---|
 | `EXPO_PUBLIC_CONVEX_URL` | live chats on Convex (written by `npm run convex`) | app |
 | `EXPO_PUBLIC_CHAT_URL` | the Faves server's address, if not found by itself | app |
-| `ASI_ONE_API_KEY` | ASI:One as the butler's model (Convex) and the Fetch.ai Butler's reader; keyless rules otherwise | Convex, agents |
+| `ASI_ONE_API_KEY` | ASI:One as the agent's model (Convex) and the Faves Agent's reader; keyless rules otherwise | Convex, agents |
 | `AGENTVERSE_API_KEY` | Agentverse mailboxes for the four agents | agents |
-| `CARTESIA_API_KEY`, `CARTESIA_VOICE_ID` | the butler's voice (replies read aloud) and voice notes typed out | server |
+| `CARTESIA_API_KEY`, `CARTESIA_VOICE_ID` | the agent's voice (replies read aloud) and voice notes typed out | server |
 | `APIFY_TOKEN`, `APIFY_ACTOR` | live scouting with our Actor | server, agents |
 | `FAVES_API_URL`, `FAVES_WEB_URL` | where the agents and Convex reach the server, and the public web address for invite links | server, agents, Convex |
 | `EXPO_PUBLIC_GOOGLE_MAPS_KEY`, `EXPO_PUBLIC_YELP_KEY`, `EXPO_PUBLIC_LLM_*`, `EXPO_PUBLIC_TICKETMASTER_KEY` | optional live data adapters from the first build; these are built into the app, so use restricted keys or leave them empty | app |
@@ -147,13 +147,13 @@ Nothing is required. Copy `.env.example` to `.env` to turn things on. Secrets st
 ```sh
 npm test                                        # unit tests (Jest): planner, fairness, routes, chat rules, hours, links
 npm run test:relay                              # the chat relay, two phones
-npx expo export --platform web && npx playwright test   # web journeys at iPhone size, chats and the butler on Convex
+npx expo export --platform web && npx playwright test   # web journeys at iPhone size, chats and the agent on Convex
 cd actors/faves-local-spots && npm test         # the Actor's ranking
-cd agents && .venv/bin/python test_flow.py      # the Fetch.ai Butler end to end (add --real-clock for today's time)
+cd agents && .venv/bin/python test_flow.py      # the Faves Agent end to end (add --real-clock for today's time)
 ```
 
 Playwright starts the web build and `npm run chat-server`; run `npm run convex` first for the
-chat and butler flows.
+chat and agent flows.
 
 ## How it's built
 
@@ -161,9 +161,9 @@ chat and butler flows.
 - `src/lib/`: the planner (`parser.ts`, `planner.ts`), fairness (`fair.ts`), scores, hours,
   sunset, travel legs, vibe vectors.
 - `src/chat/`: one set of chat rules (`reduce.mjs`) shared by the phone, the relay and Convex;
-  transports (`convex.ts`, `relay.ts`, `local.ts`) behind one interface; the on-phone butler;
+  transports (`convex.ts`, `relay.ts`, `local.ts`) behind one interface; the on-phone agent;
   voice.
-- `convex/`: tables, the live chat query and mutation, the butler (Convex Agent with tools), the
+- `convex/`: tables, the live chat query and mutation, the agent (Convex Agent with tools), the
   plan workflow (lock, book, remind), crons, presence, vector search, clip storage.
 - `server/`: the Faves server (planner API for the agents, relay, Cartesia).
 - `agents/`: the Fetch.ai uAgents. `actors/`: the Apify Actor. `data/scripts/`: the city data

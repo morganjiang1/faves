@@ -25,14 +25,14 @@ export function SendToChat({ open, item, onClose, onSent }: { open: boolean; ite
     onSent?.(`Sent to ${groups[groupId]?.name ?? "the chat"}`);
     router.push(`/chat/${groupId}`);
   };
-  // A new group for the thing: for a plan, the group's butler joins in with the ticket and a
+  // A new group for the thing: for a plan, the group's agent joins in with the ticket and a
   // hello, and you land on the invite screen to bring friends in.
   const newGroup = async () => {
     if (!item) return;
     const g = await chat.createGroup({ name: title.slice(0, 40) || "New plan", emoji: item.kind === "place" ? "📍" : "🎟️", members: [], city: item.kind === "plan" ? item.plan.citySlug : city });
     if (item.kind !== "plan") return send(g.id);
     const ticketId = await chat.postTicket(g.id, item.plan);
-    await chat.sayAsFaves(g.id, { ticketId, text: `Hi! I'm Fave, this group's butler. Here's the plan for ${item.plan.dayLabel}. Everyone taps In, Maybe or Out, and sets where they're starting from in group info so I can keep the first stop fair. Ask me with @fave to change it, book it or remind you.` });
+    await chat.sayAsFaves(g.id, { ticketId, text: `Hi! I'm Fave, this group's agent. Here's the plan for ${item.plan.dayLabel}. Everyone taps In, Maybe or Out, and sets where they're starting from in group info so I can keep the first stop fair. Ask me with @fave to change it, book it or remind you.` });
     onClose();
     onSent?.(`Made ${g.name}`);
     router.push(`/chat/${g.id}`);
@@ -45,7 +45,7 @@ export function SendToChat({ open, item, onClose, onSent }: { open: boolean; ite
           <View style={[styles.sticker, { backgroundColor: palette.roseInk, borderColor: palette.roseInk }]}><Icon name="add" size={22} tint={palette.cream} /></View>
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>New group for this</Text>
-            <Text style={styles.sub}>{item?.kind === "plan" ? "With Fave, the butler, and the ticket. Then invite friends" : "Then invite friends with a link"}</Text>
+            <Text style={styles.sub}>{item?.kind === "plan" ? "With Fave, the agent, and the ticket. Then invite friends" : "Then invite friends with a link"}</Text>
           </View>
         </Pressable>
         {list.map((g, i) => (

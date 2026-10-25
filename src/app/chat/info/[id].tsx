@@ -145,11 +145,11 @@ export default function GroupInfo() {
           {Platform.OS !== "web" ? <Row icon="people-circle-outline" label="Invite from contacts" onPress={fromContacts} testID="info-contacts" /> : null}
         </Section>
 
-        <Section title="THE GROUP'S BUTLER">
+        <Section title="THE GROUP'S AGENT">
           <View style={styles.member}>
             <View style={styles.butlerDisc}><Icon name="heart" size={18} tint={palette.cream} /></View>
             <View style={{ flex: 1, gap: 4 }}>
-              <TextInput testID="info-butler-name" value={butler} onChangeText={setButler} onBlur={saveButler} onSubmitEditing={saveButler} returnKeyType="done" style={styles.butlerInput} maxLength={20} autoCorrect={false} accessibilityLabel="Butler's name" />
+              <TextInput testID="info-butler-name" value={butler} onChangeText={setButler} onBlur={saveButler} onSubmitEditing={saveButler} returnKeyType="done" style={styles.butlerInput} maxLength={20} autoCorrect={false} accessibilityLabel="The agent's name" />
               <Text style={styles.sub}>Plans, books, reminds and sums up. Ask with @{(butler.trim() || "Fave").split(/\s+/)[0].toLowerCase()}. It's an AI.</Text>
             </View>
           </View>

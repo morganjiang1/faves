@@ -1,4 +1,4 @@
-"""The whole Butler flow in one conversation, the way ASI:One would have it, run locally:
+"""The whole Faves Agent flow in one conversation, the way ASI:One would have it, run locally:
 ask -> fair group plan with travel times -> swap a stop -> book (and pay the fee) -> group chat link.
 
     python test_flow.py               (needs the Faves server: npm run chat-server)
@@ -219,7 +219,7 @@ user.include(pay)
 
 
 def check_formatting() -> None:
-    """The Butler's wording on cases a live plan may not hit: a reservation link shows as a short
+    """The Faves Agent's wording on cases a live plan may not hit: a reservation link shows as a short
     label, and a swap that can't find the named stop says what it changed instead."""
     from butler import booking_text, swap_line
 

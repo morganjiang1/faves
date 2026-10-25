@@ -257,7 +257,7 @@ export const chat = {
   markRead,
 };
 
-// With Convex, each group's butler runs on the server; with the relay, @faves runs here.
+// With Convex, each group's agent runs on the server; with the relay, @faves runs here.
 export const serverButler = () => view.backend === "convex" && view.status === "live";
 
 // Who's in a chat right now (Convex presence). Returns how to stop.
