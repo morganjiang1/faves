@@ -4,7 +4,7 @@
 // the moment (no plan, a proposed plan, a locked plan), the rest under "More".
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View, type LayoutChangeEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { answer, currentTicket, mentionsFaves } from "@/chat/agent";
 import { countdown } from "@/chat/calendar";
@@ -102,9 +102,9 @@ export default function ChatThread() {
     { id: "late", label: "Running late", icon: "time-outline", sub: "Moves the times and reminders", when: current?.status === "locked", run: () => start("running 15 min late") },
     { id: "tldr", label: "tl;dr", icon: "reader-outline", sub: "Catch up on the chat", when: long, run: () => send(`${at} tl;dr`) },
   ];
-  // The three that fit the moment.
-  const pick = current?.status === "locked" ? ["late", "remind", "book"] : current ? ["book", "tldr", "plan", "options"] : ["plan", "find", long ? "tldr" : "options"];
-  const shown = pick.map((id) => ASKS.find((a) => a.id === id)!).filter((a) => a.when).slice(0, 3);
+  // The asks that fit the moment, most useful first; the row shows as many as fit whole.
+  const pick = current?.status === "locked" ? ["late", "remind", "book", "tldr"] : current ? ["book", "tldr", "plan", "options"] : long ? ["plan", "tldr", "options", "find"] : ["plan", "options", "find"];
+  const shown = pick.map((id) => ASKS.find((a) => a.id === id)!).filter((a) => a.when);
 
   const listen = async () => {
     try {
@@ -180,15 +180,7 @@ export default function ChatThread() {
 
       {!text ? (
         // Quick asks for the group's agent: the ones that fit right now, then "More".
-        <View style={styles.asks} testID="butler-chips">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={styles.asksRow}>
-            <View style={styles.asksLabel}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
-            {shown.map((a) => <Chip key={a.id} testID={`butler-${a.id}`} label={a.label} onPress={a.run} />)}
-          </ScrollView>
-          <Pressable testID="butler-more" accessibilityRole="button" accessibilityLabel={`More things ${butler} can do`} onPress={() => setAsksOpen(true)} style={styles.asksMore}>
-            <Icon name="add" size={20} tint={palette.ink} />
-          </Pressable>
-        </View>
+        <AskRow butler={butler} asks={shown} onMore={() => setAsksOpen(true)} />
       ) : null}
       <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <Pressable testID="composer-plan" accessibilityRole="button" accessibilityLabel="Plan a hangout" onPress={() => setPlanOpen(true)} style={styles.planButton}>
@@ -231,6 +223,64 @@ export default function ChatThread() {
           if (plan.stops.length) await chat.postTicket(groupId, plan);
         }} /> : null}
     </KeyboardAvoidingView>
+  );
+}
+
+// The quick asks: the agent's name, then only the chips that fit whole next to the pinned "+"
+// (never a clipped label like "Boc"); the ones that don't fit stay under "+". A chip's natural
+// width comes from its label in the chip's font: on the web measured right away on a canvas,
+// on the phone from an invisible copy's layout (a generous estimate until then, so a chip is
+// never drawn wider than its room).
+type Ask = { id: string; label: string; run: () => void };
+const ASK_PAD = 10, ASK_GAP = 6;
+const askWidths = new Map<string, number>(); // measured natural widths, kept across re-mounts
+let canvas: CanvasRenderingContext2D | null | undefined;
+function textWidth(text: string, weight: number, size: number): number | null {
+  if (Platform.OS !== "web" || typeof document === "undefined") return null;
+  if (canvas === undefined) canvas = document.createElement("canvas").getContext("2d");
+  if (!canvas) return null;
+  canvas.font = `${weight} ${size}px ${font.sans}`;
+  return canvas.measureText(text).width;
+}
+// Chip: 15 pt padding each side, the label in 15 pt semibold. The name: a 12 pt heart, a 4 pt
+// gap and the name in 13 pt bold, 2 pt padding.
+const chipWidth = (label: string) => askWidths.get(label) ?? Math.ceil((textWidth(label, 600, 15) ?? label.length * 8.6 + 6) + 32);
+const nameWidth = (key: string, name: string) => askWidths.get(key) ?? Math.ceil((textWidth(name, 700, 13) ?? name.length * 9) + 20);
+function AskRow({ butler, asks, onMore }: { butler: string; asks: Ask[]; onMore: () => void }) {
+  const [room, setRoom] = useState(0);
+  const [, setMeasured] = useState(0);
+  const measure = (key: string) => (e: LayoutChangeEvent) => {
+    const w = Math.ceil(e.nativeEvent.layout.width);
+    if (w > 0 && askWidths.get(key) !== w) { askWidths.set(key, w); setMeasured((n) => n + 1); }
+  };
+  const labelKey = `label:${butler}`;
+  const label = nameWidth(labelKey, butler);
+  const fit: Ask[] = [];
+  if (room > 0) {
+    let used = ASK_PAD + label;
+    for (const a of asks) {
+      const w = chipWidth(a.label);
+      if (used + ASK_GAP + w <= room) { used += ASK_GAP + w; fit.push(a); }
+    }
+  }
+  return (
+    <View style={styles.asks} testID="butler-chips">
+      <View style={styles.asksFit} onLayout={(e) => setRoom(Math.floor(e.nativeEvent.layout.width))}>
+        <View style={styles.asksLabel} onLayout={measure(labelKey)}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
+        {fit.map((a) => <Chip key={a.id} testID={`butler-${a.id}`} label={a.label} onPress={a.run} />)}
+      </View>
+      <Pressable testID="butler-more" accessibilityRole="button" accessibilityLabel={`More things ${butler} can do`} onPress={onMore} style={styles.asksMore}>
+        <Icon name="add" size={20} tint={palette.ink} />
+      </Pressable>
+      {/* On the phone, invisible copies of the chips, only to measure them. */}
+      {Platform.OS !== "web" ? (
+        <View style={styles.asksMeasure} pointerEvents="none" aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <View style={styles.asksMeasureRow}>
+            {asks.map((a) => <View key={a.id} onLayout={measure(a.label)}><Chip label={a.label} /></View>)}
+          </View>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -387,11 +437,13 @@ const styles = StyleSheet.create({
   voice: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", marginRight: 10, borderWidth: 1, borderColor: palette.line },
   voiceOn: { backgroundColor: palette.roseInk, borderColor: palette.roseInk },
   // Never squeezed by a long chat: the message list shrinks, the chips keep their height.
-  asks: { flexGrow: 0, flexShrink: 0, flexDirection: "row", alignItems: "center", paddingTop: 6, paddingBottom: 2, paddingRight: 10, backgroundColor: palette.paper },
-  asksRow: { paddingHorizontal: 10, gap: 6, alignItems: "center" },
+  asks: { flexGrow: 0, flexShrink: 0, flexDirection: "row", alignItems: "center", minHeight: 48, paddingTop: 6, paddingBottom: 2, paddingRight: 10, backgroundColor: palette.paper },
+  asksFit: { flex: 1, flexDirection: "row", alignItems: "center", gap: ASK_GAP, paddingLeft: ASK_PAD, overflow: "hidden" },
+  asksMeasure: { position: "absolute", left: 0, top: 0, width: 0, height: 0, overflow: "hidden", opacity: 0 },
+  asksMeasureRow: { flexDirection: "row", width: 1200 },
   asksLabel: { flexDirection: "row", alignItems: "center", gap: 4, paddingRight: 2 },
   asksName: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.roseInk },
-  asksMore: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.paperDeep, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
+  asksMore: { marginLeft: ASK_GAP, width: 40, height: 40, borderRadius: 20, backgroundColor: palette.paperDeep, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   composer: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: palette.line, backgroundColor: palette.paper },
   planButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: palette.sunset, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }] },
   input: { flex: 1, minHeight: 40, maxHeight: 120, borderRadius: 20, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontFamily: font.sans, fontSize: 16, color: palette.ink },

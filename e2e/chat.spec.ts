@@ -140,6 +140,10 @@ test("rename the agent, then use its quick asks: plan, book it, remind us", asyn
   await expect(lock).toBeVisible({ timeout: 30_000 });
   await page.getByTestId("butler-book").click();
   await expect(page.getByTestId("chat-messages")).toContainText("Here's how to book it", { timeout: 30_000 });
+  // Each stop's booking stays readable when it wraps: "walk-in" and "call (415) 571-8076" never split.
+  const booking = await page.getByTestId("chat-messages").getByText(/Here's how to book it/).first().evaluate((el) => (el as HTMLElement).innerText);
+  expect(booking).not.toMatch(/walk in|: call /);
+  for (const line of booking.split("\n").slice(1)) expect(line).toMatch(/ ·\u00A0(walk\u2011in|call\u00A0\(\d{3}\)\u00A0\d{3}\u2011\d{4}|Reserve on Google|Book on \w+|Book a table)$/);
   // Reservation links show as a short label, never the raw URL.
   await expect(page.getByTestId("chat-messages")).not.toContainText("https://");
   const links = page.getByTestId("msg-link");
@@ -360,3 +364,50 @@ test("the ticket keeps the details one tap away: each person's trip, plan option
   await expect(page.getByTestId("chat-messages")).toContainText("Here's how to book it", { timeout: 30_000 });
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+// Every quick-ask chip is drawn whole: its label isn't cut, nothing covers its right edge, and it
+// ends before the pinned "+". Checked with no plan, a proposed plan and a locked plan.
+async function chipsWhole(page: Page, when: string) {
+  const row = (await page.getByTestId("butler-chips").boundingBox())!;
+  const plus = (await page.getByTestId("butler-more").boundingBox())!;
+  const chips = page.getByTestId("butler-chips").locator('[data-testid^="butler-"]:not([data-testid="butler-more"])');
+  const n = await chips.count();
+  expect(n, `${when}: at least one chip`).toBeGreaterThan(0);
+  for (let i = 0; i < n; i++) {
+    const chip = chips.nth(i);
+    const id = await chip.getAttribute("data-testid");
+    const box = (await chip.boundingBox())!;
+    expect(box.x, `${when}: ${id} starts in the row`).toBeGreaterThanOrEqual(row.x);
+    expect(box.x + box.width, `${when}: ${id} ends before the +`).toBeLessThanOrEqual(plus.x);
+    expect(await chip.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), `${when}: ${id}'s label isn't cut`).toBe(true);
+    // Its right edge is really on screen: not clipped by the row or covered by the +.
+    const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("[data-testid]")?.getAttribute("data-testid"), [box.x + box.width - 3, box.y + box.height / 2]);
+    expect(hit, `${when}: ${id}'s right edge is visible`).toBe(id);
+  }
+}
+
+for (const width of [390, 375]) {
+  test(`quick asks are never clipped next to the + at ${width} px: no plan, a proposed plan, a locked plan`, async ({ browser }) => {
+    const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
+    const problems = watchConsole(page);
+    await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganw${width}${run}` });
+    await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
+    await page.getByTestId("chats-new").click();
+    await typeInto(page, "group-name", "Chip widths");
+    await page.getByTestId("add-samples").click();
+    await page.getByTestId("create-group").click();
+    await expect(page.getByTestId("butler-plan")).toBeVisible();
+    await chipsWhole(page, "no plan");
+    await typeInto(page, "composer-input", "@fave plan pickleball then hot pot on saturday afternoon");
+    await page.getByTestId("composer-send").click();
+    const lock = page.locator('[data-testid^="ticket-"][data-testid$="-lock"]').first();
+    await expect(lock).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("butler-book")).toBeVisible();
+    await chipsWhole(page, "proposed");
+    await lock.click();
+    await expect(page.getByTestId("chat-messages")).toContainText("remind everyone", { timeout: 30_000 });
+    await expect(page.getByTestId("butler-late")).toBeVisible();
+    await chipsWhole(page, "locked");
+    expect(problems, problems.join("\n")).toEqual([]);
+  });
+}
