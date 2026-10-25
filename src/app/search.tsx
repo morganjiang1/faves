@@ -1,15 +1,8 @@
-// Search. The search home and live suggestions are inspired by Beli's search
-// (references/discovery/beli/beli_search_restaurants_members_vid.jpg and
-// references/social/beli/yt_GlMma4eXe18_t176_search_tabs_chips.png, about 1.5 px/pt): wordmark +
-// grey ✕ circle, two half-width tabs with an icon (teal label and underline when active), two
-// outlined 49 pt fields 12 pt from the edges, filled chips (#9DB3B7 off, brand on), a bold
-// section title, rows of name + grey line with ⊕, bookmark and ✕.
-// Submitted results are inspired by Corner's AI search results
-// (references/discovery/corner/corner_ai_search_results_hidden_gem_cards.png): the query bubble,
-// a grey one-line answer, text tabs with a 2 pt black underline, CornerCard rows and the
-// "get more specific" bar with "+ ..." chips. No results are inspired by Yelp's recovery
-// (references/discovery/yelp/yelp_empty_no_results_android_vid.png): headline, helper line,
-// "People also search for" chips, "Notice something missing here?" with "Add a spot".
+// Search: spots and days. Live suggestions as little postcards with their Locals Score, quick
+// add to a plan, save (a heart) and hide; submitted results call out hidden gems; no results
+// suggests other words, adding a spot, or planning a day instead.
+// Calling out hidden gems with the reason is inspired by Corner; recovering from no results
+// with suggestions is inspired by Yelp.
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
@@ -18,7 +11,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { CornerCard } from "@/components/cards";
 import { answerLine, arrangeHits, browse, refinements, searchDays, searchSpots, type BrowseChip, type ResultTab } from "@/components/search/match";
 import { Sheet } from "@/components/Sheet";
-import { ErrorState, Icon, OfflineBanner, PrimaryButton, SampleTag, SkeletonRows, Toast, type IconName } from "@/components/ui";
+import { ErrorState, Icon, OfflineBanner, PlaceImage, PrimaryButton, SampleTag, SkeletonRows, Toast, type IconName } from "@/components/ui";
+import { scoreOutOf10 } from "@/lib/score";
 import type { Place } from "@/data/types";
 import { communityDays, type CommunityDay } from "@/lib/community";
 import { useCity } from "@/state/city";
@@ -171,7 +165,7 @@ export default function Search() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]} testID="search-screen">
       <View style={styles.head}>
-        <Text style={styles.wordmark}>faves</Text>
+        <Text style={styles.wordmark}>search</Text>
         <Pressable testID="search-close" accessibilityRole="button" accessibilityLabel="Close search" hitSlop={8} onPress={close} style={styles.closeCircle}>
           <Icon name="close" size={20} tint={palette.inkMuted} />
         </Pressable>
@@ -296,25 +290,29 @@ export default function Search() {
   );
 }
 
-// Beli search row: name, grey line, ⊕ (add to a day), bookmark, ✕.
+// A result: a little postcard of the spot, its name and where it is, its Locals Score stamp,
+// then add to a plan, save (a heart) and hide.
 function SpotRow({ place, index, onDismiss }: { place: Place; index: number; onDismiss?: () => void }) {
   const saved = useStore((s) => s.saved.includes(place.id));
   const sub = [place.hood, place.kind ?? categoryInfo(place.category).label].filter(Boolean).join(", ");
   return (
     <Pressable testID={`search-row-${index}`} accessibilityRole="button" accessibilityLabel={place.name} onPress={() => router.push(`/place/${encodeURIComponent(place.id)}`)} style={styles.row}>
+      <View style={[styles.rowCard, { transform: [{ rotate: `${index % 2 ? 3 : -3}deg` }] }]}>
+        <PlaceImage uri={place.image} category={place.category} style={styles.rowPhoto} emojiSize={20} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.rowName} numberOfLines={1}>{place.name}</Text>
-        <Text style={styles.rowSub} numberOfLines={1}>{sub}</Text>
+        <Text style={styles.rowSub} numberOfLines={1}>{place.unrated ? sub : `${scoreOutOf10(place.locals)} locals · ${sub}`}</Text>
       </View>
-      <Pressable testID={`search-row-add-${index}`} accessibilityLabel={`Add ${place.name} to a day`} hitSlop={6} onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)}>
-        <Icon name="add-circle-outline" size={30} tint={palette.ink} />
+      <Pressable testID={`search-row-add-${index}`} accessibilityLabel={`Add ${place.name} to a day`} hitSlop={6} onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)} style={styles.rowBtn}>
+        <Icon name="add" size={18} tint={palette.ink} />
       </Pressable>
-      <Pressable testID={`search-row-save-${index}`} accessibilityLabel={saved ? `Unsave ${place.name}` : `Save ${place.name}`} hitSlop={6} onPress={() => actions.toggleSave(place.id)}>
-        <Icon name={saved ? "bookmark" : "bookmark-outline"} size={27} tint={saved ? color.brand : "#000"} />
+      <Pressable testID={`search-row-save-${index}`} accessibilityLabel={saved ? `Unsave ${place.name}` : `Save ${place.name}`} hitSlop={6} onPress={() => actions.toggleSave(place.id)} style={[styles.rowBtn, saved && { backgroundColor: palette.roseTint }]}>
+        <Icon name={saved ? "heart" : "heart-outline"} size={17} tint={palette.roseInk} />
       </Pressable>
       {onDismiss ? (
         <Pressable testID={`search-row-dismiss-${index}`} accessibilityLabel={`Hide ${place.name}`} hitSlop={6} onPress={onDismiss}>
-          <Icon name="close" size={22} tint={palette.inkMuted} />
+          <Icon name="close" size={18} tint={palette.inkMuted} />
         </Pressable>
       ) : null}
     </Pressable>
@@ -373,7 +371,7 @@ function AddSpotSheet({ open, onClose, query, city, onSaved }: { open: boolean; 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.paper },
   head: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
-  wordmark: { fontFamily: font.serif, fontSize: 30, color: color.brand, letterSpacing: -0.3 },
+  wordmark: { fontFamily: font.displayHeavy, fontSize: 34, color: palette.ink, letterSpacing: -1 },
   closeCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
   kinds: { flexDirection: "row", marginTop: 8 },
   kind: { flex: 1, height: 46, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderBottomWidth: 2.5, borderBottomColor: "transparent" },
@@ -387,9 +385,12 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingRight: 16, marginTop: 18 },
   section: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: palette.ink, paddingHorizontal: 16, flexShrink: 1 },
   clear: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: color.brand },
-  row: { minHeight: 61, flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: palette.line },
+  row: { minHeight: 68, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: palette.line },
+  rowCard: { width: 46, height: 56, backgroundColor: palette.card, borderRadius: 5, padding: 3, paddingBottom: 9, borderWidth: 1, borderColor: palette.line, shadowColor: palette.ink, shadowOpacity: 0.08, shadowRadius: 3, shadowOffset: { width: 0, height: 2 } },
+  rowPhoto: { flex: 1, borderRadius: 3, overflow: "hidden" },
+  rowBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
   rowIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center", marginRight: -4 },
-  rowName: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  rowName: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: palette.ink },
   rowSub: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted, marginTop: 3 },
   rowMeta: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted },
   hint: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted, paddingHorizontal: 16, paddingTop: 14 },

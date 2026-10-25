@@ -1,11 +1,6 @@
-// Settings. Copies Apple Maps' grouped sheet (plans/apple-maps/appstore_03_nearby_transit_sheet_chips.png,
-// 2.49 px/pt): #F2F2F6 background, centered 17 pt semibold title with a 43 pt round close
-// button, 20 pt bold section headers, white inset cells 16 pt from the edges with radius 18,
-// 45 pt rows of 17 pt text with #7C7C81 secondary text and 1 px #DFDFE1 separators, green
-// #34C458 for live status. The transport switch is Beli's segmented control (beli_leaderboard_vid);
-// interests are Uber Eats chips (social/ubereats/appstore_07). Reset asks first in the same
-// Apple sheet style. Loading = Instagram skeleton, error = TikTok tap to retry, offline =
-// Spotify's bar.
+// Settings: you, how you get around, interests, demo mode, the city data behind the Locals Score,
+// connected services, reset, and the Powered by line. Card-stock groups on paper with display
+// headings. Grouped rows are inspired by iOS Settings.
 import { router } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
@@ -195,10 +190,10 @@ const styles = StyleSheet.create({
   credits: { marginTop: 6, marginHorizontal: 32, textAlign: "center", fontSize: 12, lineHeight: 17, color: SUB },
   screen: { flex: 1, backgroundColor: BG },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
-  title: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: palette.ink },
+  title: { fontFamily: font.display, fontSize: 20, color: palette.ink },
   close: { width: 43, height: 43, borderRadius: 22, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
-  section: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: palette.ink, marginHorizontal: 17, marginBottom: 10 },
-  card: { marginHorizontal: 16, backgroundColor: palette.card, borderRadius: 18, overflow: "hidden" },
+  section: { fontFamily: font.display, fontSize: 19, color: palette.ink, marginHorizontal: 17, marginBottom: 10 },
+  card: { marginHorizontal: 16, backgroundColor: palette.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: palette.line },
   footer: { fontFamily: font.sans, fontSize: 13, lineHeight: 18, color: SUB, marginHorizontal: 32, marginTop: 8 },
   row: { minHeight: 45, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10 },
   rowTall: { minHeight: 58 },
