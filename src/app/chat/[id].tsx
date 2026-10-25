@@ -21,7 +21,7 @@ import type { City } from "@/data/types";
 import { findDay } from "@/lib/community";
 import { callNumber } from "@/lib/links";
 import type { Plan } from "@/lib/planner";
-import { formatClock } from "@/lib/time";
+import { formatClock, startsAt } from "@/lib/time";
 import { useCityBySlug } from "@/state/city";
 import { useStore } from "@/state/store";
 import { font, palette } from "@/theme/tokens";
@@ -61,7 +61,7 @@ export default function ChatThread() {
   useEffect(() => present(groupId, setHere), [groupId]);
   const list = useMemo(() => [...(messages ?? [])].reverse(), [messages]);
   const tickets = useMemo(() => Object.values(v.data.tickets).filter((t) => t.groupId === groupId), [v.data.tickets, groupId]);
-  const pinned = useMemo(() => tickets.filter((t) => t.status === "locked").sort((a, b) => ((a.plan as Plan).dateISO + String((a.plan as Plan).start).padStart(4, "0")).localeCompare((b.plan as Plan).dateISO + String((b.plan as Plan).start).padStart(4, "0")))[0] ?? null, [tickets]);
+  const pinned = useMemo(() => tickets.filter((t) => t.status === "locked").sort((a, b) => ((a.plan as Plan).dateISO + String(startsAt(a.plan as Plan)).padStart(4, "0")).localeCompare((b.plan as Plan).dateISO + String(startsAt(b.plan as Plan)).padStart(4, "0")))[0] ?? null, [tickets]);
   const me = v.me;
 
   if (!group || !me) {
@@ -232,7 +232,7 @@ function Pinned({ ticket, city, groupSize }: { ticket: TicketT; city: City; grou
     <Pressable testID="chat-pinned" accessibilityRole="button" onPress={() => router.push(`/plan/${plan.id}`)} style={styles.pinned}>
       <View style={styles.pinnedStub}><Icon name="ticket" size={16} tint={palette.ink} /></View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.pinnedText} numberOfLines={1}>{day} {formatClock(plan.start, { compact: true })} · {first?.name ?? plan.title} · {going} going{groupSize ? "" : ""}</Text>
+        <Text style={styles.pinnedText} numberOfLines={1}>{day} {formatClock(startsAt(plan), { compact: true })} · {first?.name ?? plan.title} · {going} going{groupSize ? "" : ""}</Text>
         <Text style={styles.pinnedSub}>{countdown(plan, city)} · tap for directions</Text>
       </View>
       <Icon name="chevron-forward" size={16} tint={palette.inkMuted} />

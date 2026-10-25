@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Plan } from "@/lib/planner";
 import { chat, SAMPLE_FRIENDS, unreadCount, useChat, type ChatView, type Group } from "@/chat/store";
 import { EmptyState, Icon, SampleTag } from "@/components/ui";
-import { formatClock } from "@/lib/time";
+import { formatClock, startsAt } from "@/lib/time";
 import { useStore } from "@/state/store";
 import { font, palette } from "@/theme/tokens";
 
@@ -100,7 +100,7 @@ function Row({ g, index }: { g: Group; index: number }) {
         </View>
         <Text style={[styles.preview, unread > 0 && { color: palette.ink, fontWeight: "700" }]} numberOfLines={1}>{preview}</Text>
         {locked ? (
-          <View style={styles.stub}><Icon name="ticket" size={12} tint={palette.ink} /><Text style={styles.stubText} numberOfLines={1}>{locked.dayLabel.split(",")[0].slice(0, 3)} {formatClock(locked.start, { compact: true })} · {locked.title}</Text></View>
+          <View style={styles.stub}><Icon name="ticket" size={12} tint={palette.ink} /><Text style={styles.stubText} numberOfLines={1}>{locked.dayLabel.split(",")[0].slice(0, 3)} {formatClock(startsAt(locked), { compact: true })} · {locked.title}</Text></View>
         ) : null}
       </View>
       <View style={{ alignItems: "flex-end", gap: 6 }}>

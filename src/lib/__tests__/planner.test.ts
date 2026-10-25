@@ -5,7 +5,8 @@ import { openForVisit } from "../hours";
 import { activitiesIn, parseRequest } from "../parser";
 import { makePlan, matchesKeywords, planCost, replan, swapStop, alternativesFor, type Plan } from "../planner";
 import { costOf } from "../score";
-import { formatClock } from "../time";
+import { countdown } from "@/chat/calendar";
+import { endsAt, formatClock, startsAt } from "../time";
 
 const city = buildCity(raw as unknown as RawCity);
 // Saturday, Oct 24, 2026, 10:00 AM in San Francisco (17:00 UTC, PDT).
@@ -117,6 +118,21 @@ describe("live re-plan", () => {
     expectCoherent(r.plan);
     expect(r.plan.stops[0].start).toBeGreaterThan(base.stops[0].start);
     expect(r.message).toMatch(/45 min/);
+  });
+
+  test("running late moves the start everywhere: the plan, the ticket stub and the countdown read the new first stop", () => {
+    const r = replan(base, city, "we're running 15 min late", { lexicon, now: NOW });
+    expect(r.plan.stops[0].start).toBe(base.stops[0].start + 15);
+    expect(r.plan.start).toBe(r.plan.stops[0].start);
+    expect(startsAt(r.plan)).toBe(base.stops[0].start + 15);
+    expect(formatClock(startsAt(r.plan), { compact: true })).toBe("1:15 PM");
+    expect(endsAt(r.plan)).toBeGreaterThanOrEqual(r.plan.stops[r.plan.stops.length - 1].end);
+    // An older ticket whose start never moved still shows its first stop's time.
+    expect(startsAt({ ...r.plan, start: base.start })).toBe(base.stops[0].start + 15);
+    // The countdown runs to the new time: 15 minutes later than before.
+    const before = new Date(Date.UTC(2026, 9, 24, 19, 50)); // 12:50 PM, ten minutes before 1 PM
+    expect(countdown(base, city, before.getTime())).toBe("in 10 min");
+    expect(countdown(r.plan, city, before.getTime())).toBe("in 25 min");
   });
 
   test("swap the sushi spot", () => {

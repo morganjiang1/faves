@@ -55,6 +55,12 @@ export function formatPillTime(minutes: number): string {
   return formatClock(minutes).replace(" AM", "am").replace(" PM", "pm");
 }
 
+// When a plan really starts and ends: from its stops, so a plan whose times moved ("running
+// late") shows the new times everywhere. Falls back to the planned window.
+type Timed = { start: number; end: number; stops: { start: number; end: number }[] };
+export const startsAt = (plan: Timed): number => plan.stops[0]?.start ?? plan.start;
+export const endsAt = (plan: Timed): number => Math.max(plan.end, plan.stops[plan.stops.length - 1]?.end ?? plan.end);
+
 export const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 export const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

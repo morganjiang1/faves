@@ -7,6 +7,13 @@ import { startOnboarded, watchConsole } from "./helpers";
 
 const run = Math.random().toString(36).slice(2, 7);
 
+// "Sat 1:15 PM · ..." or a ticket stub's "1:15\nPM" -> minutes after midnight.
+function clockOf(text: string): number {
+  const m = text.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/);
+  if (!m) throw new Error(`no time in "${text}"`);
+  return (Number(m[1]) % 12 + (m[3] === "PM" ? 12 : 0)) * 60 + Number(m[2] ?? 0);
+}
+
 async function typeInto(page: Page, testID: string, text: string) {
   const input = page.getByTestId(testID);
   await input.click();
@@ -229,10 +236,16 @@ test("running late after the plan is locked: the butler moves the times and the 
   await expect(lock).toBeVisible({ timeout: 30_000 });
   await lock.click();
   await expect(page.getByTestId("chat-messages")).toContainText("remind everyone", { timeout: 30_000 });
+  // The ticket stub and the pinned banner show the start time; both move with the stops.
+  const stub = page.locator('[data-testid^="ticket-"][data-testid$="-stub"]').first();
+  const startBefore = clockOf(await page.getByTestId("chat-pinned").innerText());
+  expect(clockOf(await stub.innerText())).toBe(startBefore);
   await page.getByTestId("butler-late").click();
   await page.getByTestId("composer-send").click();
   await expect(page.getByTestId("chat-messages")).toContainText("Moved the reminders", { timeout: 30_000 });
   await expect(page.getByTestId("chat-messages")).toContainText(/Morgan asked/);
+  await expect.poll(async () => clockOf(await page.getByTestId("chat-pinned").innerText())).toBe(startBefore + 15);
+  await expect.poll(async () => clockOf(await stub.innerText())).toBe(startBefore + 15);
   expect(problems, problems.join("\n")).toEqual([]);
 });
 

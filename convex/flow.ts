@@ -78,10 +78,10 @@ async function schedule(ctx: MutationCtx, ticketId: string, moved: boolean) {
   const t = await ctx.db.query("plans").withIndex("by_ticketId", (q) => q.eq("ticketId", ticketId)).unique();
   if (!t) return;
   const plan = t.plan as PlanJson;
-  const start = planTime(plan, plan.start);
   const first = await ctx.db.query("places").withIndex("by_placeId", (q) => q.eq("placeId", plan.stops[0]?.placeId ?? "")).unique();
   const firstName = first?.name ?? "the first stop";
   const firstAt = plan.stops[0]?.start ?? plan.start;
+  const start = planTime(plan, firstAt);
   const now = Date.now();
   const wanted: { at: number; text: string }[] = [];
   // The day before, at 7 PM in the city.

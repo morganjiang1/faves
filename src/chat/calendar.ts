@@ -3,7 +3,7 @@
 import { Platform } from "react-native";
 import type { City } from "@/data/types";
 import type { Plan } from "@/lib/planner";
-import { offsetHours } from "@/lib/time";
+import { endsAt, offsetHours, startsAt } from "@/lib/time";
 
 export function when(plan: Plan, city: City, minutes: number): Date {
   // Wall-clock minutes on the plan's date in the city's time zone, as a real instant.
@@ -20,7 +20,7 @@ export function planEvent(plan: Plan, city: City) {
     const t = `${Math.floor(s.start / 60) % 24}:${String(s.start % 60).padStart(2, "0")}`;
     return `${t} ${p?.name ?? s.slot.label}${p?.address ? `, ${p.address}` : ""}`;
   }).join("\n");
-  return { title: plan.title, startDate: when(plan, city, plan.start), endDate: when(plan, city, plan.end), location: first ? `${first.name}${first.address ? `, ${first.address}` : ""}` : "", notes };
+  return { title: plan.title, startDate: when(plan, city, startsAt(plan)), endDate: when(plan, city, endsAt(plan)), location: first ? `${first.name}${first.address ? `, ${first.address}` : ""}` : "", notes };
 }
 
 const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -65,8 +65,8 @@ export async function addToCalendar(plan: Plan, city: City): Promise<"added" | "
 
 // "in 2 days", "in 3 hrs", "in 20 min", "now", "done" for a plan's start.
 export function countdown(plan: Plan, city: City, now = Date.now()): string {
-  const start = when(plan, city, plan.start).getTime();
-  const end = when(plan, city, plan.end).getTime();
+  const start = when(plan, city, startsAt(plan)).getTime();
+  const end = when(plan, city, endsAt(plan)).getTime();
   if (now > end) return "done";
   if (now >= start) return "happening now";
   const min = Math.round((start - now) / 60_000);

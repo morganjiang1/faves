@@ -972,6 +972,8 @@ export function replan(input: Plan, city: City, text: string, opts: { lexicon: (
         plan.stops.splice(idx, 1);
         retime(plan, city, Math.max(firstOpen, idx), undefined, log);
       }
+      // The day now starts when its first stop does (the ticket and reminders read this).
+      if (firstOpen === 0 && plan.stops.length) plan.start = plan.stops[0].start;
       log.unshift(`Pushed the rest of the day back ${intent.minutes} min.`);
       for (let i = firstOpen; i < plan.stops.length; i++) changed.push(i);
       break;

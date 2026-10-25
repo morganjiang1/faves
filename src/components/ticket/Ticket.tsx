@@ -9,7 +9,7 @@ import { fairLine } from "@/lib/fair";
 import { formatLeg } from "@/lib/geo";
 import { openUrl } from "@/lib/links";
 import { planCost, type Plan } from "@/lib/planner";
-import { formatClock, MONTHS } from "@/lib/time";
+import { endsAt, formatClock, MONTHS, startsAt } from "@/lib/time";
 import { font, palette, shadow } from "@/theme/tokens";
 import { Avatar, Icon, SampleTag } from "../ui";
 import { RouteSketch } from "./RouteSketch";
@@ -21,7 +21,7 @@ export interface TicketPerson { id: string; name: string; answer?: "in" | "maybe
 
 function stubParts(plan: Plan) {
   const d = new Date(`${plan.dateISO}T12:00:00Z`);
-  const [time, ampm] = formatClock(plan.start, { compact: false }).split(" ");
+  const [time, ampm] = formatClock(startsAt(plan), { compact: false }).split(" ");
   return { day: DAYS[d.getUTCDay()], date: `${MONTHS[d.getUTCMonth()].slice(0, 3).toUpperCase()} ${d.getUTCDate()}`, time, ampm: ampm ?? "" };
 }
 
@@ -60,7 +60,7 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
           </View>
           <Text style={styles.title} numberOfLines={2}>{plan.title}</Text>
           <Text style={styles.meta} numberOfLines={1}>
-            {plan.stops.length} {plan.stops.length === 1 ? "stop" : "stops"} · until {formatClock(plan.end, { compact: true })}{cost ? ` · ${cost.perPerson ? `about $${cost.perPerson} each` : "free"}` : ""}
+            {plan.stops.length} {plan.stops.length === 1 ? "stop" : "stops"} · until {formatClock(endsAt(plan), { compact: true })}{cost ? ` · ${cost.perPerson ? `about $${cost.perPerson} each` : "free"}` : ""}
           </Text>
           <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
             <View style={{ flex: 1, gap: compact ? 6 : 8 }}>
@@ -122,7 +122,7 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
           ) : null}
         </View>
         <Perforation bg={bg} />
-        <View style={styles.stub}>
+        <View style={styles.stub} testID={testID ? `${testID}-stub` : undefined}>
           <Text style={styles.stubDay}>{stub.day}</Text>
           <Text style={styles.stubDate}>{stub.date}</Text>
           <Text style={styles.stubTime}>{stub.time}</Text>

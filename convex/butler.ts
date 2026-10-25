@@ -26,7 +26,7 @@ type GroupView = {
   groupId: string; name: string; city: string; butlerName: string; threadId: string | null;
   members: { id: string; name: string }[];
   starts: { id: string; name: string; hood: string | null; lat: number; lng: number; mode: string }[];
-  ticket: { ticketId: string; plan: { id: string; title: string; dateISO?: string; start?: number; stops: { placeId: string }[]; request?: { raw?: string } }; status: string; going: number } | null;
+  ticket: { ticketId: string; plan: { id: string; title: string; dateISO?: string; start?: number; end?: number; stops: { placeId: string; start?: number; end?: number }[]; request?: { raw?: string } }; status: string; going: number } | null;
   recent: { author: string; text: string }[];
 };
 
@@ -161,7 +161,9 @@ async function remindUs(ctx: ActionCtx, g: GroupView): Promise<string> {
 
 function summary(g: GroupView) {
   const p = g.ticket?.plan;
-  const when = p?.dateISO && p.start != null ? ` on ${dayWord(p.dateISO)} at ${formatClock(p.start)}` : "";
+  // The first stop's time, so a plan that moved (running late) reads right.
+  const at = p?.stops[0]?.start ?? p?.start;
+  const when = p?.dateISO && at != null ? ` on ${dayWord(p.dateISO)} at ${formatClock(at)}` : "";
   const plan = g.ticket && p ? `Plan: ${p.title}${when}, ${g.ticket.status === "locked" ? "locked in" : "not locked yet"}, ${g.ticket.going} going.` : "No plan yet.";
   const last = g.recent.slice(-3).map((m) => `${m.author.split(" ")[0]}: "${m.text.length > 60 ? `${m.text.slice(0, 57)}...` : m.text}"`).join("; ");
   return `tl;dr: ${plan}${last ? ` Lately, ${last}.` : " Quiet so far."}`;

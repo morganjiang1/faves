@@ -10,7 +10,7 @@ import { isOpenAt } from "@/lib/hours";
 import { activitiesIn, parseRequest } from "@/lib/parser";
 import { parseReplan, replan, type Plan } from "@/lib/planner";
 import { costOf, scoreOutOf10 } from "@/lib/score";
-import { cityClock, formatClock } from "@/lib/time";
+import { cityClock, formatClock, startsAt } from "@/lib/time";
 import { getState } from "@/state/store";
 import { groupStarts, planForGroup } from "./plan";
 import type { Group, Member, Ticket } from "./reduce.mjs";
@@ -57,7 +57,7 @@ export async function answer(input: { city: City; group: Group; users: Record<st
 
   // tl;dr, booking and reminders.
   if (/\b(tl;?dr|sum up|summary|recap)\b/i.test(text)) {
-    const p = plan ? `Plan: ${plan.title}, ${plan.dayLabel} at ${formatClock(plan.start)}, ${ticket?.status === "locked" ? "locked in" : "not locked yet"}, ${Object.values(ticket?.rsvps ?? {}).filter((a) => a === "in").length} going.` : "No plan yet.";
+    const p = plan ? `Plan: ${plan.title}, ${plan.dayLabel} at ${formatClock(startsAt(plan))}, ${ticket?.status === "locked" ? "locked in" : "not locked yet"}, ${Object.values(ticket?.rsvps ?? {}).filter((a) => a === "in").length} going.` : "No plan yet.";
     await chat.sayAsFaves(group.id, { text: `tl;dr: ${p}` });
     return;
   }
