@@ -66,7 +66,7 @@ export const book = internalAction({
       const at = formatClock(s.start, { compact: true });
       if (!p) return `• ${at}: no booking needed`;
       if (p.reserveUrl) return `• ${at} ${p.name}: reserve here ${p.reserveUrl}`;
-      if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: phone bookings only (${p.phone}). Say "@fave call ${p.name}" and I'll call for us.`;
+      if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: books by phone at ${p.phone}. Say "@fave call ${p.name}" and I'll call for us.`;
       return `• ${at} ${p.name}: walk in, nothing to book`;
     });
     await ctx.runMutation(internal.flow.say, { groupId: t.groupId, ticketId, text: `Locked in! ${t.going} going. Here's the booking:\n${lines.join("\n")}` });

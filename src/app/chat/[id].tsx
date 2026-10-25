@@ -191,7 +191,7 @@ function MessageRow({ m, mine, showName, city, tickets, render }: { m: Message; 
       {showName ? (
         <View style={styles.nameRow}>
           {isFaves ? <View style={styles.favesDisc}><Icon name="heart" size={11} tint={palette.cream} /></View> : <UserDisc name={m.authorName} size={16} />}
-          <Text style={styles.name}>{isFaves ? "Faves" : m.authorName}</Text>
+          <Text style={styles.name}>{isFaves ? m.authorName || "Fave" : m.authorName}</Text>
         </View>
       ) : null}
       {place ? <View style={{ marginVertical: 4, marginRight: mine ? 6 : 0, marginLeft: mine ? 0 : 6 }}><Postcard place={place} active={false} size="row" tilt={mine ? 2 : -2} testID="msg-postcard" /></View> : null}

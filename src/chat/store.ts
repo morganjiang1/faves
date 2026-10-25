@@ -221,7 +221,7 @@ export const chat = {
   sendText: (groupId: string, text: string) => chat.send(groupId, { kind: "text", text }),
   sendPostcard: (groupId: string, placeId: string, text?: string) => chat.send(groupId, { kind: "postcard", placeId, text }),
   sendDay: (groupId: string, dayId: string) => chat.send(groupId, { kind: "day", dayId }),
-  sayAsFaves: (groupId: string, input: { text?: string; placeId?: string; ticketId?: string }) => chat.send(groupId, { kind: "agent", ...input, author: { id: FAVES_ID, name: "Faves", handle: "faves" } }),
+  sayAsFaves: (groupId: string, input: { text?: string; placeId?: string; ticketId?: string }) => chat.send(groupId, { kind: "agent", ...input, author: { id: FAVES_ID, name: "Fave", handle: "faves" } }),
   async postTicket(groupId: string, plan: Plan): Promise<string> {
     await startChat();
     const ticketId = newId("t");

@@ -8,6 +8,7 @@ import { Agent, createThread, createTool, stepCountIs } from "@convex-dev/agent"
 import { v } from "convex/values";
 import { z } from "zod/v3";
 import { FAVES_ID } from "../src/chat/reduce.mjs";
+import { formatClock } from "../src/lib/time";
 import { api, components, internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery, type ActionCtx } from "./_generated/server";
 
@@ -25,7 +26,7 @@ type GroupView = {
   groupId: string; name: string; city: string; butlerName: string; threadId: string | null;
   members: { id: string; name: string }[];
   starts: { id: string; name: string; hood: string | null; lat: number; lng: number; mode: string }[];
-  ticket: { ticketId: string; plan: { id: string; title: string; stops: { placeId: string }[]; request?: { raw?: string } }; status: string; going: number } | null;
+  ticket: { ticketId: string; plan: { id: string; title: string; dateISO?: string; start?: number; stops: { placeId: string }[]; request?: { raw?: string } }; status: string; going: number } | null;
   recent: { author: string; text: string }[];
 };
 
@@ -45,7 +46,7 @@ export const view = internalQuery({
       members: members.map((m) => ({ id: m.userId, name: m.name })),
       starts: locs.map((l) => ({ id: l.userId, name: members.find((m) => m.userId === l.userId)?.name ?? "Someone", hood: l.hood, lat: l.lat, lng: l.lng, mode: l.mode })),
       ticket: t ? { ticketId: t.ticketId, plan: t.plan, status: t.status, going } : null,
-      recent: recent.filter((m) => m.text).map((m) => ({ author: m.authorName, text: m.text! })),
+      recent: recent.filter((m) => m.text && m.kind === "text" && m.authorId !== FAVES_ID && !/^@\w+\s+(tl;?dr|summary|sum up|recap)\b/i.test(m.text)).map((m) => ({ author: m.authorName, text: m.text! })),
     };
   },
 });
@@ -102,12 +103,17 @@ async function findByVibe(ctx: ActionCtx, g: GroupView, vibe: string) {
 }
 
 function summary(g: GroupView) {
-  const people = g.recent.filter((m) => m.author !== g.butlerName);
-  const who = [...new Set(people.map((m) => m.author.split(" ")[0]))];
-  const plan = g.ticket ? `The plan is ${g.ticket.plan.title} (${g.ticket.status === "locked" ? "locked in" : "not locked yet"}), ${g.ticket.going} going.` : "No plan yet.";
-  const last = people.slice(-3).map((m) => `${m.author.split(" ")[0]}: "${m.text.slice(0, 60)}"`).join("; ");
-  return `tl;dr: ${who.length ? `${who.join(", ")} talked.` : "Quiet so far."} ${plan}${last ? ` Lately: ${last}.` : ""}`;
+  const p = g.ticket?.plan;
+  const when = p?.dateISO && p.start != null ? ` on ${dayWord(p.dateISO)} at ${formatClock(p.start)}` : "";
+  const plan = g.ticket && p ? `Plan: ${p.title}${when}, ${g.ticket.status === "locked" ? "locked in" : "not locked yet"}, ${g.ticket.going} going.` : "No plan yet.";
+  const last = g.recent.slice(-3).map((m) => `${m.author.split(" ")[0]}: "${m.text.length > 60 ? `${m.text.slice(0, 57)}...` : m.text}"`).join("; ");
+  return `tl;dr: ${plan}${last ? ` Lately, ${last}.` : " Quiet so far."}`;
 }
+
+const dayWord = (iso: string) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]}, ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()]} ${d.getUTCDate()}`;
+};
 
 // ---- The agent ------------------------------------------------------------------------------
 

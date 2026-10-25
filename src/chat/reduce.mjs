@@ -137,6 +137,8 @@ export function applyOp(state, op, ctx) {
       const t = state.tickets[op.ticketId];
       if (!t || (!isMember(state.groups[t.groupId], ctx.actorId) && ctx.actorId !== FAVES_ID)) return { events: [], error: "no-ticket" };
       const ticket = { ...t, ...pick(op.patch, ["plan", "status"]), revision: (t.revision || 1) + 1, updatedAt: now };
+      // Whoever locks a plan in is going.
+      if (op.patch.status === "locked" && ctx.actorId !== FAVES_ID && !t.rsvps[ctx.actorId]) ticket.rsvps = { ...t.rsvps, [ctx.actorId]: "in" };
       state.tickets[t.id] = ticket;
       const events = [{ type: "ticket", ticket }];
       if (op.note) {
