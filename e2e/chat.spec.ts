@@ -235,3 +235,25 @@ test("running late after the plan is locked: the butler moves the times and the 
   await expect(page.getByTestId("chat-messages")).toContainText(/Morgan asked/);
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("a long chat keeps the butler's quick-ask chips full height", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganq${run}` });
+  await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
+  await page.getByTestId("chats-new").click();
+  await typeInto(page, "group-name", "Long chat");
+  await page.getByTestId("add-samples").click();
+  await page.getByTestId("create-group").click();
+  await expect(page.getByTestId("chat-screen")).toBeVisible();
+  const chips = page.getByTestId("butler-chips");
+  const full = (await chips.boundingBox())!.height;
+  expect(full).toBeGreaterThan(30);
+  for (let i = 1; i <= 24; i++) {
+    await page.getByTestId("composer-input").fill(`message ${i}: who's bringing the paddles, and are we doing hot pot after?`);
+    await page.getByTestId("composer-send").click();
+  }
+  await expect(page.getByTestId("chat-messages")).toContainText("message 24:");
+  await expect(page.getByTestId("butler-tldr")).toBeVisible();
+  expect((await chips.boundingBox())!.height).toBeGreaterThanOrEqual(full - 1);
+  expect(problems, problems.join("\n")).toEqual([]);
+});

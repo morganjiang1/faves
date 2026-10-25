@@ -361,7 +361,8 @@ const styles = StyleSheet.create({
   phoneLink: { fontWeight: "700", textDecorationLine: "underline" },
   voice: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", marginRight: 10, borderWidth: 1, borderColor: palette.line },
   voiceOn: { backgroundColor: palette.roseInk, borderColor: palette.roseInk },
-  asks: { flexGrow: 0, backgroundColor: palette.paper },
+  // Never squeezed by a long chat: the message list shrinks, the chips keep their height.
+  asks: { flexGrow: 0, flexShrink: 0, backgroundColor: palette.paper },
   asksRow: { paddingHorizontal: 10, paddingTop: 6, paddingBottom: 2, gap: 6, alignItems: "center" },
   asksLabel: { flexDirection: "row", alignItems: "center", gap: 4, paddingRight: 2 },
   asksName: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.roseInk },
