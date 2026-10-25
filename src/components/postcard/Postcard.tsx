@@ -6,7 +6,7 @@ import { type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Place } from "@/data/types";
-import { compact, scoreOutOf10, signalCount } from "@/lib/score";
+import { compact, rankedBy, scoreOutOf10 } from "@/lib/score";
 import { font, palette, shadow } from "@/theme/tokens";
 import { SampleTag, Stamp, UserDisc } from "../ui";
 import { SpotMedia, clipFor } from "../video/SpotMedia";
@@ -67,7 +67,7 @@ export function Postcard({ place, active, size = "row", tilt = 0, width, onPress
       </View>
       {place.unrated || !showStamp ? null : (
         <View style={[styles.stamp, { right: -s.stamp * 0.22, top: -s.stamp * 0.22 }]} pointerEvents="none">
-          <Stamp score={scoreOutOf10(place.locals)} count={size === "deck" ? compact(signalCount(place)) : undefined} size={s.stamp} tilt={10} />
+          <Stamp score={scoreOutOf10(place.locals)} count={size === "deck" ? compact(rankedBy(place)) : undefined} size={s.stamp} tilt={10} />
         </View>
       )}
     </Pressable>

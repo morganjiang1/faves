@@ -9,7 +9,8 @@ import { bestLeg, legFor, metersBetween, type LatLng, type Leg, type Mode } from
 import { fairnessFor, fairPick, middleOf, type Fairness, type Start } from "./fair";
 import { isOpenAt, nextOpen, openForVisit } from "./hours";
 import type { Activity, PlanRequest, Sport, Who } from "./parser";
-import { costOf, compact, scoreOutOf10 } from "./score";
+import { costOf } from "./score";
+import { communityLine } from "./signals";
 import { sunTimes } from "./sunset";
 import { cityClock, formatClock, offsetHours, wallDateFor, DAY_NAMES, MONTHS } from "./time";
 
@@ -386,14 +387,7 @@ function closingWithin(p: Place, day: number, arrive: number, dur: number): numb
   return null;
 }
 
-const SOURCE_NAMES = (p: Place, subreddit: string) => {
-  const bits: string[] = [];
-  if (p.reddit.mentions) bits.push(`named ${p.reddit.mentions}x on r/${subreddit}`);
-  if (p.tiktok.mentions) bits.push(`${p.tiktok.mentions} ${p.tiktok.mentions === 1 ? "TikTok" : "TikToks"}, ${compact(p.tiktok.views)} views`);
-  if (p.google) bits.push(`${p.google.rating.toFixed(1)} on Google (${compact(p.google.count)})`);
-  if (p.yelp) bits.push(`${p.yelp.rating.toFixed(1)} on Yelp`);
-  return bits;
-};
+const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 export function explain(c: Candidate, s: Slot, prevName: string | null, st: Pick<PickState, "city" | "sunset" | "day">): string {
   const p = c.place;
@@ -401,10 +395,8 @@ export function explain(c: Candidate, s: Slot, prevName: string | null, st: Pick
   if (s.interest) parts.push(`For the ${s.interest} fan: ${p.kind ? p.kind.toLowerCase() : "a spot"} that matches.`);
   else if (s.mustDo) parts.push(`You asked for ${s.label}.`);
   if (p.court) parts.push(`${p.court.count > 1 ? `${p.court.count} public ${p.court.sport} courts` : `A public ${p.court.sport} court`}${p.court.surface ? `, ${p.court.surface}` : ""}${p.court.lit ? ", lit at night" : ""}.`);
-  if (!p.unrated) {
-    const src = SOURCE_NAMES(p, st.city.subreddit);
-    parts.push(`Locals Score ${scoreOutOf10(p.locals)}${src.length ? `: ${src.slice(0, 2).join(", ")}` : ""}.`);
-  }
+  // Why locals rate it, in what people on Faves do: "Ranked 9.1 by 212 locals · 38 moments."
+  if (!p.unrated) parts.push(`${capitalize(communityLine(p))}.`);
   if (p.hiddenGem) parts.push("Hidden gem: loved by locals, not overrun.");
   if (s.anchor === "sunset" && st.sunset != null && Math.abs(c.arrive - (st.sunset - 40)) <= 5) parts.push(`Sunset is ${formatClock(st.sunset)}, so you get there for golden hour.`);
   if (p.hours && isOpenAt(p.hours, st.day, c.arrive)) {

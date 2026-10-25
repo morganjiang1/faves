@@ -16,7 +16,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Place } from "@/data/types";
 import { dayHoursText, statusAt, weekLines } from "@/lib/hours";
 import { openUrl } from "@/lib/links";
-import { compact, costOf, scoreOutOf10, signalCount } from "@/lib/score";
+import { compact, costOf, scoreOutOf10 } from "@/lib/score";
+import { communitySignals } from "@/lib/signals";
 import { DAY_NAMES } from "@/lib/time";
 import { color, font } from "@/theme/tokens";
 import { Icon, UserDisc, type IconName } from "../ui";
@@ -91,7 +92,7 @@ function LocalsTab({ place, subreddit }: { place: Place; subreddit: string }) {
     return (
       <View style={styles.empty} testID="quotes-empty">
         <Text style={styles.emptyTitle}>No local quotes yet</Text>
-        <Text style={styles.emptyBody}>{place.unrated ? "This court comes from OpenStreetMap, so it has facts but no reviews." : `Nobody on r/${subreddit} has named it yet.`}</Text>
+        <Text style={styles.emptyBody}>{place.unrated ? "Nobody has ranked this court yet. Been here? Rank it." : "No local has said anything about it yet."}</Text>
       </View>
     );
   }
@@ -99,15 +100,10 @@ function LocalsTab({ place, subreddit }: { place: Place; subreddit: string }) {
     <View testID="quotes-section">
       {place.quotes.map((q, i) => (
         <View key={i} testID={`quote-${i}`} style={styles.comment}>
-          <View style={[styles.sourceDisc, { backgroundColor: "#FF4500" }]}><Icon name="logo-reddit" size={19} tint="#fff" /></View>
+          <View style={[styles.sourceDisc, { backgroundColor: SPOT_DARK.red }]}><Icon name="heart" size={17} tint="#fff" /></View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.commentName}>r/{subreddit}<Text style={styles.commentTag}>{" · Local"}</Text></Text>
+            <Text style={styles.commentName}>a local<Text style={styles.commentTag}>{place.hood ? ` · ${place.hood}` : ""}</Text></Text>
             <Text style={styles.commentText}>{q.text}</Text>
-            {q.url ? (
-              <Pressable accessibilityRole="link" hitSlop={6} onPress={() => openUrl(q.url)}>
-                <Text style={styles.commentMeta}>Open on Reddit</Text>
-              </Pressable>
-            ) : null}
           </View>
         </View>
       ))}
@@ -143,7 +139,7 @@ function DetailsTabBody({ place, day, minute, onDirections, onCall, onReserve }:
         {place.hours ? <Icon name={week ? "chevron-up" : "chevron-down"} size={18} tint={SPOT_DARK.sub} /> : null}
       </Pressable>
       {place.court ? <Row icon="tennisball-outline" testID="court-row" text={`${place.court.count} ${place.court.sport} ${place.court.count === 1 ? "court" : "courts"}${place.court.surface ? `, ${place.court.surface}` : ""}${place.court.lit ? ", lit at night" : ", no lights"}${place.court.access === "yes" ? ", public" : ""}`} /> : null}
-      <Row icon="cash-outline" testID="cost-row" text={cost.label} sub={cost.estimated ? `About $${cost.perPerson} per person, our estimate for planning.` : cost.dollars ? "Price level from Yelp" : undefined} />
+      <Row icon="cash-outline" testID="cost-row" text={cost.label} sub={cost.estimated ? `About $${cost.perPerson} per person, our estimate for planning.` : cost.dollars ? "Price level locals listed" : undefined} />
       <Row icon="location-outline" testID="address-row" text={place.address ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`} action="Directions" onPress={onDirections} />
       {place.phone ? <Row icon="call-outline" testID="phone-row" text={place.phone} action="Call" onPress={onCall} /> : null}
       {place.website ? <Row icon="globe-outline" testID="website-row" text={place.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")} action="Open" onPress={() => openUrl(place.website)} /> : null}
@@ -166,21 +162,22 @@ function Row({ icon, text, sub, action, onPress, testID }: { icon: IconName; tex
   );
 }
 
-// --- Scores: the Locals Score and where it comes from (Google, Yelp, Reddit, TikTok).
-export function ScoresTab({ place, subreddit }: { place: Place; subreddit: string; builtAt: string | null }) {
+// --- Scores: the Locals Score and where it comes from: what people on Faves rank, post and save.
+export function ScoresTab({ place }: { place: Place; subreddit: string; builtAt: string | null }) {
   if (place.unrated) {
     return (
       <View style={styles.empty} testID="scores-section">
-        <Text style={styles.emptyTitle}>No ratings yet</Text>
-        <Text style={styles.emptyBody}>This court comes from OpenStreetMap, so it has facts but no reviews.</Text>
+        <Text style={styles.emptyTitle}>No rankings yet</Text>
+        <Text style={styles.emptyBody}>Nobody has ranked this court yet. Been here? Rank it.</Text>
       </View>
     );
   }
+  const s = communitySignals(place);
   const cols: { label: string; value: string; sub: string; star?: boolean; testID: string }[] = [
-    { label: "GOOGLE", value: place.google ? place.google.rating.toFixed(1) : "-", sub: place.google ? `${compact(place.google.count)} reviews` : "not rated", star: Boolean(place.google), testID: "src-google" },
-    { label: "YELP", value: place.yelp ? place.yelp.rating.toFixed(1) : "-", sub: place.yelp ? `${compact(place.yelp.count)} reviews` : "not listed", star: Boolean(place.yelp), testID: "src-yelp" },
-    { label: "REDDIT", value: place.reddit.mentions ? `${place.reddit.mentions}` : "-", sub: place.reddit.mentions ? (place.reddit.mentions === 1 ? "mention" : "mentions") : "no mentions", testID: "src-reddit" },
-    { label: "TIKTOK", value: place.tiktok.views ? compact(place.tiktok.views) : "-", sub: place.tiktok.mentions ? "views" : "no posts", testID: "src-tiktok" },
+    { label: "RANKED", value: s.ranked ? scoreOutOf10(place.locals) : "-", sub: s.ranked ? `${s.ranked} locals` : "no rankings", star: Boolean(s.ranked), testID: "signal-ranked" },
+    { label: "MOMENTS", value: s.moments ? compact(s.moments) : "-", sub: s.moments ? "posted" : "none yet", testID: "signal-moments" },
+    { label: "SAVES", value: s.saves ? compact(s.saves) : "-", sub: s.saves ? "saved it" : "none yet", testID: "signal-saves" },
+    { label: "DAYS", value: s.days ? String(s.days) : "-", sub: s.days ? "shared days" : "none yet", testID: "signal-days" },
   ];
   return (
     <View testID="scores-section" style={{ paddingTop: 14 }}>
@@ -188,7 +185,7 @@ export function ScoresTab({ place, subreddit }: { place: Place; subreddit: strin
         <View style={styles.scoreBig}><Text style={styles.scoreBigText}>{scoreOutOf10(place.locals)}</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={styles.scoreName}>Locals Score</Text>
-          <Text style={styles.rowSub}>How much locals love it, from {compact(signalCount(place))} ratings and mentions</Text>
+          <Text style={styles.rowSub}>How much locals love it: ranked by {s.ranked} people on Faves</Text>
         </View>
       </View>
       <View style={styles.strip}>
@@ -201,10 +198,8 @@ export function ScoresTab({ place, subreddit }: { place: Place; subreddit: strin
         ))}
       </View>
       <Text style={styles.note}>
-        {place.reddit.mentions ? `Named ${place.reddit.mentions} ${place.reddit.mentions === 1 ? "time" : "times"} on r/${subreddit}${place.reddit.votes ? ` (${place.reddit.votes} upvotes)` : ""}. ` : ""}
-        {place.tiktok.mentions ? `In ${place.tiktok.mentions} TikTok ${place.tiktok.mentions === 1 ? "post" : "posts"}. ` : ""}
         {place.hiddenGem ? "Hidden gem: rated well, loved by locals, light on tourists. " : ""}
-        Ratings from Google, Yelp and TripAdvisor; local mentions from r/{subreddit} and TikTok.
+        From people on Faves: rankings, moments and saves.
       </Text>
     </View>
   );

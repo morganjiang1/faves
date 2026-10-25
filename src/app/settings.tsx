@@ -2,13 +2,14 @@
 // connected services, reset, and the Powered by line. Card-stock groups on paper with display
 // headings. Grouped rows are inspired by iOS Settings.
 import { router } from "expo-router";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Sheet } from "@/components/Sheet";
 import { TrackSegmented } from "@/components/social/controls";
 import { Chip, ErrorState, Icon, OfflineBanner, Skeleton } from "@/components/ui";
 import type { Mode } from "@/lib/geo";
+import { communitySignals } from "@/lib/signals";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, resetAll, useStore } from "@/state/store";
@@ -24,8 +25,7 @@ const RED = palette.roseInk;
 const SERVICES: { id: string; label: string; what: string; set: boolean }[] = [
   { id: "llm", label: "Planner model", what: "Writes plans with a language model", set: Boolean(process.env.EXPO_PUBLIC_LLM_BASE_URL) },
   { id: "supabase", label: "Sync and groups", what: "Supabase", set: Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL) },
-  { id: "google", label: "Google Maps", what: "Live places and routes", set: Boolean(process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY) },
-  { id: "yelp", label: "Yelp", what: "Live ratings", set: Boolean(process.env.EXPO_PUBLIC_YELP_KEY) },
+  { id: "google", label: "Live hours and travel times", what: "Maps key", set: Boolean(process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY) },
   { id: "ticketmaster", label: "Ticketmaster", what: "Events and tickets", set: Boolean(process.env.EXPO_PUBLIC_TICKETMASTER_KEY) },
 ];
 
@@ -49,14 +49,13 @@ export default function Settings() {
     actions.updateProfile({ interests: has ? profile.interests.filter((x) => x !== id) : [...profile.interests, id] });
   };
 
-  const counts = city ? {
-    places: city.places.filter((p) => !p.court).length,
-    google: city.places.filter((p) => p.google).length,
-    yelp: city.places.filter((p) => p.yelp).length,
-    reddit: city.places.filter((p) => p.reddit.mentions > 0).length,
-    tiktok: city.places.filter((p) => p.tiktok.mentions > 0).length,
-    courts: city.places.filter((p) => p.court).length,
-  } : null;
+  // The community behind the Locals Scores: rankings, moments and saves on Faves.
+  const counts = useMemo(() => {
+    if (!city) return null;
+    const spots = city.places.filter((p) => !p.court);
+    const sum = (k: "ranked" | "moments" | "saves") => spots.reduce((t, p) => t + communitySignals(p)[k], 0);
+    return { places: spots.length, ranked: sum("ranked"), moments: sum("moments"), saves: sum("saves"), courts: city.places.filter((p) => p.court).length };
+  }, [city]);
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]} testID="settings-screen">
@@ -100,7 +99,7 @@ export default function Settings() {
           </Row>
         </Section>
 
-        <Section title="Data" footer={city ? `Scores come from these sources, rebuilt by scheduled data jobs. Reddit means r/${city.subreddit}.` : undefined}>
+        <Section title="Community" footer="Locals Scores come from what people on Faves rank, post and save. The launch cities were seeded from what locals already share publicly.">
           {status === "error" ? (
             <ErrorState title="Couldn't load the city data. Tap to retry." body={error ?? "Check your connection and try again."} onRetry={retry} testID="settings-data-error" />
           ) : status === "loading" || !city || !counts ? (
@@ -113,11 +112,10 @@ export default function Settings() {
             <>
               <Row label={`Spots in ${city.name}`} first><Text style={styles.value}>{counts.places.toLocaleString("en-US")}</Text></Row>
               <Row label="City data built"><Text style={styles.value} testID="settings-built">{builtLabel(city.builtAt)}</Text></Row>
-              <Row label="Google ratings"><Text style={styles.value}>{counts.google.toLocaleString("en-US")} spots</Text></Row>
-              <Row label="Yelp ratings"><Text style={styles.value}>{counts.yelp.toLocaleString("en-US")} spots</Text></Row>
-              <Row label="Reddit mentions"><Text style={styles.value}>{counts.reddit.toLocaleString("en-US")} spots</Text></Row>
-              <Row label="TikTok posts"><Text style={styles.value}>{counts.tiktok.toLocaleString("en-US")} spots</Text></Row>
-              <Row label="OpenStreetMap courts"><Text style={styles.value}>{counts.courts.toLocaleString("en-US")}</Text></Row>
+              <Row label="Rankings by locals"><Text style={styles.value} testID="settings-rankings">{counts.ranked.toLocaleString("en-US")}</Text></Row>
+              <Row label="Moments posted"><Text style={styles.value}>{counts.moments.toLocaleString("en-US")}</Text></Row>
+              <Row label="Saves"><Text style={styles.value}>{counts.saves.toLocaleString("en-US")}</Text></Row>
+              <Row label="Public courts"><Text style={styles.value}>{counts.courts.toLocaleString("en-US")}</Text></Row>
             </>
           )}
         </Section>

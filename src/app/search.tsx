@@ -359,7 +359,7 @@ function AddSpotSheet({ open, onClose, query, city, onSaved }: { open: boolean; 
   return (
     <Sheet open={open} onClose={onClose} title="Add a spot" testID="add-spot-sheet">
       <View style={{ paddingHorizontal: 16, gap: 12, paddingBottom: 8 }}>
-        <Text style={styles.sheetBody}>Faves lists spots from Google, Yelp, Reddit and TikTok. Tell us the name and neighborhood of what's missing.</Text>
+        <Text style={styles.sheetBody}>Faves lists the spots locals share. Tell us the name and neighborhood of what's missing and we'll add it.</Text>
         <TextInput testID="add-spot-input" value={text} onChangeText={setText} placeholder="Name and neighborhood" placeholderTextColor={palette.inkMuted} multiline style={[styles.sheetInput, noOutline]} />
         <PrimaryButton testID="add-spot-save" label="Save note" disabled={!text.trim()} onPress={() => { momentsMoneyActions.addSpotNote({ id: `note-${Date.now().toString(36)}`, city, query, text: text.trim(), at: new Date().toISOString() }); onSaved(); }} />
         <Text style={styles.sheetFine}>Notes stay on this phone until accounts launch.</Text>

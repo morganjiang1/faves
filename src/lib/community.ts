@@ -6,6 +6,7 @@ import type { City, Quote } from "@/data/types";
 import { parseRequest } from "./parser";
 import { makePlan, planFromStops, type FixedStop, type Plan } from "./planner";
 import { cityClock, wallDateFor } from "./time";
+import { mentionsElsewhere } from "./score";
 
 export interface CommunityDay {
   id: string;
@@ -101,11 +102,12 @@ export function doThisDay(day: CommunityDay, city: City, now: Date = new Date())
   return copy;
 }
 
-// The clearest real quote about any stop: Reddit first, a readable length, not a list of pins.
+// The clearest real quote about any stop from a local: a readable length, not a list of pins,
+// and never one about another platform.
 function bestQuote(city: City, plan: Plan): CommunityDay["quote"] {
   const all = plan.stops.flatMap((s) => {
     const p = city.byId.get(s.placeId);
-    return p ? p.quotes.map((q) => ({ placeName: p.name, quote: q })) : [];
+    return p ? p.quotes.filter((q) => !mentionsElsewhere(q.text)).map((q) => ({ placeName: p.name, quote: q })) : [];
   });
   const score = (x: { quote: Quote }) => (x.quote.source === "reddit" ? 2 : 0) + (x.quote.text.length >= 30 && x.quote.text.length <= 170 ? 2 : 0) - (/📍|\n|#/.test(x.quote.text) ? 3 : 0);
   return all.sort((a, b) => score(b) - score(a))[0] ?? null;

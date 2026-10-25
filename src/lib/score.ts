@@ -1,7 +1,8 @@
-// How the Locals Score and its parts read on screen. The score itself is computed by
-// data/scripts/build.mjs (quality from review-count-adjusted ratings, local love from Reddit
-// and TikTok mentions); here it is shown Beli-style on a 10-point scale.
+// How the Locals Score and its parts read on screen, on a 10-point scale. The score is what
+// people on Faves say about a spot (rankings, moments, saves; see lib/signals.ts). The launch
+// cities' scores were seeded by data/scripts/build.mjs from what locals already share publicly.
 import type { Place } from "@/data/types";
+import { communitySignals } from "./signals";
 
 export const scoreOutOf10 = (locals: number) => (Math.max(0, Math.min(100, locals)) / 10).toFixed(1);
 
@@ -11,17 +12,20 @@ export function compact(n: number): string {
   return String(n);
 }
 
-// Number of signals behind the score (Beli's "2k" count badge).
+// How many locals ranked it: the count on the score stamp.
+export const rankedBy = (p: Place): number => communitySignals(p).ranked;
+
+// Everything behind the seeded score, for sorting by popularity (never shown as a count).
 export function signalCount(p: Place): number {
   return (p.google?.count ?? 0) + (p.yelp?.count ?? 0) + (p.tripadvisor?.count ?? 0) + p.reddit.mentions + p.tiktok.mentions;
 }
 
-// Corner's quantified rarity line: "only 22 reviews on google".
+// A hidden gem's line: locals rate it highly and few visitors have found it yet.
 export function gemLine(p: Place): string | null {
   if (!p.hiddenGem) return null;
   const g = p.google?.count ?? 0;
-  if (g && g < 1000) return `only ${g} reviews on google`;
-  if (p.reddit.mentions) return `${p.reddit.mentions} locals vouch for it on reddit`;
+  if (g && g < 1000) return "loved by locals, few visitors yet";
+  if (p.reddit.mentions) return `${communitySignals(p).ranked} locals vouch for it`;
   return "locals love it, tourists haven't found it";
 }
 
@@ -34,14 +38,11 @@ export function vibeLine(p: Place): string {
   return k || p.category;
 }
 
-// One plain sentence on why locals rate it, built only from the real signals.
-export function whyLocals(p: Place, subreddit?: string): string {
-  const parts: string[] = [];
-  if (p.reddit.mentions) parts.push(`named ${p.reddit.mentions} ${p.reddit.mentions === 1 ? "time" : "times"} on r/${subreddit ?? "city"}`);
-  if (p.tiktok.mentions) parts.push(`in ${p.tiktok.mentions} TikTok ${p.tiktok.mentions === 1 ? "post" : "posts"} (${compact(p.tiktok.views)} views)`);
-  if (p.google) parts.push(`${p.google.rating.toFixed(1)} on Google from ${compact(p.google.count)} reviews`);
-  if (!parts.length) return "No ratings yet";
-  return parts.join(", ");
+// One plain line on why locals rate it, from what people on Faves do with it.
+export function whyLocals(p: Place): string {
+  const s = communitySignals(p);
+  if (!s.ranked) return "No rankings yet";
+  return [`ranked by ${s.ranked} locals`, s.moments ? `${s.moments} moments posted` : "", s.saves ? `saved ${compact(s.saves)} times` : ""].filter(Boolean).join(", ");
 }
 
 // Yelp's own price ranges per person.
@@ -68,10 +69,15 @@ export function costOf(p: Place): Cost {
   return { label: "Price not listed", perPerson: TYPICAL[p.category] ?? 15, estimated: true, dollars: null };
 }
 
+// A quote that talks about another platform ("I saw it on TikTok") isn't shown: Faves shows what
+// locals say, never where else they said it.
+export const mentionsElsewhere = (text: string): boolean => /\b(google|yelp|tripadvisor|reddit|tiktok)\b|\br\/[a-z]/i.test(text);
+
 // The local quote worth showing: a real sentence, not just the place's name.
 export function bestQuote<Q extends { text: string }>(place: { name: string; quotes: Q[] }): Q | null {
   const name = place.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   return place.quotes.find((q) => {
+    if (mentionsElsewhere(q.text)) return false;
     const t = q.text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     return t.length >= 24 && t !== name && t.split(" ").length >= 5;
   }) ?? null;

@@ -32,8 +32,8 @@ Tokens live in `src/theme/tokens.ts`. The shared pieces live in `src/components/
 #3A2C4A`, `cream #FFF3E8` text (16.6:1), `creamSoft #CBBBD6`, `creamMuted #A898B8`, with
 `roseOnPlum #FF6F88`, `openOnPlum #6FD69B`, `sunsetOnPlum #FFAA6B`.
 
-Every text color passes 4.5:1 on the surface it sits on. Source marks (Google, Yelp, Reddit,
-TikTok in the Scores section) keep their own colors because they identify the source.
+Every text color passes 4.5:1 on the surface it sits on. The Scores section shows community
+signals only (locals who ranked it, moments, saves, shared days), in the palette's own colors.
 
 ## Type
 
@@ -94,7 +94,7 @@ Faves screens are our own. These apps gave us an idea each:
 | In / Maybe / Out on a plan | Partiful, for RSVPs |
 | Doing a day someone else did | DoorDash, for "order it again" |
 | A short recap of the day with one stat at a time | Strava, for the year-in-sport story |
-| Hidden-gem flag with the reason ("only 22 reviews on Google") | Corner, for calling out hidden gems |
+| Hidden-gem flag with the reason ("loved by locals, few visitors yet") | Corner, for calling out hidden gems |
 | Short vertical clips of a spot | TikTok and Instagram, for location posts |
 | Earnings and cash out | Ibotta and Venmo, for the wallet and transfer flow |
 | The paywall's plan rows | Meetup, for monthly and yearly rows |

@@ -6,7 +6,7 @@ import type { City, Place } from "@/data/types";
 import type { CityClock } from "@/lib/time";
 import { distanceLabel, type LatLng } from "@/lib/geo";
 import { statusAt } from "@/lib/hours";
-import { compact, costOf, gemLine, scoreOutOf10, signalCount, vibeLine } from "@/lib/score";
+import { compact, costOf, gemLine, rankedBy, scoreOutOf10, vibeLine } from "@/lib/score";
 import type { CommunityDay } from "@/lib/community";
 import { actions, useStore } from "@/state/store";
 import { color, font, palette } from "@/theme/tokens";
@@ -56,7 +56,7 @@ export function PlaceCard({ place, clock, from, width = 307, testID }: { place: 
             <>
               <Text style={styles.ratingNum}>{scoreOutOf10(place.locals)}</Text>
               <Text style={styles.ratingLabel}>Locals Score</Text>
-              <Text style={styles.ratingMuted}>({compact(signalCount(place))})</Text>
+              <Text style={styles.ratingMuted}>({compact(rankedBy(place))})</Text>
             </>
           )}
         </View>
@@ -86,7 +86,7 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
             </View>
           ) : null}
         </View>
-        {place.unrated ? <ScoreBadge score="-" muted size={39} /> : <ScoreBadge score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} tint={color.scoreList} size={39} />}
+        {place.unrated ? <ScoreBadge score="-" muted size={39} /> : <ScoreBadge score={scoreOutOf10(place.locals)} count={compact(rankedBy(place))} tint={color.scoreList} size={39} />}
       </View>
       {place.reserveUrl ? (
         <Pressable accessibilityRole="link" onPress={() => router.push(`/place/${encodeURIComponent(place.id)}?reserve=1`)} style={styles.slot}>
@@ -182,7 +182,7 @@ export function CornerCard({ place, onPress, testID, savedCount }: { place: Plac
           </View>
         )}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
-          <View style={cornerStyles.savedPill}><Text style={cornerStyles.savedPillText}>{savedCount != null ? `saved ${savedCount} times` : `${compact(signalCount(place))} ${signalCount(place) === 1 ? "rating" : "ratings"}`}</Text></View>
+          <View style={cornerStyles.savedPill}><Text style={cornerStyles.savedPillText}>{savedCount != null ? `saved ${savedCount} times` : `ranked by ${compact(rankedBy(place))} ${rankedBy(place) === 1 ? "local" : "locals"}`}</Text></View>
           <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)} style={cornerStyles.cornerBookmark}>
             <Icon name={saved ? "bookmark" : "bookmark-outline"} size={17} tint="#0077FF" />
           </Pressable>

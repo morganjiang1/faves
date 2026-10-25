@@ -1,14 +1,18 @@
 # Faves
 
-Never know what to do? Tell Faves who's coming and what you're into. It finds the spots locals
-actually love (courts, food, views, hidden gems), plans the whole day so it's fair for everyone's
-starting point, and lets your group chat plan it together with an agent that books and reminds.
+Never know what to do? Faves is a community app for the spots locals love: people share and rank
+the places they love, post moments there, save spots and share their days. Tell Faves who's coming
+and what you're into. It finds the spots locals actually love (courts, food, views, hidden gems),
+plans the whole day so it's fair for everyone's starting point, and lets your group chat plan it
+together with an agent that books and reminds.
 
 - **Spots are postcards.** Home opens on "this week in <city>", a deck of the spots locals love,
   each with a short clip and a Locals Score stamp. A spot's page is one big postcard with the
   facts on paper, a real local quote and a wall of posts from people who went.
-- **Locals Score** for every spot, built from Google, Yelp, TripAdvisor, Reddit and TikTok, with a
-  hidden-gem flag for places locals rate highly that tourists haven't found.
+- **Locals Score** for every spot: what people on Faves rank, post and save, with a hidden-gem
+  flag for places locals rate highly that few visitors have found. So the app works on day one, the
+  10 launch cities were seeded from what locals already share publicly (reviews and local posts,
+  gathered with Apify Actors).
 - **A planner agent** turns "me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus" into a
   day: stops picked by Locals Score, kind and opening hours, a route that keeps moving forward, a
   view timed to sunset, a Plan B and a reason for every pick. It re-plans live: "it's raining",
@@ -113,9 +117,9 @@ Without Cartesia the speaker uses the phone's own voice and the mic stays hidden
 
 ### Live local scouting (Apify)
 
-`actors/faves-local-spots` is our Apify Actor: plain words ("cozy bookstore") to OpenStreetMap
-places, ranked by what locals say on the city's subreddit, with a Locals Score and hidden-gem
-flags. `cd actors/faves-local-spots && npm install && npm test`, then `apify push` and set
+`actors/faves-local-spots` is our own Apify Actor, and the Scout agent's live scouting runs it:
+plain words ("cozy bookstore") to OpenStreetMap places, ranked by what locals say about them in
+the city's public forums, with a Locals Score and hidden-gem flags. `cd actors/faves-local-spots && npm install && npm test`, then `apify push` and set
 `APIFY_ACTOR` and `APIFY_TOKEN`. The Scout agent and the group's agent use it for asks Faves' own data
 doesn't cover yet.
 

@@ -37,8 +37,8 @@ test("a spot's page: its postcard clips, the essentials, the postcard wall and t
   await expect(page.getByTestId("spot-clip").first()).toBeVisible();
   await expect(page.getByTestId("place-dots")).toBeVisible();
   await expect(page.getByTestId("locals-score-row")).toBeVisible();
-  // Clips read as Faves posts; TikTok only appears as a score source.
-  await expect(page.getByTestId("src-tiktok")).toBeVisible();
+  // Clips read as Faves posts, and the score card shows what people on Faves did.
+  await expect(page.getByTestId("signal-ranked")).toBeVisible();
   await expect(page.getByTestId("place-media-0")).not.toContainText(/tiktok/i);
   await expect(page.getByTestId("details-section")).toBeVisible();
 
@@ -74,6 +74,37 @@ test("a spot's floating header gets a paper backdrop once the page scrolls", asy
     scroller.dispatchEvent(new Event("scroll"));
   });
   await expect.poll(bg).toBe("rgba(255, 248, 241, 0.98)");
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
+// Faves is a community app: a spot's score card shows what people on Faves rank, post and save,
+// and no screen names an outside source (booking links like "Reserve on Google" are fine).
+const SOURCES = /\b(google|yelp|tripadvisor|reddit|tiktok)\b|\br\/[a-z]/i;
+const pageText = async (page: import("@playwright/test").Page) => (await page.locator("body").innerText()).replace(/Reserve on Google/g, "");
+
+test("a spot's score card shows community signals and no outside sources", async ({ page }) => {
+  const problems = watchConsole(page);
+  for (const id of [GOLDEN_GATE, "ChIJdx6kBe6AhYARsPFmpUAvvcY" /* Ina Coolbrith Park */, "ChIJXfZJOaB_j4ARqpK7DW1C0JE"]) {
+    await startOnboarded(page, `/place/${id}`);
+    const card = page.getByTestId("scores-section");
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    await expect(card).toContainText("where the score comes from");
+    await expect(page.getByTestId("signal-ranked")).toContainText(/locals?/);
+    await expect(page.getByTestId("signal-moments")).toBeVisible();
+    await expect(page.getByTestId("signal-saves")).toBeVisible();
+    await expect(page.getByTestId("signal-days")).toBeVisible();
+    await expect(page.getByTestId("signals-footnote")).toHaveText("From people on Faves: rankings, moments and saves.");
+    const quote = page.getByTestId("quote-who");
+    if (await quote.count()) await expect(quote).toHaveText(/^a local/);
+    expect(await pageText(page)).not.toMatch(SOURCES);
+  }
+  // The Settings community section and Home say the same.
+  await page.goto("/settings");
+  await expect(page.getByTestId("settings-rankings")).toBeVisible();
+  expect(await pageText(page)).not.toMatch(SOURCES);
+  await page.goto("/");
+  await expect(page.getByTestId("top10-top")).toBeVisible({ timeout: 20_000 });
+  expect(await pageText(page)).not.toMatch(SOURCES);
   expect(problems, problems.join("\n")).toEqual([]);
 });
 

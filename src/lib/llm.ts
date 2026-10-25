@@ -9,6 +9,7 @@ import { CATEGORIES } from "@/theme/tokens";
 import type { Activity, PlanRequest, Who } from "./parser";
 import type { Plan } from "./planner";
 import { formatClock } from "./time";
+import { communitySignals } from "./signals";
 
 const BASE = process.env.EXPO_PUBLIC_LLM_BASE_URL;
 const KEY = process.env.EXPO_PUBLIC_LLM_API_KEY;
@@ -74,7 +75,9 @@ export async function llmParse(text: string, base: PlanRequest, hoods: string[])
 export async function llmExplain(plan: Plan, city: City): Promise<string[] | null> {
   const facts = plan.stops.map((s, i) => {
     const p = city.byId.get(s.placeId);
-    return { stop: i + 1, role: s.slot.label, name: p?.name, kind: p?.kind, localsScore: p ? (p.locals / 10).toFixed(1) : null, redditMentions: p?.reddit.mentions, tiktokPosts: p?.tiktok.mentions, googleRating: p?.google?.rating, hiddenGem: p?.hiddenGem, arrive: formatClock(s.start), travel: s.leg ? `${s.leg.minutes} min ${s.leg.mode}` : null };
+    // Only what people on Faves say: the model never sees, so never cites, outside sources.
+    const c = p ? communitySignals(p) : null;
+    return { stop: i + 1, role: s.slot.label, name: p?.name, kind: p?.kind, localsScore: p ? (p.locals / 10).toFixed(1) : null, localsWhoRankedIt: c?.ranked, momentsPosted: c?.moments, saves: c?.saves, hiddenGem: p?.hiddenGem, arrive: formatClock(s.start), travel: s.leg ? `${s.leg.minutes} min ${s.leg.mode}` : null };
   });
   const system = "Write one short, plain sentence per stop saying why it was picked, using only the facts given. No em dashes, no hype words. Reply as JSON {\"reasons\": [string, ...]} in stop order.";
   const out = JSON.parse(await chat(system, `Request: ${plan.request.raw}\nStops: ${JSON.stringify(facts)}`)) as { reasons?: unknown };

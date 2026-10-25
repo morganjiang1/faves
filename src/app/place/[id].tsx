@@ -20,7 +20,8 @@ import { services } from "@/lib/adapters";
 import { livePlace, type LivePlace } from "@/lib/adapters/places";
 import { dayHoursText, statusAt, weekLines } from "@/lib/hours";
 import { callNumber, openDirections, openUrl, shareUrl } from "@/lib/links";
-import { compact, costOf, gemLine, scoreOutOf10, signalCount, vibeLine, bestQuote } from "@/lib/score";
+import { compact, costOf, gemLine, rankedBy, scoreOutOf10, vibeLine, bestQuote } from "@/lib/score";
+import { communitySignals } from "@/lib/signals";
 import { DAY_NAMES } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useCityClock, useOnline } from "@/state/device";
@@ -81,6 +82,7 @@ export default function PlacePage() {
   const cost = costOf(place);
   const gem = gemLine(place);
   const quote = bestQuote(place);
+  const signals = communitySignals(place);
   const clipPages = pages.filter((p) => p.kind === "clip");
   const current = pages[Math.min(page, pages.length - 1)];
   const poster = current?.kind === "clip" ? current.moment : null;
@@ -131,7 +133,7 @@ export default function PlacePage() {
           </View>
           {place.unrated ? null : (
             <View style={[styles.stamp, { right: 4 }]} testID="locals-score-row">
-              <Stamp score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} size={70} tilt={9} />
+              <Stamp score={scoreOutOf10(place.locals)} count={compact(rankedBy(place))} size={70} tilt={9} />
             </View>
           )}
         </View>
@@ -152,9 +154,7 @@ export default function PlacePage() {
           <View style={styles.quote} testID="quotes-section">
             <Text style={styles.quoteMark}>“</Text>
             <Text style={styles.quoteText} testID="quote-0">{quote.text}</Text>
-            <Pressable accessibilityRole="link" onPress={() => openUrl(quote.url)} hitSlop={6}>
-              <Text style={styles.quoteSource}>r/{city.subreddit} · read the thread</Text>
-            </Pressable>
+            <Text style={styles.quoteSource} testID="quote-who">{place.hood ? `a local · ${place.hood}` : "a local"}</Text>
           </View>
         ) : null}
 
@@ -168,7 +168,7 @@ export default function PlacePage() {
                 {st.state !== "unknown" ? <Text style={{ fontWeight: "800", color: st.state === "open" ? palette.open : palette.sunsetInk }}>{st.state === "open" ? "Open" : "Closed"}  </Text> : null}
                 {place.hours ? `${DAY_NAMES[clock.day]}: ${dayHoursText(place.hours, clock.day)}` : place.court ? "No posted hours. Public courts are usually open dawn to dusk." : "Hours not listed. Call ahead."}
               </Text>
-              {live?.openNow != null ? <Text style={styles.rowSub} testID="live-hours">Live from Google: {live.openNow ? "open now" : "closed now"}</Text> : null}
+              {live?.openNow != null ? <Text style={styles.rowSub} testID="live-hours">Live hours: {live.openNow ? "open now" : "closed now"}</Text> : null}
               {week && place.hours ? (
                 <View style={{ marginTop: 8, gap: 3 }}>
                   {weekLines(place.hours).map((l, k) => (
@@ -219,12 +219,12 @@ export default function PlacePage() {
           <View style={styles.block} testID="scores-section">
             <Text style={styles.blockTitle}>where the score comes from</Text>
             <View style={styles.sources}>
-              <Source testID="src-google" label="Google" value={place.google ? `★ ${place.google.rating.toFixed(1)}` : "-"} sub={place.google ? `${compact(place.google.count)} reviews` : "not rated"} />
-              <Source testID="src-yelp" label="Yelp" value={place.yelp ? `★ ${place.yelp.rating.toFixed(1)}` : "-"} sub={place.yelp ? `${compact(place.yelp.count)} reviews` : "not listed"} />
-              <Source testID="src-reddit" label="Reddit" value={place.reddit.mentions ? String(place.reddit.mentions) : "-"} sub={place.reddit.mentions ? "mentions" : "no mentions"} />
-              <Source testID="src-tiktok" label="TikTok" value={place.tiktok.views ? compact(place.tiktok.views) : "-"} sub={place.tiktok.mentions ? "views" : "no posts"} />
+              <Source testID="signal-ranked" label="Locals ranked it" value={signals.ranked ? `★ ${scoreOutOf10(place.locals)}` : "-"} sub={signals.ranked ? `${signals.ranked.toLocaleString("en-US")} ${signals.ranked === 1 ? "local" : "locals"}` : "no rankings yet"} />
+              <Source testID="signal-moments" label="Moments" value={signals.moments ? compact(signals.moments) : "-"} sub={signals.moments === 1 ? "posted" : signals.moments ? "posted" : "none yet"} />
+              <Source testID="signal-saves" label="Saves" value={signals.saves ? compact(signals.saves) : "-"} sub={signals.saves ? "saved it" : "none yet"} />
+              <Source testID="signal-days" label="Shared days" value={signals.days ? String(signals.days) : "-"} sub={signals.days ? (signals.days === 1 ? "day it's in" : "days it's in") : "none yet"} />
             </View>
-            <Text style={styles.rowSub}>Ratings from Google, Yelp and TripAdvisor; local mentions from r/{city.subreddit} and TikTok.</Text>
+            <Text style={styles.rowSub} testID="signals-footnote">From people on Faves: rankings, moments and saves.</Text>
           </View>
         )}
         <Pressable testID="action-rank" accessibilityRole="button" onPress={() => router.push(`/rank?place=${encodeURIComponent(place.id)}`)} style={styles.rank}>

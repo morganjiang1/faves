@@ -12,14 +12,14 @@ The Faves Agent plans a hangout for you and your friends that's fair for everyon
 | Agent | Address | What it does |
 |---|---|---|
 | Faves Agent | `agent1qfpzxevq7dyhxy32vtvyju6zw7z5kzv2lx7p244zrfq3cqxl8skyvhyh4kk` | Talks to you (Agent Chat Protocol), works out what you want, coordinates the three agents below, sends the itinerary as an interactive card, charges the booking fee (Payment Protocol) and makes the group chat |
-| Faves Planner | `agent1qgmfty97r86evjgwd8azkmuwfmssyn9ads387r079sy7feqq9uz02n6a3x7` | Builds the day with Faves' Locals Score (Google, Yelp, Reddit and TikTok), opening hours, sunset and travel legs; the first stop is the fairest one for everyone's starting point; swaps a stop on request |
+| Faves Planner | `agent1qgmfty97r86evjgwd8azkmuwfmssyn9ads387r079sy7feqq9uz02n6a3x7` | Builds the day with Faves' Locals Score (what locals on Faves rank, post and save), opening hours, sunset and travel legs; the first stop is the fairest one for everyone's starting point; swaps a stop on request |
 | Faves Scout | `agent1qgz8893yqj0jvk3fhlj0czaeu2ewg00c3fa9yf2c5cw9ha4eak0pj7g7f9y` | Finds spots for niche asks ("a Gundam store near Japantown"): Faves data first, then a live run of our Apify Actor (actors/faves-local-spots) |
 | Faves Booker | `agent1qdfk9h8hawwxjujzwm5pke5zw5w0vwnt8zkgysvfs33l8zqzu9gau0xkqnk` | Books the day: reservation links, walk-ins, and the phone number to call for places that only take bookings by phone |
 
 ## How it works
 
 1. You ask the Faves Agent in plain words. With an ASI:One key it reads your message with the `asi1-mini` model; without one, plain rules read it.
-2. The Faves Agent asks the Planner, which calls the Faves server (`npm run chat-server` in `faves/`). That server runs the same planner as the Faves app over its city data (10 US cities, scraped with Apify from Google Maps, Yelp, TripAdvisor, Reddit and TikTok).
+2. The Faves Agent asks the Planner, which calls the Faves server (`npm run chat-server` in `faves/`). That server runs the same planner as the Faves app over its city data (10 US cities, seeded from what locals already share publicly, gathered with Apify Actors).
 3. "Meet in the middle": each friend's neighborhood or town becomes a starting point (only the neighborhood, never an address). The planner picks the first stop that keeps the longest trip shortest, then the total travel, among spots close to the best Locals Score.
 4. You get the plan as text and as an ASI:One interactive card with Book it / Make a group chat / Swap buttons.
 5. "book it" asks the Booker; "make a group chat" creates a Faves group with the plan pinned as a ticket and the agent in it, and returns the invite link.

@@ -17,7 +17,7 @@ import { PageThumb } from "@/components/spot/media";
 import { EmptyState, ErrorState, Icon, LoadingPill, OfflineBanner, Stamp, Toast } from "@/components/ui";
 import { metersBetween } from "@/lib/geo";
 import { openDirections, shareUrl } from "@/lib/links";
-import { compact, scoreOutOf10, signalCount, bestQuote } from "@/lib/score";
+import { compact, rankedBy, scoreOutOf10, bestQuote } from "@/lib/score";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
@@ -91,8 +91,8 @@ export default function SpotMoments() {
             </View>
           </View>
           {place.unrated ? null : (
-            <Pressable accessibilityRole="button" accessibilityLabel={`Locals Score ${scoreOutOf10(place.locals)} from ${compact(signalCount(place))} ratings`} onPress={() => toDetails("scores")}>
-              <Stamp score={scoreOutOf10(place.locals)} count={compact(signalCount(place))} size={68} tilt={8} />
+            <Pressable accessibilityRole="button" accessibilityLabel={`Locals Score ${scoreOutOf10(place.locals)}, ranked by ${compact(rankedBy(place))} locals`} onPress={() => toDetails("scores")}>
+              <Stamp score={scoreOutOf10(place.locals)} count={compact(rankedBy(place))} size={68} tilt={8} />
             </Pressable>
           )}
         </View>
@@ -102,7 +102,7 @@ export default function SpotMoments() {
             <Text style={styles.quoteMark}>“</Text>
             <Text style={styles.quoteText} numberOfLines={4}>{quote.text}</Text>
             <View style={styles.quoteFoot}>
-              <Text style={styles.quoteWho}>a local on r/{city.subreddit}</Text>
+              <Text style={styles.quoteWho}>{place.hood ? `a local · ${place.hood}` : "a local"}</Text>
               <Pressable testID="moments-view-all" accessibilityRole="button" onPress={() => toDetails("locals")} hitSlop={8}><Text style={styles.more}>what locals say</Text></Pressable>
             </View>
           </View>

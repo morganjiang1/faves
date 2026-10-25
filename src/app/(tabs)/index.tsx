@@ -184,7 +184,7 @@ export default function Home() {
                   <PostcardRow testID="section-gems" places={rows.gems} prefix="gems" gem />
                 </>
               ) : null}
-              <Text style={styles.footer}>{name ? `Made for ${name}. ` : ""}Rankings use Google, Yelp, Reddit and TikTok.</Text>
+              <Text style={styles.footer}>{name ? `Made for ${name}. ` : ""}Locals Scores come from what people on Faves rank, post and save.</Text>
             </>
           )}
         </ViewportProvider>

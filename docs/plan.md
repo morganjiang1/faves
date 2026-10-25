@@ -20,7 +20,7 @@ Every screen is built from a captured reference (see `docs/design_references.md`
 2. **Home:** a big "What are we doing?" prompt; occasion chips (Date, Friends, Sports, Night, Day trip, Rainy day, Cheap); "Most-done days this week" (the DoorDash "most ordered" pattern); "Hidden gems near you"; "Open now."
 3. **Plan builder:** who's coming, vibe, budget, time window, how you're getting around, and must-dos ("pickleball, then hot pot"). Returns a full day in about 30 seconds.
 4. **Itinerary:** a timeline of stops with times; travel legs (walk, bus, car) with durations on a map; opening-hours checks; reserve and ticket buttons; swap any stop; a Plan B; share to the group; "Start the day."
-5. **Place page:** the Locals Score with its breakdown (Google, Yelp, Reddit, TikTok); hidden-gem badge; what locals say (quotes with their sources); photos; hours. Courts show sport, surface, lights, number of courts and whether they're open now.
+5. **Place page:** the Locals Score with its community breakdown (locals who ranked it, moments posted, saves, shared days); hidden-gem badge; what locals say (quotes from locals); photos; hours. Courts show sport, surface, lights, number of courts and whether they're open now.
 6. **Explore map:** filters by category (courts, food by cuisine, views, date spots, nightlife, rainy day), with a list/map toggle.
 7. **Community:** popular itineraries, posts, likes, "Do this day" (copy it and customize).
 8. **Day recap:** after the outing, thumbs up or down per stop, a Beli-style "which did you like more?", and a shareable recap card.
@@ -37,7 +37,11 @@ Every screen is built from a captured reference (see `docs/design_references.md`
 
 ## Data: the Locals Score
 
-| Source | What we use | How |
+Faves is a community app: the Locals Score is what people on Faves rank, post and save, and the
+app only ever shows those community signals. So the app works on day one, the 10 launch cities
+were seeded from what locals already share publicly, gathered with Apify Actors:
+
+| Seed source | What we use | How |
 |---|---|---|
 | Google Places API | ratings, review counts, hours, photos, place types | official API |
 | Yelp API | ratings, categories, review counts | official API |
@@ -50,7 +54,7 @@ Every screen is built from a captured reference (see `docs/design_references.md`
 - **Quality:** ratings adjusted for review count, so a 4.9 with 12 reviews doesn't beat a 4.7 with 2,000.
 - **Local love:** how often locals recommend it on Reddit and TikTok, weighted by upvotes and how recent.
 - **Hidden gem:** high quality and high local love, but low tourist exposure.
-- Every score shows where it came from. Each city is pre-computed by scheduled data jobs and cached.
+- Every score shows where it came from, in community terms (rankings, moments, saves). Each city's seed is pre-computed by scheduled data jobs and cached.
 - Google and Yelp data comes through their official APIs and follows their caching limits.
 
 ## Social

@@ -59,8 +59,8 @@ Event rules that apply to everything:
 
 | Requirement | How Faves meets it |
 |---|---|
-| Meaningful use | All Faves data comes from Apify Actors (Google Maps, Yelp, TripAdvisor, Reddit, TikTok search) across 10 cities; the Scout agent runs Actors live for niche requests |
-| Build an Actor at the event | `actors/faves-local-spots`: input a city and a vibe, output ranked spots with a Locals Score that blends Google ratings with Reddit and TikTok local mentions, plus hidden-gem flags. Published to Apify Store and used by the Scout agent |
+| Meaningful use | Faves is a community app: the Locals Score is what people on Faves rank, post and save. The 10 launch cities were seeded with Apify Actors from what locals already share publicly (public reviews and local posts on Google Maps, Yelp, TripAdvisor, Reddit and TikTok), so the app works on day one; the Scout agent runs our own Actor live for niche requests |
+| Build an Actor at the event | `actors/faves-local-spots`: input a city and a vibe, output ranked spots with a Locals Score from what locals say about them in the city's public forums, plus hidden-gem flags. Published to Apify Store and used by the Scout agent |
 | Credits | $200 with promo code APIFY_CAL_HACKS |
 
 ## Needed from Morgan

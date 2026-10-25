@@ -10,7 +10,6 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { City } from "@/data/types";
-import { openUrl } from "@/lib/links";
 import { scoreOutOf10 } from "@/lib/score";
 import { color, font, palette } from "@/theme/tokens";
 import { Avatar, Icon, PlaceImage, SampleTag, ScoreBadge, Skeleton } from "@/components/ui";
@@ -59,21 +58,18 @@ export function PhotoRow({ post, city, testID }: { post: DayPost; city: City; te
   );
 }
 
-// "Notes:" is the poster's own note, or a real scraped quote about one of the stops with
-// its source (tap to open it). Nothing here is written by us.
-export function NotesLine({ post, subreddit, testID }: { post: DayPost; subreddit: string; testID?: string }) {
+// "Notes:" is the poster's own note, or what a local said about one of the stops. Nothing here
+// is written by us.
+export function NotesLine({ post, testID }: { post: DayPost; subreddit?: string; testID?: string }) {
   if (post.note) {
     return <Text style={styles.notes} testID={testID}><Text style={styles.notesLabel}>Notes: </Text>{post.note}</Text>;
   }
   const q = post.quote;
   if (!q) return null;
-  const source = `r/${subreddit}`;
   return (
-    <Pressable testID={testID} accessibilityRole="link" accessibilityLabel={`Quote from ${source} about ${q.placeName}`} onPress={() => openUrl(q.quote.url)}>
-      <Text style={styles.notes} numberOfLines={4}>
-        <Text style={styles.notesLabel}>Notes: </Text>“{q.quote.text}”<Text style={styles.source}>  {source} on {q.placeName}</Text>
-      </Text>
-    </Pressable>
+    <Text testID={testID} style={styles.notes} numberOfLines={4} accessibilityLabel={`A local on ${q.placeName}: ${q.quote.text}`}>
+      <Text style={styles.notesLabel}>Notes: </Text>“{q.quote.text}”<Text style={styles.source}>  a local on {q.placeName}</Text>
+    </Text>
   );
 }
 
