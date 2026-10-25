@@ -18,6 +18,8 @@ export interface Profile {
   transport: Mode;
   onboarded: boolean;
   memberSince: string;
+  userId?: string; // stable id for group chats, made on this phone
+  homeHood?: string | null; // where plans start from by default (a neighborhood, never an address)
 }
 
 export type Sentiment = "great" | "ok" | "bad";

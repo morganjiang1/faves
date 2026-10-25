@@ -33,3 +33,19 @@ export function CityProvider({ children }: { children: ReactNode }) {
 }
 
 export const useCity = () => useContext(Ctx);
+
+// Any city by its slug (a group chat may plan in a city other than the one you have open).
+export function useCityBySlug(slug: string | null | undefined): City | null {
+  const current = useCity().city;
+  const [city, setCity] = useState<City | null>(() => (slug ? cachedCity(slug) ?? null : null));
+  useEffect(() => {
+    if (!slug) return;
+    let live = true;
+    const hit = cachedCity(slug);
+    if (hit) { setCity(hit); return; }
+    loadCity(slug).then((c) => { if (live) setCity(c); }).catch(() => {});
+    return () => { live = false; };
+  }, [slug]);
+  if (slug && current?.slug === slug) return current;
+  return city;
+}
