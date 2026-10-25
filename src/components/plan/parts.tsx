@@ -16,7 +16,7 @@ import type { City, Place } from "@/data/types";
 import { formatLeg, legFor, metersBetween, type Leg, type Mode } from "@/lib/geo";
 import { keywordStrength, type Candidate, type PlanStop } from "@/lib/planner";
 import { costOf, scoreOutOf10 } from "@/lib/score";
-import { formatClock, formatPillTime } from "@/lib/time";
+import { formatClock } from "@/lib/time";
 import { color, font, palette } from "@/theme/tokens";
 import { Sheet } from "../Sheet";
 import { ActionPill, Icon, PlaceImage, type IconName } from "../ui";
@@ -35,7 +35,7 @@ export function DateBadge({ dayShort, date }: { dayShort: string; date: number }
   );
 }
 
-export function LegRow({ leg, loading, onModes, onDirections, testID }: { leg: Leg; loading?: boolean; onModes: () => void; onDirections: () => void; testID?: string }) {
+export function LegRow({ leg, loading, onModes, testID }: { leg: Leg; loading?: boolean; onModes: () => void; onDirections?: () => void; testID?: string }) {
   return (
     <View style={styles.legRow} testID={testID}>
       <Icon name={MODE_ICON[leg.mode]} size={18} tint={color.wanderMuted} />
@@ -43,7 +43,6 @@ export function LegRow({ leg, loading, onModes, onDirections, testID }: { leg: L
         <Text style={styles.legText}>{loading ? "Loading travel time…" : formatLeg(leg)}</Text>
         <Icon name="caret-down" size={12} tint={color.wanderMuted} />
       </Pressable>
-      <Pressable accessibilityRole="link" onPress={onDirections} hitSlop={6}><Text style={styles.legLink}>Directions</Text></Pressable>
       <View style={styles.legDash} />
     </View>
   );
@@ -67,13 +66,12 @@ export function StopCard({ stop, place, index, live, onOpen, onSwap, onPlanB, on
           <Text style={styles.cardTitle} numberOfLines={2}>{place.name}</Text>
           <Text style={styles.cardSub} numberOfLines={1}>{formatClock(stop.start)} to {formatClock(stop.end)} · {role}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View style={styles.timePill}><Text style={styles.timePillText}>{formatPillTime(stop.start)}</Text></View>
-            {!place.unrated ? <Text style={styles.score}>{scoreOutOf10(place.locals)}</Text> : null}
+            {!place.unrated ? <Text style={styles.score}>★ {scoreOutOf10(place.locals)}</Text> : null}
             <Text style={styles.cardMeta} numberOfLines={1}>{[cost.dollars ?? (cost.perPerson === 0 && !cost.estimated ? "Free" : null), place.hiddenGem ? "Hidden gem" : null].filter(Boolean).join(" · ")}</Text>
           </View>
         </Pressable>
       </View>
-      <Text style={styles.why}>{stop.why}</Text>
+      <Text style={styles.why} numberOfLines={2}>{stop.why}</Text>
       {stop.warnings.map((w) => (
         <View key={w} style={styles.warning}><Icon name="alert-circle-outline" size={15} tint={color.closed} /><Text style={styles.warningText}>{w}</Text></View>
       ))}
@@ -173,8 +171,6 @@ const styles = StyleSheet.create({
   thumbNumText: { fontFamily: font.sans, color: "#fff", fontSize: 11, fontWeight: "800" },
   cardTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: color.airbnbText },
   cardSub: { fontFamily: font.sans, fontSize: 14, color: color.airbnbSub },
-  timePill: { backgroundColor: color.wanderPill, borderRadius: 5, paddingHorizontal: 7, height: 19, justifyContent: "center" },
-  timePillText: { fontFamily: font.sans, fontSize: 12, fontWeight: "700", color: color.wanderBlue },
   score: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: color.score },
   cardMeta: { fontFamily: font.sans, fontSize: 13, color: color.airbnbSub, flexShrink: 1 },
   livePill: { alignSelf: "flex-start", overflow: "hidden", backgroundColor: "#000", color: "#fff", fontFamily: font.sans, fontSize: 11, fontWeight: "700", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },

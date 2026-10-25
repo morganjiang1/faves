@@ -1,7 +1,7 @@
 // You: a Faves passport (your initial as a stamp, name, handle, what you're into) with your
-// days, saved spots and rankings as passport stamps, then your lists in a card-stock panel,
-// rewards and streak as ticket stubs, and your recent activity. Works from saved data offline.
-// A stats row of days, saved and ranked is inspired by Beli's profile.
+// days, saved spots and rankings as passport stamps (each opens its list), one list of the
+// rest (popular days, spot rewards, Faves Plus, settings), and your recent activity. Works
+// from saved data offline. A stats row of days, saved and ranked is inspired by Beli's profile.
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -10,10 +10,9 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { UnderlineTabs } from "@/components/social/controls";
 import { copiedFrom, monthYear, postDate } from "@/components/social/dayPost";
 import { DaysDiary } from "@/components/social/Diary";
-import { OutlineButton, ProfileRow, Stat, StatCard } from "@/components/social/ProfileParts";
+import { ProfileRow, Stat } from "@/components/social/ProfileParts";
 import { rankScores, SENTIMENT_TINT } from "@/components/social/rankScore";
-import { weekendStreak } from "@/components/social/streak";
-import { Avatar, Icon, SampleTag, ScoreBadge, type IconName } from "@/components/ui";
+import { Avatar, Icon, ScoreBadge, type IconName } from "@/components/ui";
 import type { Plan } from "@/lib/planner";
 import { balance, money } from "@/lib/rewards";
 import { shareUrl } from "@/lib/links";
@@ -41,7 +40,6 @@ export default function Profile() {
   const plans = useMemo(() => planOrder.map((id) => plansById[id]).filter((p): p is Plan => Boolean(p)), [planOrder, plansById]);
   const todayISO = cityClock(city?.utcOffset ?? -8).wall.toISOString().slice(0, 10);
   const daysDone = plans.filter((p) => p.dateISO <= todayISO).length;
-  const streak = weekendStreak(plans, todayISO);
   const cash = balance(wallet);
   const testWallet = wallet.entries.length > 0 && wallet.entries.every((e) => e.id.startsWith("test-"));
   const interests = CATEGORIES.filter((c) => profile.interests.includes(c.id));
@@ -65,7 +63,7 @@ export default function Profile() {
         <Text style={styles.navName} numberOfLines={1} accessibilityRole="header">you</Text>
         <View style={{ flexDirection: "row", gap: 20 }}>
           <Pressable testID="profile-share-icon" accessibilityRole="button" accessibilityLabel="Share profile" hitSlop={8} onPress={() => setShare(true)}><Icon name="share-outline" size={25} tint={palette.ink} /></Pressable>
-          <Pressable testID="profile-menu" accessibilityRole="button" accessibilityLabel="Settings" hitSlop={8} onPress={() => router.push("/settings")}><Icon name="menu-outline" size={28} tint={palette.ink} /></Pressable>
+          <Pressable testID="profile-menu" accessibilityRole="button" accessibilityLabel="Settings" hitSlop={8} onPress={() => router.push("/settings")}><Icon name="settings-outline" size={25} tint={palette.ink} /></Pressable>
         </View>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }} testID="profile-scroll">
@@ -74,8 +72,7 @@ export default function Profile() {
             <View style={styles.initial}><Text style={styles.initialText}>{(profile.name || "You").slice(0, 1).toUpperCase()}</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.name} numberOfLines={1}>{profile.name || "You"}</Text>
-              <Text style={styles.handle}>@{handle}</Text>
-              <Text style={styles.since}>on Faves since {monthYear(profile.memberSince)}</Text>
+              <Text style={styles.handle}>@{handle} <Text style={styles.since}>· since {monthYear(profile.memberSince)}</Text></Text>
             </View>
           </View>
           {interests.length ? (
@@ -87,24 +84,13 @@ export default function Profile() {
             <Stat testID="stat-saved" value={String(saved.length)} label="saved" tilt={4} onPress={() => router.push("/saved?tab=spots")} />
             <Stat testID="stat-ranked" value={String(rankings.length)} label="ranked" tilt={-3} onPress={() => router.push("/rankings")} />
           </View>
-          <View style={styles.buttons}>
-            <OutlineButton testID="profile-edit" label="Edit" onPress={() => router.push("/settings")} />
-            <OutlineButton testID="profile-share" label="Share" onPress={() => setShare(true)} />
-          </View>
         </View>
 
         <View style={styles.rows}>
-          <ProfileRow testID="row-days" icon="calendar-outline" label="Your days" value={String(plans.length)} onPress={() => router.push("/saved?tab=days")} />
-          <ProfileRow testID="row-saved" icon="bookmark" label="Want to try" value={String(saved.length)} onPress={() => router.push("/saved?tab=spots")} />
-          <ProfileRow testID="row-rankings" icon="trophy-outline" label="Your rankings" value={String(rankings.length)} onPress={() => router.push("/rankings")} />
-          <ProfileRow testID="row-wallet" icon="wallet-outline" label="Spot rewards" value={money(cash)} onPress={() => router.push("/wallet")} />
+          <ProfileRow testID="row-community" icon="flame-outline" label="Popular days" onPress={() => router.push("/feed")} />
+          <ProfileRow testID="row-wallet" icon="wallet-outline" label="Spot rewards" value={testWallet ? `${money(cash)} test` : money(cash)} onPress={() => router.push("/wallet")} />
           <ProfileRow testID="row-plus" icon="diamond-outline" label="Faves Plus" value={plus.active ? "Member" : "Try it"} onPress={() => router.push("/plus")} />
           <ProfileRow testID="row-settings" icon="settings-outline" label="Settings" onPress={() => router.push("/settings")} last />
-        </View>
-
-        <View style={styles.cards}>
-          <StatCard testID="card-rewards" icon="cash-outline" label="Spot rewards" value={money(cash)} onPress={() => router.push("/wallet")} tag={testWallet ? <SampleTag text="Test data" /> : null} />
-          <StatCard testID="card-streak" icon="flame" label="Weekend streak" value={`${streak} in a row`} onPress={() => router.push("/saved?tab=days")} />
         </View>
 
         <View style={{ marginTop: 22 }}>
@@ -118,7 +104,6 @@ export default function Profile() {
           ) : (
             <View style={styles.emptyActivity} testID="profile-activity-empty">
               <Text style={styles.emptyTitle}>Nothing here yet</Text>
-              <Text style={styles.emptyBody}>Plan a day, rank a spot or post a day and it shows up here.</Text>
               <Pressable testID="profile-plan" accessibilityRole="button" onPress={() => router.push("/builder")} style={styles.emptyCta}><Text style={styles.emptyCtaText}>Plan a day</Text></Pressable>
             </View>
           )
@@ -133,7 +118,6 @@ export default function Profile() {
         ) : (
           <View style={styles.emptyActivity}>
             <Text style={styles.emptyTitle}>No days yet</Text>
-            <Text style={styles.emptyBody}>Your planned and finished days show up here like a diary.</Text>
           </View>
         )}
       </ScrollView>
@@ -177,7 +161,7 @@ const styles = StyleSheet.create({
   initialText: { fontFamily: font.displayHeavy, fontSize: 32, color: palette.ink },
   name: { fontFamily: font.display, fontSize: 24, color: palette.ink },
   handle: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.roseInk, marginTop: 1 },
-  since: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 2 },
+  since: { fontFamily: font.sans, fontSize: 13, fontWeight: "400", color: palette.inkMuted },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
   chip: { backgroundColor: palette.paperDeep, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   chipText: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.ink },

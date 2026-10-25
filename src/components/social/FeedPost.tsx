@@ -13,7 +13,7 @@ import type { City } from "@/data/types";
 import { scoreOutOf10 } from "@/lib/score";
 import { color, font, palette } from "@/theme/tokens";
 import { Avatar, Icon, PlaceImage, SampleTag, ScoreBadge, Skeleton } from "@/components/ui";
-import { categoryGlyph, dayScore, mainCategory, mainHood, postDate, stopPlaces, withWhom, type DayPost } from "./dayPost";
+import { categoryGlyph, dayScore, mainCategory, mainHood, stopPlaces, withWhom, type DayPost } from "./dayPost";
 
 const GREY = palette.inkMuted;
 
@@ -62,12 +62,12 @@ export function PhotoRow({ post, city, testID }: { post: DayPost; city: City; te
 // is written by us.
 export function NotesLine({ post, testID }: { post: DayPost; subreddit?: string; testID?: string }) {
   if (post.note) {
-    return <Text style={styles.notes} testID={testID}><Text style={styles.notesLabel}>Notes: </Text>{post.note}</Text>;
+    return <Text style={styles.notes} testID={testID} numberOfLines={3}><Text style={styles.notesLabel}>Notes: </Text>{post.note}</Text>;
   }
   const q = post.quote;
   if (!q) return null;
   return (
-    <Text testID={testID} style={styles.notes} numberOfLines={4} accessibilityLabel={`A local on ${q.placeName}: ${q.quote.text}`}>
+    <Text testID={testID} style={styles.notes} numberOfLines={2} accessibilityLabel={`A local on ${q.placeName}: ${q.quote.text}`}>
       <Text style={styles.notesLabel}>Notes: </Text>“{q.quote.text}”<Text style={styles.source}>  a local on {q.placeName}</Text>
     </Text>
   );
@@ -134,13 +134,10 @@ export function FeedPost({ post, city, state, faces, handlers, testID }: { post:
           </Pressable>
           <View style={{ flex: 1 }} />
           <ReorderPill label={state.done ? "Do it again" : "Do this day"} onPress={handlers.onDo} testID={`${testID}-do`} />
-          <View style={{ width: 8 }} />
-          <ReorderPill label="See stops" onPress={handlers.onOpen} testID={`${testID}-stops`} />
           <Pressable testID={`${testID}-save`} accessibilityRole="button" accessibilityLabel={state.saved ? "Remove from saved days" : "Save this day"} accessibilityState={{ selected: state.saved }} hitSlop={8} onPress={handlers.onSave} style={{ marginLeft: 14 }}>
             <Icon name={state.saved ? "bookmark" : "bookmark-outline"} size={25} tint={state.saved ? color.brand : "#000"} />
           </Pressable>
         </View>
-        <Text style={styles.date}>{postDate(post.at)}</Text>
       </View>
     </View>
   );
@@ -188,8 +185,7 @@ const styles = StyleSheet.create({
   countsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 18 },
   kudos: { flexDirection: "row", alignItems: "center", gap: 7, flexShrink: 1 },
   counts: { fontFamily: font.sans, fontSize: 14, color: palette.ink },
-  actions: { flexDirection: "row", alignItems: "center", marginTop: 12, minHeight: 30 },
+  actions: { flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 14, minHeight: 30 },
   pill: { height: 25, borderRadius: 13, backgroundColor: color.reorderPill, paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 4 },
   pillText: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: color.reorderText },
-  date: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 20, marginBottom: 12 },
 });

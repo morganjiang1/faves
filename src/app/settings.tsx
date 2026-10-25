@@ -1,6 +1,6 @@
-// Settings: you, how you get around, interests, demo mode, the city data behind the Locals Score,
-// connected services, reset, and the Powered by line. Card-stock groups on paper with display
-// headings. Grouped rows are inspired by iOS Settings.
+// Settings: you, how you get around, interests, demo mode, the community behind the Locals
+// Score, connected services (one row, the list in a sheet), reset, and the Powered by line.
+// Card-stock groups on paper with display headings. Grouped rows are inspired by iOS Settings.
 import { router } from "expo-router";
 import { useMemo, useState, type ReactNode } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
@@ -42,6 +42,7 @@ export default function Settings() {
   const profile = useStore((s) => s.profile);
   const demoHere = useStore((s) => s.settings.demoHere);
   const [confirm, setConfirm] = useState(false);
+  const [services, setServices] = useState(false);
   const close = () => (router.canGoBack() ? router.back() : router.replace("/profile"));
 
   const toggleInterest = (id: CategoryId) => {
@@ -93,13 +94,13 @@ export default function Settings() {
           </View>
         </Section>
 
-        <Section title="Demo mode" footer="For trying moment posting away from the city. Those clips get a Demo stamp, never Taken here.">
-          <Row label="Demo mode: treat me as at the spot" first wrap>
+        <Section title="Demo mode" footer="Post moments from anywhere. They get a Demo stamp.">
+          <Row label="Treat me as at the spot" first wrap>
             <Switch testID="settings-demo" accessibilityLabel="Demo mode" value={demoHere} onValueChange={(v) => actions.setSetting({ demoHere: v })} trackColor={{ true: LIVE, false: "#E9E9EA" }} thumbColor="#fff" {...(Platform.OS === "web" ? { activeThumbColor: "#fff" } : {})} />
           </Row>
         </Section>
 
-        <Section title="Community" footer="Locals Scores come from what people on Faves rank, post and save. The launch cities were seeded from what locals already share publicly.">
+        <Section title="Community" footer="Locals Scores come from what people on Faves rank, post and save.">
           {status === "error" ? (
             <ErrorState title="Couldn't load the city data. Tap to retry." body={error ?? "Check your connection and try again."} onRetry={retry} testID="settings-data-error" />
           ) : status === "loading" || !city || !counts ? (
@@ -111,38 +112,42 @@ export default function Settings() {
           ) : (
             <>
               <Row label={`Spots in ${city.name}`} first><Text style={styles.value}>{counts.places.toLocaleString("en-US")}</Text></Row>
-              <Row label="City data built"><Text style={styles.value} testID="settings-built">{builtLabel(city.builtAt)}</Text></Row>
               <Row label="Rankings by locals"><Text style={styles.value} testID="settings-rankings">{counts.ranked.toLocaleString("en-US")}</Text></Row>
               <Row label="Moments posted"><Text style={styles.value}>{counts.moments.toLocaleString("en-US")}</Text></Row>
               <Row label="Saves"><Text style={styles.value}>{counts.saves.toLocaleString("en-US")}</Text></Row>
-              <Row label="Public courts"><Text style={styles.value}>{counts.courts.toLocaleString("en-US")}</Text></Row>
             </>
           )}
         </Section>
 
-        <Section title="Connected services">
-          {SERVICES.map((s, i) => (
-            <View key={s.id} style={[styles.row, styles.rowTall, i > 0 && styles.sep]} testID={`settings-service-${s.id}`}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>{s.label}</Text>
-                <Text style={[styles.sub, s.set && { color: LIVE }]}>{s.set ? "Connected" : "Not set, using bundled data"}</Text>
-              </View>
-              {s.set ? <Icon name="checkmark-circle" size={20} tint={LIVE} /> : <Text style={styles.subSmall}>{s.what}</Text>}
-            </View>
-          ))}
-        </Section>
-
         <Section>
-          <Pressable testID="settings-reset" accessibilityRole="button" onPress={() => setConfirm(true)} style={({ pressed }) => [styles.row, pressed && { backgroundColor: palette.paperDeep }]}>
+          <Row label="Connected services" first onPress={() => setServices(true)} testID="settings-services">
+            <Text style={styles.value}>{SERVICES.filter((x) => x.set).length} of {SERVICES.length}</Text>
+            <Icon name="chevron-forward" size={18} tint={palette.inkMuted} />
+          </Row>
+          <Pressable testID="settings-reset" accessibilityRole="button" onPress={() => setConfirm(true)} style={({ pressed }) => [styles.row, styles.sep, pressed && { backgroundColor: palette.paperDeep }]}>
             <Text style={[styles.label, { color: RED }]}>Reset app data</Text>
           </Pressable>
         </Section>
         <Text style={styles.version}>Faves 0.1.0</Text>
-        <Text style={styles.credits} testID="settings-powered-by">Powered by Convex (live chats, the agent, reminders), Fetch.ai (agents on Agentverse and ASI:One), Cartesia (the agent's voice and voice notes) and Apify (the agent's live scouting). Maps © OpenStreetMap contributors.</Text>
+        <Text style={styles.credits} testID="settings-powered-by">Powered by Convex, Fetch.ai, Cartesia and Apify. Maps © OpenStreetMap contributors.</Text>
       </ScrollView>
 
+      <Sheet open={services} onClose={() => setServices(false)} title="Connected services" subtitle="Faves works without them" background={BG} testID="settings-services-sheet">
+        <View style={styles.card}>
+          {SERVICES.map((s, i) => (
+            <View key={s.id} style={[styles.row, styles.rowTall, i > 0 && styles.sep]} testID={`settings-service-${s.id}`}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>{s.label}</Text>
+                <Text style={[styles.sub, s.set && { color: LIVE }]}>{s.set ? "Connected" : "Not set"}</Text>
+              </View>
+              {s.set ? <Icon name="checkmark-circle" size={20} tint={LIVE} /> : <Text style={styles.subSmall}>{s.what}</Text>}
+            </View>
+          ))}
+        </View>
+        <Text style={styles.confirmBody}>Convex runs the live chats, the agent and reminders; Fetch.ai the agents on Agentverse and ASI:One; Cartesia the agent's voice; Apify live scouting.</Text>
+      </Sheet>
       <Sheet open={confirm} onClose={() => setConfirm(false)} title="Reset app data?" background={BG} testID="settings-reset-sheet">
-        <Text style={styles.confirmBody}>This clears your profile, saved spots, days, rankings and rewards on this device. It can't be undone.</Text>
+        <Text style={styles.confirmBody}>Clears your profile, saved spots, days, rankings and rewards on this phone. This can't be undone.</Text>
         <View style={styles.card}>
           <Pressable testID="settings-reset-confirm" accessibilityRole="button" onPress={async () => { setConfirm(false); await resetAll(); router.replace("/onboarding"); }} style={styles.row}>
             <Text style={[styles.label, { color: RED, fontWeight: "600" }]}>Reset everything</Text>
@@ -154,13 +159,6 @@ export default function Settings() {
       </Sheet>
     </SafeAreaView>
   );
-}
-
-function builtLabel(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "Unknown";
-  const M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${M[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 function Section({ title, footer, children }: { title?: string; footer?: string; children: ReactNode }) {

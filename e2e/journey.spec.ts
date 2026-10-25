@@ -11,12 +11,12 @@ test("onboarding to Home to a planned day to a place page", async ({ page }) => 
   await expect(page.getByTestId("onboarding-splash")).toBeVisible();
   await onboard(page);
 
-  // Home (DoorDash-style feed) with the city loaded.
+  // Home with the city loaded: the deck, the plan prompt, one row of postcards, popular days.
   await expect(page.getByTestId("home-prompt")).toBeVisible();
   await expect(page.getByTestId("city-switcher")).toContainText(/san francisco/i);
   await expect(page.getByTestId("top10-top")).toBeVisible();
   await expect(page.getByTestId("row-tonight").or(page.getByTestId("row-weekend")).first()).toBeVisible();
-  await expect(page.getByTestId("day-card-0")).toBeVisible();
+  await expect(page.getByTestId("more-days")).toBeVisible();
 
   // Plan a day from a plain request.
   await page.getByTestId("home-prompt").click();
@@ -39,12 +39,16 @@ test("onboarding to Home to a planned day to a place page", async ({ page }) => 
   await page.getByTestId("reel-close").click();
   await expect(page.getByTestId("itinerary")).toBeVisible();
 
-  // A stop opens its place page with logistics and the Locals Score.
+  // A stop opens its place page with the facts line, the Locals Score and the details sheet.
   await page.getByTestId("stop-0-open").click();
   await expect(page.getByTestId("place-page")).toBeVisible();
   await expect(page.getByTestId("locals-score-row")).toBeVisible();
   await expect(page.getByTestId("open-status")).toBeVisible();
-  await expect(page.getByTestId("details-section")).toBeVisible();
+  await page.getByTestId("details-section").click();
+  await expect(page.getByTestId("place-details")).toBeVisible();
+  await expect(page.getByTestId("address-row")).toContainText("Directions");
+  await page.getByTestId("place-details-close").click();
+  await expect(page.getByTestId("place-details")).toBeHidden();
   await page.getByTestId("place-back").click();
   await expect(page.getByTestId("itinerary")).toBeVisible();
 
@@ -60,11 +64,15 @@ test("live re-plan: rain, running late and a swap", async ({ page }) => {
 
   const stopsText = async () => (await page.locator('[data-testid^="stop-"][data-testid$="-open"]').allInnerTexts()).join("|");
   const before = await stopsText();
+  // The live re-plans live in the "Change plans" sheet.
+  await page.getByTestId("change-plans").click();
+  await expect(page.getByTestId("change-sheet")).toBeVisible();
   await page.getByTestId("quick-0").click(); // It's raining
   await expect(page.getByTestId("agent-note")).toContainText(/takes its place|already indoors/);
   // Outdoor stops are replaced; indoor ones stay.
   if (/takes its place/.test(await page.getByTestId("agent-note").innerText())) expect(await stopsText()).not.toEqual(before);
 
+  await page.getByTestId("change-plans").click();
   await page.getByTestId("replan-input").fill("we're running 45 min late");
   await page.getByTestId("replan-send").click();
   await expect(page.getByTestId("agent-note")).toContainText("45 min");
@@ -83,7 +91,9 @@ test("live re-plan: rain, running late and a swap", async ({ page }) => {
 test("a popular day from Home, Do this day, the recap, and posting it", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/");
-  await page.getByTestId("day-card-0").click();
+  await page.getByTestId("more-days").click();
+  await expect(page.getByTestId("feed-screen")).toBeVisible();
+  await page.getByTestId("post-0-open").click();
   await expect(page).toHaveURL(/\/day\/san-francisco-saturday-in-sf/);
   await expect(page.getByTestId("day-page")).toContainText("Saturday in SF");
   for (const name of ["Arsicault Bakery", "Presidio Wall Pickleball Courts", "Golden Boy Pizza", "Musée Mécanique", "Ina Coolbrith Park", "The Interval at Long Now"]) {
@@ -93,7 +103,8 @@ test("a popular day from Home, Do this day, the recap, and posting it", async ({
   await expect(page.getByTestId("itinerary")).toBeVisible();
   await expect(page.getByTestId("stop-5")).toContainText("The Interval at Long Now");
 
-  await page.getByTestId("link-recap").click();
+  await page.getByTestId("plan-menu").click();
+  await page.getByTestId("menu-recap").click();
   await expect(page).toHaveURL(/\/recap\//);
   await expect(page.getByTestId("recap-screen")).toBeVisible();
 

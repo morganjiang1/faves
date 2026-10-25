@@ -1,12 +1,6 @@
-// A day's page. Header is inspired by Beli's post page (social/beli/appstore_03_feed_post_ranked_share.png:
-// plain back chevron, then the post header, Notes and kudos); the map is inspired by Wanderlog's route
-// map (plans/wanderlog/appstore_04_road_trip_route_map_numbered_stops.png: 26x37 numbered
-// teardrops in the day color, route line at about 60%, walk legs dotted like Citymapper);
-// the stops are inspired by Airbnb's "What you'll do" list (plans/airbnb/android_video_2025_experience_
-// what_youll_do.png: 76 pt square photo radius 8, 20 pt gap, bold title, grey 2-line
-// description, a thin #EBEBEB line joining the photos); the footer is inspired by Airbnb's floating
-// listing footer (android_video_2025_experience_detail_show_dates.png: white pill card 15 pt
-// from the edges, price at the left, a 162x49 pt pill button at the right).
+// A day someone did: who did it and their note, a thumbs up with faces, the route map, then
+// "What you'll do" as a clean list (each stop's clip, name, time and travel leg), and a
+// floating footer with the price and Do this day.
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -196,7 +190,6 @@ function DayBody({ post, city, liked, faces, bottomPad }: { post: DayPost; city:
               <StopClip testID={`day-stop-clip-${i}`} place={p} reel={`${reelBase}&i=${i}`} />
               <Pressable testID={`day-stop-${i}`} accessibilityRole="button" accessibilityLabel={`Stop ${i + 1}: ${p.name}`} onPress={() => router.push(`/place/${encodeURIComponent(p.id)}`)} style={{ flex: 1 }}>
                 <Text style={styles.stopTitle} numberOfLines={2}>{p.name}</Text>
-                <Text style={styles.stopDesc} numberOfLines={2}>{s.why}</Text>
                 <View style={styles.legRow}>
                   <Icon name={s.leg ? MODE_ICON[s.leg.mode] : "time-outline"} size={14} tint={color.airbnbSub} />
                   <Text style={styles.legText} numberOfLines={1}>{formatClock(s.start)}{s.leg ? ` · ${formatLeg(s.leg)}` : " · first stop"}</Text>
@@ -218,7 +211,6 @@ function Footer({ post, city, done, bottom }: { post: DayPost; city: City; done:
     <View style={[styles.footer, shadow.card, { bottom }]} testID="day-footer">
       <View style={{ flex: 1, paddingRight: 8 }}>
         <Text style={styles.footTop} numberOfLines={1}><Text style={{ fontWeight: "700" }}>{price}</Text>{cost.perPerson > 0 ? " / person" : " to do"}</Text>
-        <Text style={styles.footSub} numberOfLines={1}>{post.plan.stops.length} stops · {formatClock(post.plan.start, { compact: true })} to {formatClock(post.plan.end, { compact: true })}</Text>
       </View>
       <Pressable testID="day-do" accessibilityRole="button" accessibilityLabel={done ? "Do this day again" : "Do this day"} onPress={() => doThisDay(post, city)} style={({ pressed }) => [styles.footButton, pressed && { opacity: 0.8 }]}>
         <Text style={styles.footButtonText}>{done || post.kind === "mine" ? "Do it again" : "Do this day"}</Text>
@@ -237,15 +229,13 @@ const styles = StyleSheet.create({
   mapWrap: { height: 250, marginTop: 22, backgroundColor: color.cornerLand, overflow: "hidden" },
   h2: { fontFamily: font.sans, fontSize: 22, fontWeight: "600", color: color.airbnbText, marginTop: 24 },
   sub: { fontFamily: font.sans, fontSize: 15, color: color.airbnbSub, marginTop: 4 },
-  stop: { flexDirection: "row", gap: 16, marginBottom: 18 },
+  stop: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 18 },
   connector: { position: "absolute", left: 24.25, top: 75, bottom: -18, width: 1.5, backgroundColor: palette.paperDeep },
   stopTitle: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "600", color: color.airbnbText },
-  stopDesc: { fontFamily: font.sans, fontSize: 16, lineHeight: 22, color: color.airbnbSub, marginTop: 2 },
   legRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
   legText: { fontFamily: font.sans, fontSize: 14, color: color.airbnbSub, flexShrink: 1 },
   footer: { position: "absolute", left: 15, right: 15, minHeight: 61, borderRadius: 31, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", paddingLeft: 22, paddingRight: 6, paddingVertical: 6, maxWidth: Platform.OS === "web" ? 490 : undefined },
   footTop: { fontFamily: font.sans, fontSize: 16, color: color.airbnbText },
-  footSub: { fontFamily: font.sans, fontSize: 12, color: color.airbnbSub, marginTop: 2 },
   footButton: { width: 162, height: 49, borderRadius: 25, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },
   footButtonText: { fontFamily: font.sans, color: "#fff", fontSize: 17, fontWeight: "600" },
 });

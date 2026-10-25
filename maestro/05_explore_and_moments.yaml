@@ -3,12 +3,13 @@ env:
   APP_URL: exp://127.0.0.1:8081
 ---
 - runFlow: 01_onboarding.yaml
-- tapOn:
-    id: "open-map"
+- tapOn: "Explore"
 - extendedWaitUntil:
     visible:
       id: "explore-map"
     timeout: 20000
+- tapOn:
+    id: "explore-category"
 - tapOn:
     id: "explore-cat-courts"
 - tapOn:
@@ -22,11 +23,11 @@ env:
       id: "place-page"
     timeout: 15000
 - tapOn:
-    id: "place-caption"
-- assertVisible:
     id: "details-section"
+- assertVisible:
+    id: "place-details"
 - tapOn:
-    id: "details-close"
+    id: "place-details-close"
 - tapOn:
     id: "moments-anchor"
 - extendedWaitUntil:

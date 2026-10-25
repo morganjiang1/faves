@@ -1,25 +1,23 @@
-// Community tab. The fixed top is inspired by Beli's feed (social/beli/yt_GlMma4eXe18_t160 and t174):
-// serif wordmark at the left with three icons at the right, the #EBEBED search field, the
-// filled chips row (selected #134456, others #9DB3B7). Posts are inspired by Beli's feed post
-// (appstore_03_feed_post_ranked_share.png), likes Strava kudos (appstore_02 / appstore_06),
-// "Do this day" DoorDash's Reorder pill (appstore2026_05). The "Post your first day" card
-// is inspired by Beli's invite card (t160). Loading = Instagram skeleton, error = TikTok tap to retry,
-// offline = Spotify's bar (drawn by the tab bar), empty = Beli's empty card.
+// Popular days: the days people did in the city this week (sample people for now, labeled),
+// with Trending, Newest and Saved. Each post: who did it, the stops' photos, a note, a thumbs
+// up with faces, share, Do this day and save. Search and the leaderboard are icons in the
+// header. Posts are inspired by Beli's feed post, likes by Strava kudos, "Do this day" by
+// DoorDash's Reorder.
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { FlatList, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ShareSheet } from "@/components/ShareSheet";
-import { CapsHeader, FilledChip, HeaderIcon, InviteCard, SearchField, WordmarkHeader } from "@/components/social/controls";
+import { CapsHeader, FilledChip, HeaderIcon, InviteCard } from "@/components/social/controls";
 import { stopPlaces, type DayPost } from "@/components/social/dayPost";
 import { FeedPost, FeedSkeleton } from "@/components/social/FeedPost";
 import { doThisDay, facesFor, useCommunityPosts, useMyPosts } from "@/components/social/useDays";
-import { EmptyState, ErrorState, SampleTag, T, Toast } from "@/components/ui";
+import { EmptyState, ErrorState, Icon, SampleTag, T, Toast } from "@/components/ui";
 import { shareUrl } from "@/lib/links";
 import { useCity } from "@/state/city";
 import { actions, useStore } from "@/state/store";
+import { font, palette } from "@/theme/tokens";
 
-import { palette } from "@/theme/tokens";
 type Tab = "top" | "new" | "saved";
 type Row = { key: string; kind: "caps"; title: string } | { key: string; kind: "post"; post: DayPost; index: number } | { key: string; kind: "invite" } | { key: string; kind: "empty-saved" } | { key: string; kind: "sample" };
 
@@ -84,15 +82,15 @@ export default function Feed() {
             return (
               <View style={styles.sample} testID="feed-sample-note">
                 <SampleTag text="Sample people" />
-                <T v="caption" style={{ flex: 1 }}>Real spots and quotes. People and counts are placeholders for now.</T>
+                <T v="caption" style={{ flex: 1 }}>Real spots and quotes, placeholder people.</T>
               </View>
             );
           }
           if (item.kind === "invite") {
-            return <View style={{ paddingVertical: 20 }}><InviteCard testID="feed-invite" title="Your days show up here" body="Finish a day, rate the stops and post it so others can copy it." cta="Plan a day" onPress={() => router.push("/builder")} /></View>;
+            return <View style={{ paddingVertical: 20 }}><InviteCard testID="feed-invite" title="Post your day" body="Loved a day out? Post it so others can do it too." cta="Plan a day" onPress={() => router.push("/builder")} /></View>;
           }
           if (item.kind === "empty-saved") {
-            return <EmptyState testID="feed-saved-empty" icon="bookmark-outline" title="No saved days" body="Tap the bookmark on any day to keep it here for later." cta="See popular days" onCta={() => setTab("top")} />;
+            return <EmptyState testID="feed-saved-empty" icon="bookmark-outline" title="No saved days" body="Bookmark a day to keep it here." cta="See popular days" onCta={() => setTab("top")} />;
           }
           const p = item.post;
           return (
@@ -122,16 +120,14 @@ export default function Feed() {
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]} testID="feed-screen">
-      <WordmarkHeader
-        right={
-          <>
-            <HeaderIcon testID="feed-your-days" icon="calendar-outline" label="Your days" onPress={() => router.push("/saved?tab=days")} />
-            <HeaderIcon testID="feed-leaderboard" icon="trophy-outline" label="Leaderboard" onPress={() => router.push("/rankings?tab=leaderboard")} />
-            <HeaderIcon testID="feed-menu" icon="menu-outline" label="Settings" onPress={() => router.push("/settings")} />
-          </>
-        }
-      />
-      <SearchField testID="feed-search" placeholder="Search a spot, a day or a hood" onPress={() => router.push("/search")} />
+      <View style={styles.header}>
+        <Pressable testID="feed-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}>
+          <Icon name="chevron-back" size={26} tint={palette.ink} />
+        </Pressable>
+        <Text style={styles.title} accessibilityRole="header">popular days</Text>
+        <HeaderIcon testID="feed-search" icon="search" label="Search spots and days" onPress={() => router.push("/search")} />
+        <HeaderIcon testID="feed-leaderboard" icon="trophy-outline" label="Leaderboard" onPress={() => router.push("/rankings?tab=leaderboard")} />
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chips}>
         <FilledChip testID="feed-tab-top" label="Trending" icon="trending-up" on={tab === "top"} onPress={() => setTab("top")} />
         <FilledChip testID="feed-tab-new" label="Newest" icon="time-outline" on={tab === "new"} onPress={() => setTab("new")} />
@@ -158,6 +154,8 @@ export default function Feed() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.paper },
+  header: { flexDirection: "row", alignItems: "center", gap: 18, paddingHorizontal: 14, paddingTop: 6, paddingBottom: 4 },
+  title: { flex: 1, fontFamily: font.displayHeavy, fontSize: 28, color: palette.ink, letterSpacing: -0.8 },
   chips: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 10, gap: 8 },
   hairline: { height: 1, backgroundColor: palette.paperDeep },
   sample: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 22, paddingBottom: 6 },

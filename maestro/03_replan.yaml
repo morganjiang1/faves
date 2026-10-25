@@ -15,9 +15,13 @@ env:
       id: "itinerary"
     timeout: 30000
 - tapOn:
+    id: "change-plans"
+- tapOn:
     id: "quick-0"
 - assertVisible:
     id: "agent-note"
+- tapOn:
+    id: "change-plans"
 - tapOn:
     id: "replan-input"
 - inputText: "we're running 45 min late"

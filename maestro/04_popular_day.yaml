@@ -5,10 +5,12 @@ env:
 - runFlow: 01_onboarding.yaml
 - scrollUntilVisible:
     element:
-      id: "day-card-0"
+      id: "more-days"
     direction: DOWN
 - tapOn:
-    id: "day-card-0"
+    id: "more-days"
+- tapOn:
+    id: "post-0-open"
 - assertVisible: "Saturday in SF"
 - assertVisible: "Arsicault Bakery"
 - tapOn:
@@ -18,7 +20,9 @@ env:
       id: "itinerary"
     timeout: 15000
 - tapOn:
-    id: "link-recap"
+    id: "plan-menu"
+- tapOn:
+    id: "menu-recap"
 - extendedWaitUntil:
     visible:
       id: "recap-screen"

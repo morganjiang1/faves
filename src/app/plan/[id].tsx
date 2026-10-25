@@ -1,11 +1,9 @@
-// Itinerary. Map on top with Wanderlog's numbered teardrop pins and route line in the day
-// color (appstore_04_road_trip_route_map_numbered_stops.png; walk legs as Citymapper's navy
-// dots, appstore_04_journey_go_button_legs.png), a sheet below with Wanderlog's day header and
-// blue links (appstore_05_itinerary_day_travel_legs.png), Airbnb Trips' timeline and stop
-// cards (appstore_06_trips_day_by_day_timeline.png), Wanderlog leg rows between stops, Google
-// Maps tonal pills for reserve and directions, and the live re-plan box in Ask Maps' glowing
-// prompt style (promo_video_ask_maps_prompt_glow.png).
-import { LinearGradient } from "expo-linear-gradient";
+// Itinerary: the route map on top, then the day as a clean list on a paper sheet: the title,
+// one line with the day, the hours and the cost, the agent's note after a change, and the
+// stops with travel legs between them (each stop with its clip, why it was picked, a Plan B,
+// directions and swap). The bottom bar has the two things you do next: share it with friends
+// (a group chat with the agent and this ticket) or change plans (a sheet with the live
+// re-plans: rain, running late, cheaper, your own words, plus the weather and sunset).
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -17,12 +15,12 @@ import { ViewportProvider, useViewport } from "@/components/video/viewport";
 import { Sheet } from "@/components/Sheet";
 import { ShareSheet } from "@/components/ShareSheet";
 import { SendToChat } from "@/components/chat/SendToChat";
-import { Chip, CircleButton, EmptyState, ErrorState, Grabber, Icon, OfflineBanner, Skeleton, SkeletonRows, Toast } from "@/components/ui";
-import { formatDuration, type Mode } from "@/lib/geo";
+import { Chip, CircleButton, EmptyState, ErrorState, Grabber, Icon, OfflineBanner, PrimaryButton, SecondaryButton, Skeleton, SkeletonRows, Toast } from "@/components/ui";
+import { type Mode } from "@/lib/geo";
 import { openDirections, openUrl, shareUrl } from "@/lib/links";
 import { encodePayload, decodePayload } from "@/lib/payload";
 import { activitiesIn, parseRequest, requestChips } from "@/lib/parser";
-import { alternativesFor, planCost, planFromShared, planTravel, replan, setLegMode, swapStop } from "@/lib/planner";
+import { alternativesFor, planCost, planFromShared, replan, setLegMode, swapStop } from "@/lib/planner";
 import { cityClock, DAY_SHORT, formatClock, wallDateFor } from "@/lib/time";
 import { weatherFor, type DayWeather } from "@/lib/weather";
 import { services } from "@/lib/adapters";
@@ -53,6 +51,7 @@ export default function Itinerary() {
   const [share, setShare] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [changing, setChanging] = useState(false);
   const [ask, setAsk] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -133,7 +132,6 @@ export default function Itinerary() {
   const liveIndex = today ? plan.stops.findIndex((s) => clock.minutes >= s.start - 5 && clock.minutes < s.end) : -1;
   const nextIndex = today ? plan.stops.findIndex((s) => s.start > clock.minutes) : -1;
   const cost = planCost(plan, city);
-  const travel = planTravel(plan);
   const date = new Date(`${plan.dateISO}T00:00:00Z`);
   const dayKey = wallDateFor(city.utcOffset, { offsetDays: 0 }, now).toISOString().slice(0, 10);
   const usedToday = replans.day === dayKey ? replans.count : 0;
@@ -157,6 +155,7 @@ export default function Itinerary() {
     save(r.plan, r.message);
     if (r.changed.length || /Removed|Added|Pushed/.test(r.message)) actions.useReplan(dayKey);
     setAsk("");
+    setChanging(false);
   };
 
   const sharePayload: SharedPlan = { id: plan.id, c: plan.citySlug, raw: plan.request.raw, date: plan.dateISO, start: plan.stops[0]?.start ?? plan.start, mode: plan.transport, places: plan.stops.map((s) => s.placeId), title: plan.title };
@@ -181,41 +180,20 @@ export default function Itinerary() {
         <ScrollView testID="plan-scroll" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" onScroll={view.onScroll} scrollEventThrottle={64} onLayout={view.onLayout}>
           <ViewportProvider vp={view.vp}>
           <Text style={styles.title} testID="plan-title">{plan.title}</Text>
-          <Text style={styles.meta}>{plan.dayLabel} · {formatClock(plan.stops[0]?.start ?? plan.start)} to {formatClock(plan.stops[plan.stops.length - 1]?.end ?? plan.end)} · {plan.stops.length} stops</Text>
-          <Text style={styles.meta}>
-            {cost.perPerson ? `About $${cost.perPerson} each${cost.estimated ? ` (${cost.estimated} estimated)` : ""}` : "Free"} · {formatDuration(travel.minutes)} of travel, {travel.miles.toFixed(1)} mi
-          </Text>
-          <View style={styles.links}>
-            <Text testID="link-friends" style={styles.link} onPress={() => setSendOpen(true)}>Share with friends</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text testID="link-share" style={styles.link} onPress={() => setShare(true)}>Link</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text testID="link-vote" style={styles.link} onPress={() => router.push(`/group/new?plan=${plan.id}`)}>Vote</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text testID="link-recap" style={styles.link} onPress={() => router.push(`/recap/${plan.id}`)}>Recap</Text>
-          </View>
-          {chips.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
-              {chips.map((c) => <View key={c} style={styles.reqChip}><Text style={styles.reqChipText}>{c}</Text></View>)}
-            </ScrollView>
+          <Text style={styles.meta}>{plan.dayLabel} · {formatClock(plan.stops[0]?.start ?? plan.start)} to {formatClock(plan.stops[plan.stops.length - 1]?.end ?? plan.end)} · {cost.perPerson ? `about $${cost.perPerson} each` : "free"}</Text>
+          {rainHour ? (
+            <Pressable testID="make-rain-plan" accessibilityRole="button" onPress={() => runReplan("it's raining")} style={styles.rain}>
+              <Text style={styles.rainText}>🌧️ {rainHour.chance}% rain around {formatClock(rainHour.hour * 60, { compact: true })}</Text>
+              <Text style={styles.rainLink}>Make it a rain plan</Text>
+            </Pressable>
           ) : null}
-          <View style={styles.info}>
-            {plan.sunset != null ? <Text style={styles.infoText}>🌅 Sunset at {formatClock(plan.sunset)}</Text> : null}
-            {weather ? <Text style={styles.infoText}>{rainHour ? `🌧️ ${rainHour.chance}% chance of rain around ${formatClock(rainHour.hour * 60, { compact: true })}` : `🌤️ ${weather.highF}°F high, rain unlikely`}</Text> : null}
-            {rainHour ? <Text testID="make-rain-plan" style={styles.link} onPress={() => runReplan("it's raining")}>Make it a rain plan</Text> : null}
-          </View>
           {message || plan.log[0] ? (
             <View style={styles.agentNote} testID="agent-note">
-              <Icon name="sparkles" size={16} tint={color.askMapsBlue} />
+              <Icon name="sparkles" size={16} tint={palette.roseInk} />
               <Text style={styles.agentText}>{message ?? plan.log[0]}</Text>
             </View>
           ) : null}
           {plan.notes.filter((n) => !n.startsWith("Sunset")).map((n) => <Text key={n} style={styles.note}>{n}</Text>)}
-          <Text style={styles.changedTitle}>Something changed?</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
-            {QUICK.map((q, i) => <Chip key={q} testID={`quick-${i}`} label={q} onPress={() => runReplan(q)} />)}
-          </ScrollView>
-          <Text style={styles.replansLeft}>{plus ? "Faves Plus: unlimited live re-plans" : left > 0 ? `${left} free live ${left === 1 ? "re-plan" : "re-plans"} left today` : "Out of free re-plans today. Plus has unlimited."}</Text>
 
           {/* Timeline */}
           <View style={styles.timeline}>
@@ -264,32 +242,13 @@ export default function Itinerary() {
             </View>
           ) : null}
           </ViewportProvider>
-          <Text style={styles.footnote}>{Object.keys(realLegs).length ? "Travel times and route lines from Google Routes." : "Travel times are estimates from distance and typical speeds. Lines on the map are straight; tap Directions for the real route."}</Text>
+          <Text style={styles.footnote}>{Object.keys(realLegs).length ? "Travel times from Google Routes." : "Travel times are estimates."}</Text>
         </ScrollView>
 
-        {/* Live re-plan: one row with the agent box and the start button */}
+        {/* What you do next: change plans, or share it with friends */}
         <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
-            <LinearGradient colors={[color.askMapsStrokeA, color.askMapsStrokeB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.askStroke}>
-              <View style={styles.askBox}>
-                <TextInput testID="replan-input" value={ask} onChangeText={setAsk} placeholder="What changed?" placeholderTextColor={palette.inkMuted} style={styles.askInput} onSubmitEditing={() => runReplan(ask)} returnKeyType="send" />
-                <Pressable testID="replan-send" accessibilityLabel="Re-plan" onPress={() => runReplan(ask)} style={styles.askSend}><Icon name="send" size={16} tint="#306CF0" /></Pressable>
-              </View>
-            </LinearGradient>
-            <Pressable
-              testID={started ? "end-day" : "start-day"}
-              accessibilityRole="button"
-              onPress={() => {
-                if (started) router.push(`/recap/${plan.id}`);
-                else if (today) setToast("Have fun. The plan stays live as you go.");
-                else { actions.savePlan(plan); setToast("Saved to your days"); }
-              }}
-              style={styles.startPill}
-            >
-              <Icon name={started ? "flag" : today ? "play" : "bookmark"} size={16} tint="#fff" />
-              <Text style={styles.startText}>{started ? "End day" : today ? "Start" : "Save"}</Text>
-            </Pressable>
-          </View>
+          <SecondaryButton testID="change-plans" label="Change plans" onPress={() => setChanging(true)} style={{ height: 52, paddingHorizontal: 16 }} compact />
+          <PrimaryButton testID="link-friends" icon="paper-plane" label="Share with friends" onPress={() => setSendOpen(true)} style={{ flex: 1, paddingHorizontal: 10 }} />
         </View>
       </KeyboardAvoidingView>
 
@@ -312,8 +271,26 @@ export default function Itinerary() {
       />
       <SendToChat open={sendOpen} item={{ kind: "plan", plan }} onClose={() => setSendOpen(false)} />
       <ShareSheet open={share} onClose={() => setShare(false)} subtitle="Anyone with the link can see this day" url={link} cardTitle={plan.title} image={places[0]?.image} category={places[0]?.category} message={`${plan.title}, ${plan.dayLabel}. Planned on Faves:`} />
+      <Sheet open={changing} onClose={() => setChanging(false)} title="Change plans" testID="change-sheet" background={palette.paper}>
+        <View style={{ paddingHorizontal: 16, gap: 12, paddingBottom: 6 }}>
+          <View style={styles.chipsWrap}>
+            {QUICK.map((q, i) => <Chip key={q} testID={`quick-${i}`} label={q} onPress={() => runReplan(q)} />)}
+          </View>
+          <View style={styles.askBox}>
+            <TextInput testID="replan-input" value={ask} onChangeText={setAsk} placeholder="Or say what changed" placeholderTextColor={palette.inkMuted} style={styles.askInput} onSubmitEditing={() => runReplan(ask)} returnKeyType="send" />
+            <Pressable testID="replan-send" accessibilityLabel="Re-plan" onPress={() => runReplan(ask)} style={styles.askSend}><Icon name="arrow-up" size={18} tint={palette.cream} /></Pressable>
+          </View>
+          <Text style={styles.replansLeft}>{plus ? "Unlimited re-plans with Plus" : left > 0 ? `${left} free ${left === 1 ? "re-plan" : "re-plans"} left today` : "Out of free re-plans today"}</Text>
+          {plan.sunset != null || weather || chips.length ? (
+            <View style={styles.dayInfo}>
+              {plan.sunset != null || weather ? <Text style={styles.infoText}>{[plan.sunset != null ? `🌅 Sunset ${formatClock(plan.sunset)}` : null, weather ? (rainHour ? `🌧️ ${rainHour.chance}% rain around ${formatClock(rainHour.hour * 60, { compact: true })}` : `🌤️ ${weather.highF}°F, rain unlikely`) : null].filter(Boolean).join("   ")}</Text> : null}
+              {chips.length ? <Text style={styles.infoText} numberOfLines={2}>You asked for: {chips.join(" · ")}</Text> : null}
+            </View>
+          ) : null}
+        </View>
+      </Sheet>
       <Sheet open={menu} onClose={() => setMenu(false)} title="This day" testID="plan-menu-sheet">
-        <MenuRow testID="menu-group" icon="people-outline" label="Vote with friends" onPress={() => { setMenu(false); router.push(`/group/new?plan=${plan.id}`); }} />
+        <MenuRow testID="menu-group" icon="people-outline" label="Vote by link" onPress={() => { setMenu(false); router.push(`/group/new?plan=${plan.id}`); }} />
         <MenuRow testID="menu-recap" icon="flag-outline" label="End the day and recap" onPress={() => { setMenu(false); router.push(`/recap/${plan.id}`); }} />
         <MenuRow testID="menu-redo" icon="refresh" label="Plan it again from scratch" onPress={() => { setMenu(false); router.push(`/builder?q=${encodeURIComponent(plan.request.raw)}`); }} />
         <MenuRow testID="menu-delete" icon="trash-outline" label="Delete this day" danger onPress={() => { setMenu(false); actions.deletePlan(plan.id); router.replace("/"); }} />
@@ -335,16 +312,16 @@ const styles = StyleSheet.create({
   mapBox: { height: "38%", backgroundColor: color.cornerLand },
   mapButtons: { position: "absolute", left: 14, right: 14, flexDirection: "row", justifyContent: "space-between" },
   sheet: { flex: 1, marginTop: -22, backgroundColor: palette.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden" },
-  title: { fontFamily: font.sans, fontSize: 26, lineHeight: 31, fontWeight: "700", color: palette.ink, marginTop: 4 },
-  meta: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, marginTop: 4 },
-  links: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" },
-  link: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: color.wanderBlue },
-  dot: { color: palette.inkMuted },
-  reqChip: { backgroundColor: color.chipOff, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  reqChipText: { fontFamily: font.sans, fontSize: 13, color: palette.ink, fontWeight: "500" },
-  info: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8, alignItems: "center" },
+  title: { fontFamily: font.displayHeavy, fontSize: 28, lineHeight: 32, color: palette.ink, letterSpacing: -0.6, marginTop: 4 },
+  meta: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft, marginTop: 6 },
+  link: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.roseInk },
+  rain: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: palette.sunsetTint },
+  rainText: { flex: 1, fontFamily: font.sans, fontSize: 14, color: palette.ink },
+  rainLink: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.roseInk },
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  dayInfo: { gap: 6, paddingTop: 10, borderTopWidth: 1, borderTopColor: palette.line },
   infoText: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft },
-  agentNote: { flexDirection: "row", gap: 8, backgroundColor: "#F0F5FF", borderRadius: 12, padding: 12, marginTop: 12 },
+  agentNote: { flexDirection: "row", gap: 8, backgroundColor: palette.roseTint, borderRadius: 12, padding: 12, marginTop: 12 },
   agentText: { fontFamily: font.sans, fontSize: 14, color: palette.ink, flex: 1, lineHeight: 19 },
   note: { fontFamily: font.sans, fontSize: 14, color: color.closed, marginTop: 8 },
   timeline: { flexDirection: "row", gap: 10, marginTop: 18 },
@@ -352,15 +329,12 @@ const styles = StyleSheet.create({
   railLine: { flex: 1, width: 1, backgroundColor: color.airbnbRail, marginTop: 6 },
   railDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: color.airbnbDot },
   footnote: { fontFamily: font.sans, fontSize: 12, color: color.textMuted, marginTop: 16, lineHeight: 17 },
-  bottom: { borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 10, backgroundColor: palette.card },
-  askStroke: { flex: 1, borderRadius: 24, padding: 2 },
-  askBox: { flexDirection: "row", alignItems: "center", backgroundColor: palette.card, borderRadius: 22, paddingLeft: 14, paddingRight: 4, height: 44 },
-  askInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: palette.ink, height: 44 },
-  askSend: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F0F0FC", alignItems: "center", justifyContent: "center" },
-  replansLeft: { fontFamily: font.sans, fontSize: 12, color: color.textMuted, marginTop: 6 },
+  bottom: { flexDirection: "row", gap: 10, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 10, backgroundColor: palette.paper },
+  askBox: { flexDirection: "row", alignItems: "center", backgroundColor: palette.card, borderRadius: 24, borderWidth: 1, borderColor: palette.line, paddingLeft: 14, paddingRight: 4, height: 48 },
+  askInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: palette.ink, height: 46 },
+  askSend: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.roseInk, alignItems: "center", justifyContent: "center" },
+  replansLeft: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted },
   changedTitle: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.ink, marginTop: 14, marginBottom: 8 },
-  startPill: { height: 46, borderRadius: 23, backgroundColor: color.brand, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16 },
-  startText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600" },
   menuRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, height: 54, borderBottomWidth: 1, borderBottomColor: palette.line },
   menuText: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
 });

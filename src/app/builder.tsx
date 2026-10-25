@@ -205,7 +205,6 @@ export default function Builder() {
           <Text style={styles.askTitle}>Plan a day</Text>
           <View style={{ flex: 1 }} />
           <Pressable testID="builder-history" accessibilityLabel="Your past days" onPress={() => setHistory(true)} style={styles.askRound}><Icon name="time-outline" size={20} tint={palette.ink} /></Pressable>
-          <Pressable testID="builder-new" accessibilityLabel="Start over" onPress={() => setText("")} style={styles.askRound}><Icon name="create-outline" size={19} tint={palette.ink} /></Pressable>
           <Pressable testID="builder-close" accessibilityLabel="Close" onPress={close} style={styles.askRound}><Icon name="close" size={20} tint={palette.ink} /></Pressable>
         </View>
         <Sheet open={history} onClose={() => setHistory(false)} title="Your days" testID="history-sheet">
@@ -236,7 +235,6 @@ export default function Builder() {
             <Icon name="list-outline" size={18} tint={color.brand} />
             <Text style={styles.questionsText}>Answer a few questions instead</Text>
           </Pressable>
-          {llmEnabled ? <Text style={styles.engine}>Planner model connected</Text> : <Text style={styles.engine}>Planning runs on this device with Faves data</Text>}
         </ScrollView>
         <View style={styles.promptWrap}>
           <View style={styles.glow} />

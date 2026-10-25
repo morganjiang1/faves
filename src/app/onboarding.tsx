@@ -22,7 +22,7 @@ const CREW: { id: Who; label: string; emoji: string }[] = [
   { id: "friends", label: "Friends", emoji: "👯" },
   { id: "date", label: "A date or partner", emoji: "💘" },
   { id: "family", label: "Family", emoji: "👨‍👩‍👧" },
-  { id: "catch-up", label: "Old friends I'm catching up with", emoji: "🫶" },
+  { id: "catch-up", label: "Old friends", emoji: "🫶" },
   { id: "solo", label: "Just me", emoji: "🎧" },
 ];
 const MOVES: { id: Mode; label: string; emoji: string }[] = [
