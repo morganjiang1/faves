@@ -424,16 +424,33 @@ function hoodCenter(city: City, hood: string | null): LatLng | null {
 
 const DEFAULT_HOURS: Record<string, number> = { date: 5, friends: 6, family: 5, solo: 4, "catch-up": 4 };
 
+// Is the asked window over for today? With a time: less than 90 minutes of it is left. Without
+// one: it's too late for a real outing (under 4 hours to midnight, or 2 hours to 2 AM for a
+// night out).
+function windowIsOver(req: PlanRequest, soonest: number): boolean {
+  if (req.start != null) {
+    const until = req.end ?? req.start + (req.durationHours ?? 3) * 60;
+    return until - Math.max(req.start, soonest) < 90;
+  }
+  const nightOut = req.vibes.includes("late") || (req.mustDos.length > 0 && req.mustDos.every((m) => m.category === "night"));
+  return (nightOut ? 26 * 60 : 24 * 60) - soonest < (nightOut ? 2 : 4) * 60;
+}
+
 export function planWindow(req: PlanRequest, ctx: PlanContext): { date: Date; weekday: number; start: number; end: number; isToday: boolean } {
   const now = ctx.now ?? new Date();
   const off = ctx.city.utcOffset;
   let date = wallDateFor(off, req.day ?? { offsetDays: 0 }, now);
   const clock = cityClock(off, now);
   let isToday = date.getUTCDate() === clock.wall.getUTCDate() && date.getUTCMonth() === clock.wall.getUTCMonth();
-  // "Saturday afternoon" asked on Saturday evening means next Saturday.
-  if (isToday && req.day?.weekday != null && req.start != null) {
-    const until = req.end ?? req.start + (req.durationHours ?? 3) * 60;
-    if (until <= clock.minutes + 60) { date = new Date(date.getTime() + 7 * 24 * 3600_000); isToday = false; }
+  // A plan never starts in the past: the soonest it can start is the next quarter hour, 15+ min out.
+  const soonest = Math.ceil((clock.minutes + 15) / 15) * 15;
+  // A weekday name ("saturday") or no day at all can move to the next one; "today" and
+  // "tonight" stay today and just start from now.
+  if (isToday && (req.day == null || req.day.weekday != null) && windowIsOver(req, soonest)) {
+    // "Saturday afternoon" asked on Saturday evening means next Saturday; a request with no
+    // day asked after the time has gone means tomorrow.
+    date = new Date(date.getTime() + (req.day?.weekday != null ? 7 : 1) * 24 * 3600_000);
+    isToday = false;
   }
   let start = req.start;
   if (start == null) {
@@ -441,8 +458,8 @@ export function planWindow(req: PlanRequest, ctx: PlanContext): { date: Date; we
     else if (req.who === "catch-up") start = 14 * 60;
     else if (req.who === "date") start = 15 * 60 + 30;
     else start = 12 * 60;
-    if (isToday) start = Math.max(start, Math.ceil((clock.minutes + 15) / 15) * 15);
   }
+  if (isToday) start = Math.max(start, soonest);
   let end = req.end ?? start + (req.durationHours ?? DEFAULT_HOURS[req.who ?? ""] ?? 5) * 60;
   if (req.durationHours && req.end == null) end = start + req.durationHours * 60;
   end = Math.min(end, req.vibes.includes("late") ? 26 * 60 : 24 * 60 + 30);

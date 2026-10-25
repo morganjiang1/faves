@@ -60,3 +60,61 @@ test("'Saturday afternoon' asked on Saturday evening plans next Saturday", () =>
   const morning = planWindow(parseRequest("pickleball then hot pot on saturday afternoon", { hoods: city.hoods }), { city, now: NOW });
   expect(morning.date.toISOString().slice(0, 10)).toBe("2026-10-24");
 });
+
+// Sat Oct 24, 10:00 PM in San Francisco: the demo run that planned "Saturday" for 10:15 PM tonight.
+const SAT_10PM = new Date(Date.UTC(2026, 9, 25, 5, 0));
+
+test("'a Saturday' asked late on Saturday night plans next Saturday, a whole day with several stops", () => {
+  const req = parseRequest("plan a Saturday in SF for me and 3 friends, we like pickleball and hot pot, under $40 each", { hoods: city.hoods });
+  const win = planWindow(req, { city, now: SAT_10PM });
+  expect(win.date.toISOString().slice(0, 10)).toBe("2026-10-31");
+  expect(win.start).toBe(12 * 60);
+  const p = makePlan(req, { city, now: SAT_10PM });
+  expect(p.dateISO).toBe("2026-10-31");
+  expect(p.stops.length).toBeGreaterThanOrEqual(2);
+});
+
+test("no day and the time has gone: the next sensible time, never tonight in the past", () => {
+  const noDay = planWindow(parseRequest("me and 3 friends, pickleball then hot pot", { hoods: city.hoods }), { city, now: SAT_10PM });
+  expect(noDay.date.toISOString().slice(0, 10)).toBe("2026-10-25");
+  expect(noDay.start).toBe(12 * 60);
+  const window = planWindow(parseRequest("pickleball then hot pot, 2pm to 6pm", { hoods: city.hoods }), { city, now: SAT_10PM });
+  expect(window.date.toISOString().slice(0, 10)).toBe("2026-10-25");
+  expect(window.start).toBe(14 * 60);
+  // A night out still fits tonight.
+  const drinks = planWindow(parseRequest("drinks and karaoke with friends", { hoods: city.hoods }), { city, now: SAT_10PM });
+  expect(drinks.date.toISOString().slice(0, 10)).toBe("2026-10-24");
+  expect(drinks.start).toBe(22 * 60 + 15);
+});
+
+test("'tonight' stays tonight but starts from now; a window still under way starts from now too", () => {
+  const tonight = planWindow(parseRequest("dinner and drinks tonight", { hoods: city.hoods }), { city, now: SAT_10PM });
+  expect(tonight.date.toISOString().slice(0, 10)).toBe("2026-10-24");
+  expect(tonight.start).toBe(22 * 60 + 15);
+  const afternoon = new Date(Date.UTC(2026, 9, 24, 22, 0)); // Sat 3:00 PM
+  const under = planWindow(parseRequest("saturday 1pm to 9pm, pickleball then hot pot", { hoods: city.hoods }), { city, now: afternoon });
+  expect(under.date.toISOString().slice(0, 10)).toBe("2026-10-24");
+  expect(under.start).toBe(15 * 60 + 15);
+  expect(under.end).toBe(21 * 60);
+});
+
+test.each([
+  "plan a Saturday for me and 3 friends",
+  "saturday afternoon, pickleball then hot pot",
+  "pickleball then hot pot",
+  "2pm to 6pm, tacos then a view",
+  "date night, sushi then drinks",
+  "dinner tonight",
+  "today, 1pm to 6pm",
+  "family day, a museum then pizza",
+  "late night karaoke",
+])("never starts in the past, at any hour: %s", (text) => {
+  for (const hour of [10, 15, 18, 20, 22, 23.85]) {
+    const now = new Date(Date.UTC(2026, 9, 24, 7) + hour * 3600_000); // Sat Oct 24 in San Francisco (PDT)
+    const win = planWindow(parseRequest(text, { hoods: city.hoods }), { city, now });
+    const startsAt = win.date.getTime() + win.start * 60_000; // wall time, like the clock below
+    const wallNow = now.getTime() - 7 * 3600_000;
+    expect(startsAt).toBeGreaterThan(wallNow);
+    expect(win.end).toBeGreaterThan(win.start);
+  }
+});
