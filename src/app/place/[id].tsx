@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { pagesFor, playCount } from "@/components/moments/clips";
+import { useSharedMoments } from "@/chat/moments";
 import { SendToChat, type SendItem } from "@/components/chat/SendToChat";
 import { Postmark } from "@/components/postcard/Postcard";
 import { ShareSheet } from "@/components/ShareSheet";
@@ -36,6 +37,7 @@ export default function PlacePage() {
   const focused = useIsFocused();
   const saved = useStore((s) => s.saved.includes(placeId));
   const mine = useStore((s) => s.moments[placeId]);
+  const shared = useSharedMoments(placeId);
   const hidden = useStore((s) => s.hidden);
   const transport = useStore((s) => s.profile.transport);
   const [page, setPage] = useState(Math.max(0, Number(i) || 0));
@@ -53,7 +55,7 @@ export default function PlacePage() {
     livePlace(place.id).then((g) => { if (on) setLive(g); });
     return () => { on = false; };
   }, [place, online]);
-  const pages = useMemo(() => (place ? pagesFor(place, mine ?? [], hidden) : []), [place, mine, hidden]);
+  const pages = useMemo(() => (place ? pagesFor(place, [...(mine ?? []), ...shared], hidden) : []), [place, mine, shared, hidden]);
   const onViewable = useMemo(() => ({ viewableItems }: { viewableItems: ListViewToken[] }) => { const f = viewableItems[0]; if (f?.index != null) setPage(f.index); }, []);
 
   const back = () => (router.canGoBack() ? router.back() : router.replace("/"));

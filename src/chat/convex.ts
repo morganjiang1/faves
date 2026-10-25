@@ -18,6 +18,8 @@ export function convexUrl(): string | null {
   return host ? raw.replace(/127\.0\.0\.1|localhost/, host) : raw;
 }
 
+export type SharedMoment = { id: string; url: string | null; kind: string; caption: string; creator: string; postedBy: string; takenHere: boolean; demo: boolean; duration: number | null; postedAt: number };
+
 export class ConvexTransport extends BaseTransport {
   readonly kind = "relay" as const; // a shared backend, like the relay
   readonly backend = "convex" as const;
@@ -29,7 +31,7 @@ export class ConvexTransport extends BaseTransport {
   private timer: ReturnType<typeof setInterval> | null = null;
   private live = false;
 
-  constructor(url: string) {
+  constructor(private url: string) {
     super();
     this.client = new ConvexClient(url);
   }
@@ -81,6 +83,27 @@ export class ConvexTransport extends BaseTransport {
     const out = (await this.client.mutation(anyApi.chat.apply, { actorId, op })) as { ok: boolean; result?: unknown; error?: string };
     if (!out.ok) throw new Error(out.error ?? "failed");
     return out.result;
+  }
+
+  // Moments in Convex file storage: upload a clip or photo from this phone, post it at a spot,
+  // and follow what everyone posted at a spot.
+  async postMoment(input: { uri: string; mime: string; placeId: string; city: string; kind: string; caption: string; takenHere: boolean; demo: boolean; duration?: number }): Promise<void> {
+    if (!this.me) throw new Error("offline");
+    const uploadUrl = (await this.client.mutation(anyApi.clips.uploadUrl, {})) as string;
+    const blob = await (await fetch(input.uri)).blob();
+    const res = await fetch(uploadUrl.replace(/^https?:\/\/[^/]+/, this.origin()), { method: "POST", headers: { "Content-Type": input.mime }, body: blob });
+    const { storageId } = (await res.json()) as { storageId: string };
+    await this.client.mutation(anyApi.clips.post, { placeId: input.placeId, city: input.city, file: storageId, kind: input.kind, caption: input.caption, creator: this.me.handle, postedBy: this.me.id, takenHere: input.takenHere, demo: input.demo, duration: input.duration });
+  }
+
+  // React Native's URL has no .origin, so: the scheme and host of the backend address.
+  private origin(): string {
+    return this.url.match(/^https?:\/\/[^/]+/)?.[0] ?? this.url;
+  }
+
+  watchPlace(placeId: string, cb: (rows: SharedMoment[]) => void): () => void {
+    const origin = this.origin();
+    return this.client.onUpdate(anyApi.clips.forPlace, { placeId }, (rows: SharedMoment[]) => cb(rows.map((r) => ({ ...r, url: r.url ? r.url.replace(/^https?:\/\/[^/]+/, origin) : null }))));
   }
 
   // Presence: say "I'm here" every 10 s while a chat is open; returns how to stop and a way

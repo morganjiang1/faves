@@ -9,7 +9,8 @@ export type MomentTab = "highlights" | "now";
 export const DEFAULT_CLIP_SECONDS = 12;
 
 export function clipsFor(place: Place, mine: Moment[], hidden: string[], tab: MomentTab, now = Date.now()): Moment[] {
-  const own = mine.filter((m) => !hidden.includes(m.id)).map((m) => ({ ...m, mine: true }));
+  // Yours, plus what others posted here through Convex (those come in with mine: false).
+  const own = mine.filter((m) => !hidden.includes(m.id)).map((m) => ({ ...m, mine: m.mine !== false }));
   if (tab === "now") return own.filter((m) => m.postedAt && new Date(m.postedAt).getTime() > now - 24 * 3600_000);
   const theirs = place.moments.filter((m) => !hidden.includes(m.id));
   return [...theirs, ...own];

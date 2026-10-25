@@ -17,6 +17,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { pagesFor, playCount, type MomentTab } from "@/components/moments/clips";
+import { useSharedMoments } from "@/chat/moments";
 import { openForPosting, POST_RADIUS_M } from "@/components/moments/gate";
 import { DarkError, DarkMessage } from "@/components/moments/parts";
 import { ShareSheet } from "@/components/ShareSheet";
@@ -40,7 +41,9 @@ export default function SpotMoments() {
   const online = useOnline();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const mine = useStore((s) => s.moments[placeId]);
+  const local = useStore((s) => s.moments[placeId]);
+  const shared = useSharedMoments(placeId);
+  const mine = useMemo(() => [...(local ?? []), ...shared], [local, shared]);
   const hidden = useStore((s) => s.hidden);
   const saved = useStore((s) => s.saved.includes(placeId));
   const transport = useStore((s) => s.profile.transport);

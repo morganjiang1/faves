@@ -29,6 +29,7 @@ import { openDirections } from "@/lib/links";
 import { useCity } from "@/state/city";
 import { currentLocation, useCityClock, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
+import { shareMoment } from "@/chat/moments";
 import { font, palette } from "@/theme/tokens";
 
 type Shot = { uri: string; kind: "photo" | "video"; seconds: number };
@@ -187,6 +188,7 @@ function LocationPrompt({ place, onCancel, onRetry }: { place: Place; onCancel: 
 }
 
 function Capture({ place, demo, onClose, online }: { place: Place; demo: boolean; onClose: () => void; online: boolean }) {
+  const citySlug = useStore((st) => st.profile.city);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const handle = useStore((s) => s.profile.handle);
@@ -259,6 +261,8 @@ function Capture({ place, demo, onClose, online }: { place: Place; demo: boolean
       caption: caption.trim(), duration: shot.seconds, uri, kind: shot.kind, takenHere: !demo, demo,
     };
     actions.addMoment(place.id, m);
+    // Everyone sees it on the spot's postcard wall when chats run on Convex (file storage).
+    void shareMoment(place.id, citySlug, m);
     setSending(false);
     if (router.canGoBack()) router.back();
     else router.replace(`/place/${encodeURIComponent(place.id)}`);

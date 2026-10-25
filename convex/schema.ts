@@ -28,6 +28,9 @@ export default defineSchema({
     .index("by_placeId", ["placeId"])
     .vectorIndex("by_vibe", { vectorField: "embedding", dimensions: 128, filterFields: ["city"] }),
   // Spot clips served from Convex file storage.
-  clips: defineTable({ placeId: v.string(), city: v.string(), order: v.number(), video: v.id("_storage"), poster: v.optional(v.id("_storage")), creator: v.optional(v.string()), plays: v.optional(v.number()) })
+  // Spot clips in file storage: the bundled ones (scripts/convex-upload-clips.ts) and moments people
+  // post from a spot (postedBy set), which everyone then sees on that spot's postcard wall.
+  clips: defineTable({ placeId: v.string(), city: v.string(), order: v.number(), video: v.id("_storage"), poster: v.optional(v.id("_storage")), creator: v.optional(v.string()), plays: v.optional(v.number()),
+    postedBy: v.optional(v.string()), kind: v.optional(v.string()), caption: v.optional(v.string()), takenHere: v.optional(v.boolean()), demo: v.optional(v.boolean()), duration: v.optional(v.number()), postedAt: v.optional(v.number()) })
     .index("by_place", ["placeId", "order"]).index("by_city", ["city"]),
 });

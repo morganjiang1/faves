@@ -92,7 +92,8 @@
     "relay-only": "node server/chat-server.mjs",
     "convex": "CONVEX_AGENT_MODE=anonymous convex dev",
     "convex:seed": "tsx scripts/convex-seed.ts",
-    "cartesia:setup": "tsx scripts/cartesia-setup.ts"
+    "cartesia:setup": "tsx scripts/cartesia-setup.ts",
+    "convex:clips": "tsx scripts/convex-upload-clips.ts"
   },
   "private": true,
   "description": "Faves: find the spots locals love and plan the whole day.",

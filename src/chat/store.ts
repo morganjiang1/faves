@@ -57,6 +57,11 @@ export const chatView = () => view;
 
 // The shared backend: Convex when EXPO_PUBLIC_CONVEX_URL is set, otherwise the WebSocket relay.
 let relay: RelayTransport | ConvexTransport | null = null;
+
+// Moments shared through Convex file storage (only when chats run on Convex).
+export function sharedMoments(): ConvexTransport | null {
+  return relay instanceof ConvexTransport ? relay : null;
+}
 let local: LocalTransport | null = null;
 let starting: Promise<void> | null = null;
 

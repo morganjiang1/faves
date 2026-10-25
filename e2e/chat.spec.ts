@@ -1,5 +1,7 @@
 // Group chats between two people (two browsers) through the chat relay, a plan ticket both
 // answer, and typing into every main text field.
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { startOnboarded, watchConsole } from "./helpers";
 
@@ -169,5 +171,24 @@ test("a phone-only stop gets Call to book: a confirm sheet first, and the server
   const bare = await request.post("http://localhost:8787/api/call", { data: { groupId: group.groupId, placeName: "M Pot", day: "Sat", time: "5 PM" } });
   expect(bare.status()).toBe(400);
   expect((await bare.json()).error).toContain("confirm");
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
+test("a moment posted at a spot is stored in Convex and shows on that spot for everyone", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const env = readFileSync(join(__dirname, "..", ".env.local"), "utf8");
+  const convex = env.match(/EXPO_PUBLIC_CONVEX_URL=(\S+)/)?.[1];
+  test.skip(!convex, "needs npm run convex");
+  const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text: "pickleball then hot pot saturday 1pm to 7pm", city: "san-francisco" } })).json();
+  const placeId: string = plan.raw.stops[0].placeId;
+  // Another phone posts a photo there: upload to file storage, then post it.
+  const call = async (path: string, args: Record<string, unknown>) => (await (await request.post(`${convex}/api/mutation`, { data: { path, args, format: "json" } })).json()).value;
+  const uploadUrl: string = await call("clips:uploadUrl", {});
+  const poster = readdirSync(join(__dirname, "..", "assets/videos/san-francisco")).find((f) => f.endsWith(".jpg"))!;
+  const up = await request.post(uploadUrl, { headers: { "Content-Type": "image/jpeg" }, data: readFileSync(join(__dirname, "..", "assets/videos/san-francisco", poster)) });
+  const { storageId } = await up.json();
+  await call("clips:post", { placeId, city: "san-francisco", file: storageId, kind: "photo", caption: "Test data: posted from another phone", creator: `tester${run}`, postedBy: `u-tester-${run}`, takenHere: false, demo: true });
+  await startOnboarded(page, `/moments/${encodeURIComponent(placeId)}`, { name: "Ana", handle: `anam${run}` });
+  await expect(page.getByLabel(`Post by tester${run}`).first()).toBeVisible({ timeout: 20_000 });
   expect(problems, problems.join("\n")).toEqual([]);
 });
