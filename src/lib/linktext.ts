@@ -31,7 +31,8 @@ export type Piece =
   | { kind: "phone"; text: string };
 
 const LINK = /\[([^\]\n]{1,60})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]])/g;
-const PHONE = /(\(?\d{3}\)?[ .-]\d{3}-\d{4})/g;
+// A US number, also when it's kept on one line with a no-break space and hyphen (U+00A0, U+2011).
+const PHONE = /(\(?\d{3}\)?[ .\-\u00A0]\d{3}[-\u2011]\d{4})/g;
 
 // A message split into plain text, links (shown by their label) and phone numbers.
 export function messagePieces(text: string): Piece[] {

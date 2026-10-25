@@ -1,5 +1,5 @@
 // The group agent's lines: short, plain, never repeating what the ticket shows.
-import { plainText } from "../../lib/linktext";
+import { messagePieces, plainText } from "../../lib/linktext";
 import * as say from "../lines";
 
 const words = (s: string) => plainText(s).split(/\s+/).filter(Boolean).length;
@@ -39,7 +39,13 @@ test("booking: one short line per stop, a label for links, the number for phone-
     say.bookLine({ at: 18 * 60 + 26, name: "M Pot", phone: "(415) 571-8076" }),
     say.bookLine({ at: 19 * 60, name: "Foo", url }),
   ]);
-  expect(plainText(text)).toBe("Locked in! 3 going. Here's how to book it:\n• 1 PM Randall Museum: walk in\n• 6:26 PM M Pot: call (415) 571-8076\n• 7 PM Foo: Reserve on Google");
+  // Spaces inside "1 PM", "walk-in" and "call (415) 571-8076" don't break (U+00A0, U+2011).
+  const readable = plainText(text).replace(/\u00A0/g, " ").replace(/\u2011/g, "-");
+  expect(readable).toBe("Locked in! 3 going. Here's how to book it:\n• 1 PM Randall Museum · walk-in\n• 6:26 PM M Pot · call (415) 571-8076\n• 7 PM Foo · Reserve on Google");
+  expect(text).toContain("walk\u2011in");
+  expect(text).toContain("call\u00A0(415)\u00A0571\u20118076");
+  // The kept-together number is still one tappable phone number.
+  expect(messagePieces(say.bookLine({ at: 18 * 60, name: "M Pot", phone: "(415) 571-8076" })).filter((p) => p.kind === "phone")).toHaveLength(1);
   expect(say.bookLead(false, 0)).toBe("Here's how to book it:");
   expect(say.bookLead(true, 0)).toBe("Locked in! Here's how to book it:");
 });

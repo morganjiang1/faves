@@ -102,15 +102,22 @@ export const spotsLine = (names: string[]) => `Try ${listOf(names.slice(0, 3), "
 
 export const bookLead = (locked: boolean, going: number) => (locked ? `Locked in!${going ? ` ${going} going.` : ""} Here's how to book it:` : "Here's how to book it:");
 
-// One stop's booking: "• 7 PM Foo: Reserve on Google" (a short tappable label, never the URL),
-// "• 6:26 PM M Pot: call (415) 571-8076" (phone-only places; anyone taps it and calls),
-// "• 1 PM Randall Museum: walk in".
+// One stop's booking: "• 7 PM Foo · Reserve on Google" (a short tappable label, never the URL),
+// "• 6:26 PM M Pot · call (415) 571-8076" (phone-only places; anyone taps it and calls),
+// "• 1 PM Randall Museum · walk-in". The time, "walk-in" and "call" with its number never break
+// across lines in a chat bubble (no-break spaces and a no-break hyphen), and the dot stays with
+// the method, so a long line wraps as "... M Pot / · call (415) 571-8076".
+const NBSP = "\u00A0";
+const NBHY = "\u2011";
+const unbroken = (t: string) => t.replace(/ /g, NBSP).replace(/-/g, NBHY);
 export function bookLine(b: { at: number; name?: string | null; url?: string | null; phone?: string | null }): string {
-  const at = clock(b.at);
-  if (!b.name) return `• ${at}: walk in`;
-  if (b.url) return `• ${at} ${b.name}: ${reserveLink(b.url)}`;
-  if (b.phone) return `• ${at} ${b.name}: call ${b.phone}`;
-  return `• ${at} ${b.name}: walk in`;
+  const at = unbroken(clock(b.at));
+  const walkIn = `walk${NBHY}in`;
+  const dot = ` ·${NBSP}`;
+  if (!b.name) return `• ${at}${dot}${walkIn}`;
+  if (b.url) return `• ${at} ${b.name}${dot}${reserveLink(b.url)}`;
+  if (b.phone) return `• ${at} ${b.name}${dot}call${NBSP}${unbroken(b.phone)}`;
+  return `• ${at} ${b.name}${dot}${walkIn}`;
 }
 
 export const bookMessage = (lead: string, lines: string[]) => `${lead}\n${lines.join("\n")}`;
