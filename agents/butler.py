@@ -1,0 +1,286 @@
+"""Faves Butler: plans a fair hangout for a group of friends, in a chat.
+
+Speaks the Agent Chat Protocol (so it works in ASI:One) and coordinates three agents:
+Faves Planner (the day, fair to everyone's starting point), Faves Scout (niche asks, live
+Apify runs) and Faves Booker (reservation links and AI booking calls). The whole flow works in
+one conversation: ask -> a fair plan with each friend's travel time -> swap a stop -> book ->
+a Faves group chat invite link. It charges a small booking fee through the Payment Protocol.
+If an agent doesn't answer, the Butler calls the Faves API itself, so the chat never stalls.
+"""
+from __future__ import annotations
+
+import certs  # noqa: F401  (first: TLS roots for Agentverse)
+
+import json
+from datetime import datetime, timezone
+from typing import Any
+from uuid import uuid4
+
+from uagents import Agent, Context, Protocol
+from uagents_core.contrib.protocols.chat import (
+    ChatAcknowledgement,
+    ChatMessage,
+    EndSessionContent,
+    MetadataContent,
+    StartSessionContent,
+    TextContent,
+    chat_protocol_spec,
+)
+from uagents_core.contrib.protocols.payment import (
+    CommitPayment,
+    CompletePayment,
+    Funds,
+    RejectPayment,
+    RequestPayment,
+    payment_protocol_spec,
+)
+
+from common import MAILBOX, NAMES, PORTS, BookReply, BookRequest, FavesAPI, PlanReply, PlanRequest, ScoutReply, ScoutRequest, SwapRequest, address_of, seed_for
+from understand import understand
+
+api = FavesAPI()
+butler = Agent(
+    name=NAMES["butler"],
+    seed=seed_for("butler"),
+    port=PORTS["butler"],
+    mailbox=MAILBOX,
+    readme_path="README.md",
+    description="Plans a hangout for you and your friends that's fair for everyone: tell it who's coming, where each of you lives and what you like.",
+)
+chat = Protocol(spec=chat_protocol_spec)
+pay = Protocol(spec=payment_protocol_spec, role="seller")
+
+HELP = (
+    "Hi, I'm the Faves Butler. I plan hangouts that are fair for everyone.\n\n"
+    "Try: **plan a Saturday in SF for me and 3 friends, we live in the Mission, the Richmond and Oakland, "
+    "we like pickleball and hot pot, under $40 each**\n\n"
+    "Then you can say **swap the hot pot for ramen**, **book it**, or **make a group chat**."
+)
+MODE = {"walk": "walk", "transit": "transit", "drive": "drive", "bike": "bike"}
+
+
+def chat_text(text: str, card: dict[str, Any] | None = None, end: bool = False) -> ChatMessage:
+    content: list[Any] = [TextContent(text=text)]
+    if card:
+        content.append(MetadataContent(metadata={
+            "card_protocol_version": "1",
+            "requires_card_interaction": "true",
+            "card_kind": "detail",
+            "card_payload": json.dumps(card),
+        }))
+    if end:
+        content.append(EndSessionContent())
+    return ChatMessage(timestamp=datetime.now(timezone.utc), msg_id=uuid4(), content=content)
+
+
+def plan_text(p: dict[str, Any], changed: dict[str, Any] | None = None) -> str:
+    lines = []
+    if changed:
+        lines.append(f"Swapped **{changed['from']}** for **{changed['to']}** (stop {changed['stop']}).\n")
+    lines.append(f"### {p['title']}")
+    lines.append(f"**{p['day']} · {p['start']} to {p['end']} · about ${p['costPerPerson']} each**")
+    if p.get("travel"):
+        def trip(t: dict[str, Any]) -> str:
+            where = f" from {t['from']}" if t.get("from") else ""
+            return f"{t['name']} {t['minutes']} min {MODE.get(t['mode'], t['mode'])}{where}"
+        trips = " · ".join(trip(t) for t in p["travel"])
+        lines.append(f"Getting to the first stop, {p['fairLine']}: {trips}")
+    if p.get("unplacedFriends"):
+        who = p["unplacedFriends"]
+        lines.append(f"_Tell me where {', '.join(who)} {'starts' if len(who) == 1 else 'start'} from and I'll keep it fair for them too._")
+    lines.append("")
+    for s in p["stops"]:
+        score = f" · Locals Score {s['localsScore']}" if s.get("localsScore") is not None else ""
+        hood = f" ({s['hood']})" if s.get("hood") else ""
+        lines.append(f"{s['n']}. **{s['time']} {s['name']}**{hood}{score} · {s['cost']}")
+        if s.get("leg") and s["n"] > 1:
+            lines.append(f"   _{s['leg']} from the stop before_")
+    if p.get("home"):
+        lines.append("\nGetting home: " + " · ".join(f"{h['name']} {h['minutes']} min" for h in p["home"]))
+    lines.append("\nSay **swap stop 2 for something cheaper**, **book it**, or **make a group chat**.")
+    return "\n".join(lines)
+
+
+def plan_card(p: dict[str, Any]) -> dict[str, Any]:
+    rows = [{"label": s["time"], "value": f"{s['name']} · {s['cost']}"} for s in p["stops"]]
+    if p.get("fairLine"):
+        rows.append({"label": "Fair", "value": p["fairLine"]})
+    hero = next((s.get("image") for s in p["stops"] if s.get("image")), None)
+    card: dict[str, Any] = {
+        "title": p["title"],
+        "summary_rows": rows,
+        "ctas": [
+            {"label": "Book it", "primary": True, "selection": {"action": "book", "planId": p["planId"]}},
+            {"label": "Make a group chat", "selection": {"action": "group", "planId": p["planId"]}},
+            {"label": f"Swap {p['stops'][0]['name']}", "selection": {"action": "swap", "stop": 1, "planId": p["planId"]}},
+        ],
+    }
+    if hero:
+        card["hero_image"] = hero
+    return card
+
+
+async def ask(ctx: Context, role: str, msg, reply_type, timeout: int = 25):
+    """Ask one of the Faves agents; None when it doesn't answer in time."""
+    try:
+        reply, status = await ctx.send_and_receive(address_of(role), msg, response_type=reply_type, timeout=timeout)
+        return reply if isinstance(reply, reply_type) else None
+    except Exception as e:
+        ctx.logger.warning(f"{role} didn't answer: {e}")
+        return None
+
+
+def session(ctx: Context, sender: str) -> dict[str, Any]:
+    raw = ctx.storage.get(f"s:{sender}")
+    return json.loads(raw) if isinstance(raw, str) else (raw or {})
+
+
+def save(ctx: Context, sender: str, s: dict[str, Any]) -> None:
+    ctx.storage.set(f"s:{sender}", json.dumps(s))
+
+
+async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
+    s = session(ctx, sender)
+    plan = s.get("plan")
+    it = understand(text, has_plan=bool(plan))
+    intent = it.get("intent", "plan")
+
+    if intent == "help" and not plan:
+        return chat_text(HELP)
+
+    if intent == "scout":
+        city = it.get("city") or s.get("city") or "san-francisco"
+        r = await ask(ctx, "scout", ScoutRequest(city=city, query=it.get("query") or text), ScoutReply)
+        spots = r.spots if r and r.ok else (await api.scout(city, it.get("query") or text)).get("spots", [])
+        if not spots:
+            return chat_text("I couldn't find that in Faves yet, and live scouting isn't switched on. Try another word, or ask me to plan a day.")
+        tag = " (fresh finds from a live scout)" if r and r.source == "apify" else ""
+        def spot(x: dict[str, Any]) -> str:
+            bits = [f"**{x['name']}**"]
+            if x.get("hood"):
+                bits.append(x["hood"])
+            if x.get("localsScore"):
+                bits.append(f"Locals Score {x['localsScore']}")
+            if x.get("hiddenGem"):
+                bits.append("hidden gem")
+            if x.get("fresh"):
+                bits.append("fresh find")
+            return "- " + " · ".join(bits)
+        lines = [f"Here's what I found{tag}:"] + [spot(x) for x in spots]
+        return chat_text("\n".join(lines) + "\n\nWant me to plan a day around one of them?")
+
+    if intent in {"swap", "book", "call", "group"} and not plan:
+        return chat_text("Let's plan the day first. " + HELP)
+
+    if intent == "swap":
+        stop = str(it.get("stop") or "1")
+        r = await ask(ctx, "planner", SwapRequest(plan_id=plan["planId"], stop=stop, want=it.get("want") or ""), PlanReply)
+        if r and r.ok:
+            new = r.plan
+        else:
+            new = await api.swap(plan["planId"], int(stop) if stop.isdigit() else stop, it.get("want") or "")
+        s["plan"] = new
+        save(ctx, sender, s)
+        return chat_text(plan_text(new, new.get("changed")), plan_card(new))
+
+    if intent in {"book", "call"}:
+        call_stop = int(it["stop"]) if str(it.get("stop") or "").isdigit() else None
+        if intent == "call" and call_stop is None and it.get("stop"):
+            call_stop = next((st["n"] for st in plan["stops"] if str(it["stop"]).lower() in st["name"].lower()), None)
+        confirmed = intent == "call" and bool(it.get("confirm"))
+        r = await ask(ctx, "booker", BookRequest(plan_id=plan["planId"], call_stop=call_stop, confirmed=confirmed), BookReply)
+        res = r.model_dump() if r and r.ok else {**(await api.book(plan["planId"])), "call": None}
+        lines = ["Here's how the day gets booked:"]
+        calls = []
+        for b in res["bookings"]:
+            if b["how"] == "online":
+                lines.append(f"- **{b['name']}** ({b['time']}): [reserve online]({b['url']})")
+            elif b["how"] == "call":
+                calls.append(b)
+                lines.append(f"- **{b['name']}** ({b['time']}): phone bookings only, {b['phone']}")
+            else:
+                lines.append(f"- **{b['name']}** ({b['time']}): no booking needed, just show up")
+        if res.get("call"):
+            lines.append(f"\nCall: {res['call'].get('message') or res['call'].get('status')}")
+        elif calls and intent != "call":
+            lines.append(f"\nI can call {calls[0]['name']} for you with an AI voice that says it's booking for your group. Say **yes, call stop {calls[0]['n']}** to confirm.")
+        s["booked"] = True
+        save(ctx, sender, s)
+        fee = res.get("fee")
+        if fee and not s.get("paid"):
+            lines.append(f"\nFaves charges a {fee['amount']} {fee['currency']} booking fee for the day; I've sent a payment request.")
+            await ctx.send(sender, RequestPayment(
+                accepted_funds=[Funds(amount=fee["amount"], currency=fee["currency"], payment_method="fet_direct")],
+                recipient=str(butler.wallet.address()),
+                deadline_seconds=600,
+                reference=plan["planId"],
+                description="Faves booking fee for the group's day",
+            ))
+        lines.append("\nWant a group chat for your friends? Say **make a group chat**.")
+        return chat_text("\n".join(lines))
+
+    if intent == "group":
+        g = await api.group(plan["planId"], s.get("groupName") or "")
+        s["group"] = g
+        save(ctx, sender, s)
+        return chat_text(
+            f"Your Faves group chat **{g['name']}** is ready, with the plan pinned and me in it.\n\n"
+            f"- Invite link: {g['web']}\n- In the app: {g['app']} (or code **{g['code']}**)\n\n"
+            "Everyone taps In, Maybe or Out on the ticket and sets where they start from, and I'll keep the first stop fair."
+        )
+
+    # A new plan (or a re-plan with new details).
+    city = it.get("city") or s.get("city") or "san-francisco"
+    friends = it.get("friends") or s.get("friends") or []
+    request = it.get("request") or text
+    r = await ask(ctx, "planner", PlanRequest(city=city, text=request, friends=friends), PlanReply)
+    new = r.plan if r and r.ok else await api.plan(city, request, friends)
+    s.update({"plan": new, "city": city, "friends": friends})
+    save(ctx, sender, s)
+    return chat_text(plan_text(new), plan_card(new))
+
+
+@chat.on_message(ChatMessage)
+async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
+    await ctx.send(sender, ChatAcknowledgement(timestamp=datetime.now(timezone.utc), acknowledged_msg_id=msg.msg_id))
+    for item in msg.content:
+        if isinstance(item, StartSessionContent):
+            ctx.logger.info(f"session started with {sender}")
+        elif isinstance(item, EndSessionContent):
+            ctx.storage.set(f"s:{sender}", json.dumps({}))
+    text = msg.text().strip()
+    if not text:
+        return
+    try:
+        reply = await handle(ctx, sender, text)
+    except Exception as e:
+        ctx.logger.exception("couldn't handle a message")
+        reply = chat_text(f"Sorry, something went wrong on my side ({e}). Try asking again in a moment.")
+    await ctx.send(sender, reply)
+
+
+@chat.on_message(ChatAcknowledgement)
+async def on_ack(ctx: Context, sender: str, msg: ChatAcknowledgement):
+    pass
+
+
+@pay.on_message(CommitPayment)
+async def on_commit(ctx: Context, sender: str, msg: CommitPayment):
+    # A real deployment checks the transfer on the ledger before completing.
+    s = session(ctx, sender)
+    s["paid"] = msg.transaction_id
+    save(ctx, sender, s)
+    await ctx.send(sender, CompletePayment(transaction_id=msg.transaction_id))
+    await ctx.send(sender, chat_text("Thanks, the booking fee came through. Your day is set."))
+
+
+@pay.on_message(RejectPayment)
+async def on_reject(ctx: Context, sender: str, msg: RejectPayment):
+    await ctx.send(sender, chat_text("No problem. The reservation links still work, and the group chat is free."))
+
+
+butler.include(chat, publish_manifest=True)
+butler.include(pay, publish_manifest=True)
+
+if __name__ == "__main__":
+    butler.run()

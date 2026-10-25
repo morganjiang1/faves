@@ -120,10 +120,20 @@ function swap(body: { planId: string; stop?: number | string; want?: string }) {
   if (index < 0 || index >= p.stops.length) index = 0;
   const before = city.byId.get(p.stops[index].placeId)!;
   const alts = alternativesFor(p, city, index, 10);
-  const want = (body.want ?? "").toLowerCase();
+  const want = (body.want ?? "").toLowerCase().replace(/\b(something|somewhere|a|an|the|place|spot)\b/g, " ").trim();
   const kws = activitiesIn(want).flatMap((a) => a.keywords);
-  const pick = (want.includes("cheap") ? alts.sort((a, b) => costOf(a.place).perPerson - costOf(b.place).perPerson)[0] : null)
-    ?? alts.find((c) => kws.some((k) => `${c.place.name} ${c.place.kind ?? ""}`.toLowerCase().includes(k)))
+  // A specific wish ("ramen") can be any spot of that kind near the stops around it.
+  const prev = index > 0 ? city.byId.get(p.stops[index - 1].placeId) : null;
+  const near = prev ?? before;
+  const inPlan = new Set(p.stops.map((x) => x.placeId));
+  const wished = kws.length
+    ? city.places
+        .filter((x) => !inPlan.has(x.id) && !x.temporarilyClosed && !x.unrated && kws.some((k) => `${x.name} ${x.kind ?? ""} ${x.kinds.join(" ")}`.toLowerCase().includes(k)))
+        .map((x) => ({ place: x, score: x.locals - bestLeg(near, x, "transit").minutes * 1.2 }))
+        .sort((a, b) => b.score - a.score)[0] ?? null
+    : null;
+  const pick = (want.includes("cheap") ? [...alts].sort((a, b) => costOf(a.place).perPerson - costOf(b.place).perPerson)[0] : null)
+    ?? wished
     ?? alts.find((c) => want && `${c.place.name} ${c.place.kind ?? ""}`.toLowerCase().includes(want))
     ?? alts[0];
   if (!pick) throw new Error("Nothing nearby fits instead. Try another stop.");
