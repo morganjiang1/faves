@@ -119,9 +119,12 @@ async function changePlan(ctx: ActionCtx, g: GroupView, text: string, askedBy: s
 
 async function swap(ctx: ActionCtx, g: GroupView, stop: string, want: string, askedBy: string) {
   if (!g.ticket) return "There's no plan yet. Ask me to plan something first.";
-  const res = await call<{ raw: unknown; changed: { from: string; to: string } }>("swap", { plan: g.ticket.plan, stop: /^\d+$/.test(stop) ? Number(stop) : stop, want });
-  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: `${askedBy} asked: swapped ${res.changed.from} for ${res.changed.to}` } });
-  return `Swapped ${res.changed.from} for ${res.changed.to}.`;
+  const res = await call<{ raw: unknown; changed: { stop: number; from: string; to: string; asked: string | null; matched: boolean } }>("swap", { plan: g.ticket.plan, stop: /^\d+$/.test(stop) ? Number(stop) : stop, want });
+  const c = res.changed;
+  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: `${askedBy} asked: swapped ${c.from} for ${c.to}` } });
+  // Say which stop changed; when nothing matched what they named, say that too.
+  const what = `stop ${c.stop}, ${c.from}, for ${c.to}`;
+  return c.matched === false && c.asked ? `I couldn't find "${c.asked}" in the plan, so I swapped ${what}.` : `Swapped ${what}.`;
 }
 
 async function findByVibe(ctx: ActionCtx, g: GroupView, vibe: string) {

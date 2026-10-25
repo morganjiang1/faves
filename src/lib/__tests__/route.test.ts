@@ -5,7 +5,8 @@ import type { RawCity } from "@/data/types";
 import type { Start } from "../fair";
 import { metersBetween } from "../geo";
 import { parseRequest } from "../parser";
-import { makePlan, planWindow, type Plan } from "../planner";
+import { findStop, makePlan, planWindow, type Plan } from "../planner";
+import { activitiesIn } from "../parser";
 
 const city = buildCity(raw as unknown as RawCity);
 const NOW = new Date(Date.UTC(2026, 9, 24, 17, 0)); // Sat 10:00 AM in San Francisco
@@ -117,4 +118,18 @@ test.each([
     expect(startsAt).toBeGreaterThan(wallNow);
     expect(win.end).toBeGreaterThan(win.start);
   }
+});
+
+test("'swap the hot pot' finds the hot pot stop, not the first one; nothing matching is -1", () => {
+  const p = plan("me and 3 friends, pickleball then hot pot then karaoke, 1pm to 9pm");
+  const names = p.stops.map((s) => `${city.byId.get(s.placeId)?.name} ${city.byId.get(s.placeId)?.kind}`.toLowerCase());
+  const hot = names.findIndex((n) => n.includes("hot pot"));
+  expect(hot).toBeGreaterThan(0);
+  expect(findStop(p, city, "the hot pot", activitiesIn)).toBe(hot);
+  expect(findStop(p, city, "hot pot", activitiesIn)).toBe(hot);
+  expect(findStop(p, city, "pickleball", activitiesIn)).toBe(names.findIndex((n) => n.includes("pickleball")));
+  expect(findStop(p, city, "stop 2", activitiesIn)).toBe(1);
+  expect(findStop(p, city, "3")).toBe(2);
+  expect(findStop(p, city, "9")).toBe(-1);
+  expect(findStop(p, city, "bowling alley", activitiesIn)).toBe(-1);
 });

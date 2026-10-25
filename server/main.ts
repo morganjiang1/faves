@@ -23,7 +23,7 @@ import type { City, Place } from "../src/data/types";
 import { fairLine, hoodPoint, type Start } from "../src/lib/fair";
 import { bestLeg, formatLeg, type Mode } from "../src/lib/geo";
 import { activitiesIn, parseRequest } from "../src/lib/parser";
-import { alternativesFor, makePlan, planCost, replan, swapStop, type Plan } from "../src/lib/planner";
+import { alternativesFor, findStop, makePlan, planCost, replan, swapStop, type Plan } from "../src/lib/planner";
 import { costOf, scoreOutOf10 } from "../src/lib/score";
 import { formatClock } from "../src/lib/time";
 import { ConvexHttpClient } from "convex/browser";
@@ -167,17 +167,22 @@ async function swap(body: { planId?: string; plan?: Plan; stop?: number | string
   const st = plans.get(body.planId);
   if (!st) throw new Error("No plan with that id. Plan again first.");
   const { plan: p, city } = st;
-  let index = typeof body.stop === "number" ? body.stop - 1 : -1;
-  if (typeof body.stop === "string") {
-    const q = body.stop.toLowerCase();
-    index = p.stops.findIndex((s) => (city.byId.get(s.placeId)?.name ?? "").toLowerCase().includes(q) || s.slot.label.toLowerCase().includes(q));
-    if (index < 0 && /^\d+$/.test(q)) index = Number(q) - 1;
+  const want = (body.want ?? "").toLowerCase().replace(/\b(something|somewhere|a|an|the|place|spot)\b/g, " ").trim();
+  const wantActs = activitiesIn(want);
+  const kws = wantActs.flatMap((a) => a.keywords);
+  // The stop they named ("the hot pot", "stop 2", "the courts"). Only when nothing in the plan
+  // matches does it fall back: the stop of the same kind as the wish ("for ramen" is a food
+  // stop), else the first one, and the reply says so.
+  const asked = typeof body.stop === "number" ? String(body.stop) : (body.stop ?? "").trim();
+  let index = asked ? findStop(p, city, asked, activitiesIn) : -1;
+  const matched = index >= 0;
+  if (!matched) {
+    const cat = wantActs[0]?.category;
+    index = cat ? p.stops.findIndex((s) => city.byId.get(s.placeId)?.category === cat) : -1;
+    if (index < 0) index = 0;
   }
-  if (index < 0 || index >= p.stops.length) index = 0;
   const before = city.byId.get(p.stops[index].placeId)!;
   const alts = alternativesFor(p, city, index, 10);
-  const want = (body.want ?? "").toLowerCase().replace(/\b(something|somewhere|a|an|the|place|spot)\b/g, " ").trim();
-  const kws = activitiesIn(want).flatMap((a) => a.keywords);
   // A specific wish ("ramen") can be any spot of that kind near the stops around it.
   const prev = index > 0 ? city.byId.get(p.stops[index - 1].placeId) : null;
   const near = prev ?? before;
@@ -196,7 +201,7 @@ async function swap(body: { planId?: string; plan?: Plan; stop?: number | string
   const next = swapStop(p, city, index, pick.place.id);
   const stored = { ...st, plan: { ...next, fairness: st.starts.length ? next.fairness ?? p.fairness : null } };
   plans.set(p.id, stored);
-  return { ...summarize(p.id, stored), raw: stored.plan, changed: { stop: index + 1, from: before.name, to: pick.place.name } };
+  return { ...summarize(p.id, stored), raw: stored.plan, changed: { stop: index + 1, from: before.name, to: pick.place.name, fromKind: before.kind ?? null, toKind: pick.place.kind ?? null, asked: asked || null, matched: matched || !asked } };
 }
 
 async function book(body: { planId?: string; plan?: Plan }) {

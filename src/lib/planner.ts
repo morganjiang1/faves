@@ -829,16 +829,28 @@ const tidyTarget = (s: string) => s.replace(/\b(the|a|an|that|this|our|my|spot|p
 
 const ORDINALS: Record<string, number> = { first: 0, second: 1, third: 2, fourth: 3, fifth: 4, last: -1 };
 
-export function findStop(plan: Plan, city: City, target: string): number {
-  if (!target) return -1;
-  for (const [w, i] of Object.entries(ORDINALS)) if (new RegExp(`\\b${w}\\b`).test(target)) return i < 0 ? plan.stops.length - 1 : Math.min(i, plan.stops.length - 1);
-  const words = target.split(" ").filter((w) => w.length >= 3);
+// Which stop "the hot pot" / "the courts" / "stop 2" means: -1 when nothing in the plan matches.
+// Words match at word starts ("pot" is not "spot"); the whole phrase and the place's own name
+// or kind count most. With a lexicon, the words people use ("hot pot") also match the kinds
+// of places they mean ("shabu").
+export function findStop(plan: Plan, city: City, target: string, lexicon?: (t: string) => Activity[]): number {
+  const t = norm(target).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  if (!t) return -1;
+  const n = t.match(/^(?:stop|number|no)?\s*(\d{1,2})$/);
+  if (n) return Number(n[1]) >= 1 && Number(n[1]) <= plan.stops.length ? Number(n[1]) - 1 : -1;
+  for (const [w, i] of Object.entries(ORDINALS)) if (new RegExp(`\\b${w}\\b`).test(t)) return i < 0 ? plan.stops.length - 1 : Math.min(i, plan.stops.length - 1);
+  const words = t.split(" ").filter((w) => w.length >= 3 && !["the", "and", "stop", "spot", "place"].includes(w));
+  const kws = lexicon ? lexicon(t).flatMap((a) => a.keywords).map(norm) : [];
+  const at = (text: string, w: string) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(text);
   let best = -1, bestScore = 0;
   plan.stops.forEach((s, i) => {
     const p = city.byId.get(s.placeId);
-    const text = norm([s.slot.label, ...s.slot.keywords, s.slot.categories.join(" "), CATEGORIES.find((c) => c.id === s.slot.categories[0])?.label ?? "", p?.name ?? "", p?.kind ?? "", ...(p?.kinds ?? [])].join(" "));
+    const own = norm([p?.name ?? "", p?.kind ?? "", ...(p?.kinds ?? [])].join(" "));
+    const text = norm([s.slot.label, ...s.slot.keywords, s.slot.categories.join(" "), CATEGORIES.find((c) => c.id === s.slot.categories[0])?.label ?? "", own].join(" "));
     let score = 0;
-    for (const w of words) if (text.includes(w) || (w.endsWith("s") && text.includes(w.slice(0, -1)))) score += 1;
+    for (const w of words) if (at(text, w) || (w.endsWith("s") && at(text, w.slice(0, -1)))) score += 1;
+    if (words.length > 1 && text.includes(t)) score += 2;
+    if (kws.some((k) => k && own.includes(k))) score += 3;
     if (score > bestScore) { bestScore = score; best = i; }
   });
   return best;
@@ -975,14 +987,14 @@ export function replan(input: Plan, city: City, text: string, opts: { lexicon: (
       break;
     }
     case "swap": {
-      const i = findStop(plan, city, intent.target);
+      const i = findStop(plan, city, intent.target, opts.lexicon);
       if (i < 0) { log.push(`Couldn't tell which stop "${intent.target}" means. Tap Swap on the stop instead.`); break; }
       replaceAt(i, (a, b) => `Swapped ${a} for ${b}.`);
       retime(plan, city, i, undefined, log);
       break;
     }
     case "remove": {
-      const i = findStop(plan, city, intent.target);
+      const i = findStop(plan, city, intent.target, opts.lexicon);
       if (i < 0) { log.push(`Couldn't tell which stop "${intent.target}" means.`); break; }
       log.push(`Removed ${city.byId.get(plan.stops[i].placeId)?.name}.`);
       plan.stops.splice(i, 1);
