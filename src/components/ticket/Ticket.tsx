@@ -12,7 +12,7 @@ import { planCost, type Plan } from "@/lib/planner";
 import { endsAt, formatClock, MONTHS, startsAt } from "@/lib/time";
 import { font, palette, shadow } from "@/theme/tokens";
 import { Avatar, Icon, SampleTag } from "../ui";
-import { RouteSketch } from "./RouteSketch";
+import { MiniMap } from "./MiniMap";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MODE_WORD = { walk: "walk", transit: "transit", drive: "drive", bike: "bike" } as const;
@@ -82,9 +82,9 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
               {compact && plan.stops.length > 3 ? <Text style={styles.more}>+ {plan.stops.length - 3} more</Text> : null}
             </View>
           </View>
-          {!compact && city && places.filter(Boolean).length > 1 ? (
+          {!compact && city && places.some(Boolean) ? (
             <View style={styles.sketch}>
-              <RouteSketch testID="ticket-sketch" stops={places.filter(Boolean) as { lat: number; lng: number }[]} starts={[]} width={220} height={86} />
+              <MiniMap testID="ticket-map" stops={places} />
             </View>
           ) : null}
           {!compact && fair?.toFirst.length ? (
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   addr: { fontFamily: font.sans, fontSize: 12, color: palette.inkMuted, marginTop: 1 },
   leg: { fontFamily: font.sans, fontSize: 11.5, color: palette.inkMuted, marginLeft: 60, marginBottom: 4 },
   more: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.inkSoft, marginLeft: 60 },
-  sketch: { marginTop: 10, alignItems: "center", backgroundColor: palette.paper, borderRadius: 10 },
+  sketch: { marginTop: 10 },
   fair: { marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: palette.paper, gap: 6 },
   fairHead: { fontFamily: font.sans, fontSize: 12.5, fontWeight: "700", color: palette.ink },
   fairRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },

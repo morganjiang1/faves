@@ -304,3 +304,28 @@ test("the butler's booking shows a reservation as a short tappable label, not th
   await expect(page.getByTestId("chat-messages")).not.toContainText("https://");
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("a planned chat's ticket shows a real map: OpenStreetMap tiles under the route, and tapping it opens the itinerary", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const tiles: number[] = [];
+  page.on("response", (r) => { if (r.url().startsWith("https://tile.openstreetmap.org/")) tiles.push(r.status()); });
+  const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text: "pickleball then hot pot saturday 1pm to 7pm", city: "san-francisco", friends: [{ name: "Ana", from: "Inner Richmond" }, { name: "Ben", from: "Mission" }] } })).json();
+  const group = await (await request.post("http://localhost:8787/api/group", { data: { planId: plan.planId } })).json();
+  await startOnboarded(page, `/join/${group.code}`, { name: "Ana", handle: `anamap${run}` });
+  await expect(page.getByTestId("chat-screen")).toBeVisible({ timeout: 20_000 });
+  const map = page.getByTestId("ticket-map").first();
+  await expect(map).toBeVisible();
+  await expect(map).toContainText("© OpenStreetMap");
+  // The tiles load from OpenStreetMap and are painted inside the map.
+  await expect.poll(() => tiles.length, { timeout: 20_000 }).toBeGreaterThan(0);
+  await expect.poll(() => map.locator('[data-testid="minimap-tile"] img').evaluateAll((imgs) => imgs.filter((i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0).length), { timeout: 20_000 }).toBeGreaterThan(0);
+  expect(tiles.every((s) => s < 400), `tile statuses: ${tiles.join(",")}`).toBe(true);
+  const box = (await map.boundingBox())!;
+  const tile = (await map.getByTestId("minimap-tile").first().boundingBox())!;
+  expect(tile.width).toBeGreaterThan(100);
+  expect(box.height).toBeGreaterThan(100);
+  // The map doesn't take the tap: the ticket opens the itinerary.
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page).toHaveURL(/\/plan\//);
+  expect(problems, problems.join("\n")).toEqual([]);
+});
