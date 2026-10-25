@@ -57,6 +57,7 @@
     "@types/react": "~19.3.0",
     "jest": "~30.5.2",
     "jest-expo": "~58.0.12",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "ws": "^8.22.0"
   },
@@ -72,8 +73,9 @@
     "data:build": "node data/scripts/build.mjs --city all",
     "data:export": "node data/scripts/export.mjs --city all",
     "lint": "expo lint",
-    "chat-server": "node server/chat-server.mjs",
-    "test:relay": "node --test server/test/relay.test.mjs"
+    "chat-server": "tsx server/main.ts",
+    "test:relay": "node --test server/test/relay.test.mjs",
+    "relay-only": "node server/chat-server.mjs"
   },
   "private": true,
   "description": "Faves: find the spots locals love and plan the whole day.",

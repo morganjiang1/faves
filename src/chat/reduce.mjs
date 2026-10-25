@@ -115,7 +115,8 @@ export function applyOp(state, op, ctx) {
     case "postTicket": {
       const g = state.groups[op.ticket.groupId];
       if (!isMember(g, ctx.actorId)) return { events: [], error: "not-a-member" };
-      const ticket = state.tickets[op.ticket.id] || { ...op.ticket, rsvps: { [ctx.actorId]: "in", ...(op.ticket.rsvps || {}) }, thumbs: op.ticket.thumbs || {}, createdAt: now, updatedAt: now, revision: 1 };
+      // Whoever proposes a plan is in, unless the proposer says otherwise (the butler proposes for everyone).
+      const ticket = state.tickets[op.ticket.id] || { ...op.ticket, rsvps: op.ticket.rsvps || { [ctx.actorId]: "in" }, thumbs: op.ticket.thumbs || {}, createdAt: now, updatedAt: now, revision: 1 };
       state.tickets[ticket.id] = ticket;
       const message = { ...op.message, createdAt: now };
       delete message.pending;
