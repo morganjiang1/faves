@@ -188,7 +188,9 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
         if intent == "call" and call_stop is None and it.get("stop"):
             call_stop = next((st["n"] for st in plan["stops"] if str(it["stop"]).lower() in st["name"].lower()), None)
         confirmed = intent == "call" and bool(it.get("confirm"))
-        r = await ask(ctx, "booker", BookRequest(plan_id=plan["planId"], call_stop=call_stop, confirmed=confirmed), BookReply)
+        if it.get("name"):
+            s["name"] = it["name"]
+        r = await ask(ctx, "booker", BookRequest(plan_id=plan["planId"], call_stop=call_stop, confirmed=confirmed, booker_name=s.get("name")), BookReply)
         res = r.model_dump() if r and r.ok else {**(await api.book(plan["planId"])), "call": None}
         lines = ["Here's how the day gets booked:"]
         calls = []
@@ -200,10 +202,15 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
                 lines.append(f"- **{b['name']}** ({b['time']}): phone bookings only, {b['phone']}")
             else:
                 lines.append(f"- **{b['name']}** ({b['time']}): no booking needed, just show up")
-        if res.get("call"):
-            lines.append(f"\nCall: {res['call'].get('message') or res['call'].get('status')}")
+        call = res.get("call")
+        if call and call.get("callId"):
+            s["callId"] = call["callId"]
+            who = s.get("name") or "your group"
+            lines.append(f"\nCalling now, to {call.get('dialing', 'the place')}, with an AI voice that says it's an AI and books under **{who}**. Ask **how did the call go?** in a minute.")
+        elif call:
+            lines.append(f"\nCall: {call.get('message') or call.get('status')}")
         elif calls and intent != "call":
-            lines.append(f"\nI can call {calls[0]['name']} for you with an AI voice that says it's booking for your group. Say **yes, call stop {calls[0]['n']}** to confirm.")
+            lines.append(f"\nI can call {calls[0]['name']} for you with an AI voice that says it's booking for your group. Say **yes, call stop {calls[0]['n']} under <your name>** to confirm.")
         s["booked"] = True
         save(ctx, sender, s)
         fee = res.get("fee")
@@ -218,6 +225,14 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
             ))
         lines.append("\nWant a group chat for your friends? Say **make a group chat**.")
         return chat_text("\n".join(lines))
+
+    if intent == "callstatus":
+        if not s.get("callId"):
+            return chat_text("There's no call yet. Say **yes, call stop N** (and **under <your name>**) to book one by phone.")
+        c = await api.call_status(s["callId"])
+        if c.get("outcome"):
+            return chat_text(c["outcome"])
+        return chat_text(f"The call to {c.get('place', 'the place')} is still going. Ask again in a minute.")
 
     if intent == "group":
         g = await api.group(plan["planId"], s.get("groupName") or "")

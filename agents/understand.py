@@ -18,13 +18,14 @@ CITIES = {
 MODES = {"walk": "walk", "walking": "walk", "transit": "transit", "bus": "transit", "bart": "transit", "muni": "transit", "train": "transit", "car": "drive", "drive": "drive", "driving": "drive", "bike": "bike", "biking": "bike"}
 
 SYSTEM = """You turn a message to the Faves Butler (a group hangout planner) into JSON. Reply with JSON only:
-{"intent": "plan"|"swap"|"book"|"call"|"group"|"scout"|"help",
+{"intent": "plan"|"swap"|"book"|"call"|"callstatus"|"group"|"scout"|"help",
  "city": city name or null,
  "request": the plan request in plain words (what, when, budget), e.g. "saturday 1pm to 7pm, pickleball then hot pot, under $40 each",
  "friends": [{"name": str, "from": neighborhood or town or null, "mode": "walk"|"transit"|"drive"|"bike"|null}],
  "stop": which stop to swap or call (a number or a name) or null,
  "want": what to swap it for or null,
  "confirm": true if they clearly confirm a phone call, else false,
+ "name": the name a booking goes under if they give one ("under Morgan") or null,
  "query": what to scout for (e.g. "gundam store near japantown") or null}
 For "me and 3 friends, we live in the Mission, the Richmond and Oakland": friends = You (Mission), Friend 2 (Richmond), Friend 3 (Oakland), Friend 4 (no place)."""
 
@@ -105,6 +106,8 @@ def rules(text: str, has_plan: bool) -> dict[str, Any]:
         m = re.search(r"(?:swap|replace|switch|change)\s+(?:out\s+)?(?:the\s+)?(?:stop\s+)?(.+?)(?:\s+(?:for|with|to)\s+(.+))?$", low)
         if m:
             stop, want = m.group(1).strip(" ."), (m.group(2) or "").strip(" .")
+    elif has_plan and re.search(r"\b(how did|how'?s|status of|did) (the |that )?call\b|\bcall go\b", low):
+        intent = "callstatus"
     elif has_plan and re.search(r"\bcall\b", low):
         intent = "call"
         n = re.search(r"stop\s+(\d+)", low)
@@ -119,12 +122,13 @@ def rules(text: str, has_plan: bool) -> dict[str, Any]:
         intent, query = "scout", t
     elif re.search(r"^(hi|hello|hey|help|what can you do)\b", low) and len(low) < 40:
         intent = "help"
-    return {"intent": intent, "city": _city(t), "request": t, "friends": _friends(t), "stop": stop, "want": want, "confirm": confirm, "query": query}
+    under = re.search(r"\bunder (?:the name )?([A-Za-z][A-Za-z'-]+)", t)
+    return {"intent": intent, "city": _city(t), "request": t, "friends": _friends(t), "stop": stop, "want": want, "confirm": confirm, "query": query, "name": under.group(1) if under else None}
 
 
 def understand(text: str, has_plan: bool) -> dict[str, Any]:
     base = rules(text, has_plan)
-    if base["intent"] in {"swap", "book", "call", "group"} and text.strip().startswith("{"):
+    if base["intent"] in {"swap", "book", "call", "callstatus", "group"} and text.strip().startswith("{"):
         return base  # a card button: no need to ask the model
     got = _llm(text, has_plan)
     if not got:

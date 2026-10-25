@@ -16,13 +16,17 @@ proto = Protocol(name="FavesBooker", version="1.0.0")
 DEMO_NUMBER = os.getenv("FAVES_CALL_NUMBER")  # for the demo, a teammate plays the restaurant
 
 
-async def place_call(stop: dict, party: int) -> dict:
-    """Start the reservation call through the Faves server (Cartesia voice agent)."""
+async def place_call(stop: dict, day: str, party: int, confirmed_by: dict) -> dict:
+    """Start the reservation call through the Faves server (a Cartesia managed agent that says
+    it's an AI). The server dials the demo phone unless FAVES_CALL_REAL=1."""
     if not CARTESIA_API_KEY:
         return {"status": "not-set-up", "message": f"Voice calls aren't set up yet. Call {stop.get('name')} at {stop.get('phone')}."}
     async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(f"{api.base}/api/call", json={"name": stop.get("name"), "phone": DEMO_NUMBER or stop.get("phone"), "party": party, "time": stop.get("time")})
-        return r.json()
+        r = await client.post(f"{api.base}/api/call", json={"placeName": stop.get("name"), "phone": stop.get("phone"), "day": day, "time": stop.get("time"), "partySize": party, "confirmedBy": confirmed_by})
+        data = r.json()
+        if r.status_code >= 400:
+            return {"status": "error", "message": data.get("error", "The call didn't start.")}
+        return {"status": "calling", **data}
 
 
 @proto.on_message(BookRequest, replies=BookReply)
@@ -32,7 +36,8 @@ async def on_book(ctx: Context, sender: str, msg: BookRequest):
         call = None
         if msg.call_stop and msg.confirmed:
             stop = next((b for b in res["bookings"] if b["n"] == msg.call_stop), None)
-            call = await place_call(stop, len(res["bookings"])) if stop else {"status": "no-stop"}
+            who = {"id": sender, "name": msg.booker_name or "the group"}
+            call = await place_call(stop, res.get("day", ""), int(res.get("groupSize") or 2), who) if stop else {"status": "no-stop"}
         await ctx.send(sender, BookReply(ok=True, bookings=res["bookings"], fee=res.get("fee"), call=call))
     except Exception as e:
         await ctx.send(sender, BookReply(ok=False, error=str(e)))

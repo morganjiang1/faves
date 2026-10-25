@@ -21,6 +21,7 @@
     "convex-helpers": "^0.1.129",
     "expo": "~58.0.19",
     "expo-asset": "~58.0.18",
+    "expo-audio": "~58.0.10",
     "expo-calendar": "~58.0.6",
     "expo-camera": "~58.0.12",
     "expo-clipboard": "~58.0.4",
@@ -39,6 +40,7 @@
     "expo-location": "~58.0.19",
     "expo-router": "~58.0.26",
     "expo-sharing": "~58.0.20",
+    "expo-speech": "~58.0.3",
     "expo-splash-screen": "~58.0.11",
     "expo-status-bar": "~58.0.4",
     "expo-symbols": "~58.0.4",
@@ -89,7 +91,8 @@
     "test:relay": "node --test server/test/relay.test.mjs",
     "relay-only": "node server/chat-server.mjs",
     "convex": "CONVEX_AGENT_MODE=anonymous convex dev",
-    "convex:seed": "tsx scripts/convex-seed.ts"
+    "convex:seed": "tsx scripts/convex-seed.ts",
+    "cartesia:setup": "tsx scripts/cartesia-setup.ts"
   },
   "private": true,
   "description": "Faves: find the spots locals love and plan the whole day.",
