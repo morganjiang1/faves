@@ -14,7 +14,7 @@ test("San Francisco's most-done days lead with the featured Saturday in SF", () 
   expect(top.sample).toBe(true);
   expect(top.doneCount).toBeGreaterThan(days[1].doneCount);
   const names = top.plan.stops.map((s) => city.byId.get(s.placeId)!.name);
-  expect(names).toEqual(["Arsicault Bakery", "Bay Padel - Treasure Island", "Golden Boy Pizza", "Musée Mécanique", "Ina Coolbrith Park", "The Interval at Long Now"]);
+  expect(names).toEqual(["Arsicault Bakery", "Presidio Wall Pickleball Courts", "Golden Boy Pizza", "Musée Mécanique", "Ina Coolbrith Park", "The Interval at Long Now"]);
   top.plan.stops.forEach((s, i) => {
     if (i > 0) {
       expect(s.leg).not.toBeNull();

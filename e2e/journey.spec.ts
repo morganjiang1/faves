@@ -86,7 +86,7 @@ test("a popular day from Home, Do this day, the recap, and posting it", async ({
   await page.getByTestId("day-card-0").click();
   await expect(page).toHaveURL(/\/day\/san-francisco-saturday-in-sf/);
   await expect(page.getByTestId("day-page")).toContainText("Saturday in SF");
-  for (const name of ["Arsicault Bakery", "Bay Padel - Treasure Island", "Golden Boy Pizza", "Musée Mécanique", "Ina Coolbrith Park", "The Interval at Long Now"]) {
+  for (const name of ["Arsicault Bakery", "Presidio Wall Pickleball Courts", "Golden Boy Pizza", "Musée Mécanique", "Ina Coolbrith Park", "The Interval at Long Now"]) {
     await expect(page.getByTestId("day-page")).toContainText(name);
   }
   await page.getByTestId("day-do").click();

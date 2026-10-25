@@ -57,12 +57,12 @@ const FEATURED: Record<string, Featured[]> = {
   "san-francisco": [{
     id: "san-francisco-saturday-in-sf",
     title: "Saturday in SF",
-    raw: "Saturday in SF: pastries, padel, pizza, the arcade, sunset and a cocktail",
+    raw: "Saturday in SF: pastries, pickleball, pizza, the arcade, sunset and a cocktail",
     transport: "transit",
     author: ["Maya", "maya.eats"],
     stops: [
       { placeId: "ChIJJ09d9DmHhYARkrToDt9JCy8", start: 9 * 60, duration: 45, label: "morning pastries" }, // Arsicault Bakery, Richmond District
-      { placeId: "ChIJN6BQnN2BhYARZiaQR4CPSD8", start: 10 * 60 + 30, duration: 105, label: "padel" }, // Bay Padel - Treasure Island
+      { placeId: "ChIJpzubGOqHhYAR_l5H3YvQhcg", start: 10 * 60 + 15, duration: 105, label: "pickleball" }, // Presidio Wall Pickleball Courts (on the way east, not out to Treasure Island)
       { placeId: "ChIJmx3iW_GAhYARrlV9H2vyE-E", start: 12 * 60 + 45, duration: 75, label: "lunch" }, // Golden Boy Pizza, North Beach
       { placeId: "ChIJCQAzVOKAhYARuOpiALmomu0", start: 14 * 60 + 20, duration: 140, label: "the arcade" }, // Musee Mecanique
       { placeId: "ChIJdx6kBe6AhYARsPFmpUAvvcY", start: 17 * 60 + 15, duration: 85, label: "sunset" }, // Ina Coolbrith Park
