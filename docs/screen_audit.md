@@ -19,7 +19,7 @@ X for <idea>".
 | Plan builder | `src/app/builder.tsx` | ask in plain words or answer a few questions; the plan streams in | Google Maps "Ask Maps" for an answer that forms as you watch | `r-builder.png` |
 | Itinerary | `src/app/plan/[id].tsx` | the route map, the day as a timeline of stops with clips and travel legs, live re-plans (rain, running late, cheaper), Share with friends, a link, a vote, a recap | Wanderlog for travel legs between stops | `map-sim-itinerary.png`, `map-web-itinerary.png` |
 | Chats | `src/app/(tabs)/chats.tsx` | your groups, join by code, try it with sample friends | none | `chat-a.png` |
-| Group chat | `src/app/chat/[id].tsx` | messages, spots as postcards, plans as tickets with In / Maybe / Out, the pinned next hangout with a countdown, the butler (Fave) with quick asks, read-aloud and voice notes, Call to book with a confirm sheet | Partiful for In / Maybe / Out | `butler-1-plan.png` to `butler-4-tldr.png`, `chat-b.png` |
+| Group chat | `src/app/chat/[id].tsx` | messages, spots as postcards, plans as tickets with In / Maybe / Out, the pinned next hangout with a countdown, the butler (Fave) with quick asks, read-aloud and voice notes, phone numbers in its messages you tap to call | Partiful for In / Maybe / Out | `butler-1-plan.png` to `butler-4-tldr.png`, `chat-b.png` |
 | New group | `src/app/chat/new.tsx` | name, emoji, people by username, sample friends | none | |
 | Group info | `src/app/chat/info/[id].tsx` | members and where each starts from, add by username or contacts, QR and invite link, the butler's name, your start point (live or a neighborhood) and how you get around, mute, leave | none | |
 | Join | `src/app/join/[code].tsx` | joins a group from an invite link and opens it | none | |

@@ -32,7 +32,7 @@ Every screen is built from a captured reference (see `docs/design_references.md`
 - **Planner:** turns the request into constraints, finds candidates for each stop, scores them, orders stops by opening hours and travel time, checks weather and budget, and explains each pick.
 - **Niche interests:** "loves Gundam" searches specialty stores, events and related spots.
 - **Live re-plan:** "it's raining," "we're running late," "swap the sushi spot." It changes what's needed and keeps the rest.
-- **Booking:** reservation links (OpenTable, Resy, Google), event tickets, and as a stretch goal, a voice agent that calls places with no online booking.
+- **Booking:** reservation links (OpenTable, Resy, Google), event tickets, and for places with no online booking, their phone number to tap and call.
 - **Group vote:** the agent merges everyone's votes into the final plan.
 
 ## Data: the Locals Score

@@ -65,11 +65,10 @@ TikTok in the Scores section) keep their own colors because they identify the so
 | Postcard deck | Home, "this week in <city>" | a pile of tilted postcards you flick through; the top one plays its clip |
 | Postcard rows | Home (tonight, this weekend, hidden gems) | small postcards with stamps; gems get a lavender gem badge |
 | Place page | `place/[id]` | one big 4:5 postcard (clips and photos, swipe with dots), the facts written on paper below, a postcard wall of Spot Moments, sticky "Add to a plan" and "Send to a chat" |
-| Plan ticket | itinerary, chats, Home "your plans" | the ticket above; in a chat it carries In / Maybe / Out, a thumbs up, Swap a stop, Lock it in, Call to book |
+| Plan ticket | itinerary, chats, Home "your plans" | the ticket above; in a chat it carries In / Maybe / Out, a thumbs up, Swap a stop, Lock it in, Itinerary |
 | Pinned hangout | top of a chat | the next locked plan as a stub with a countdown, tap for directions |
-| The butler | every group chat | "Fave" (renamable), rose-tint bubbles with a heart; change notes in lavender pills say who changed what |
+| The butler | every group chat | "Fave" (renamable), rose-tint bubbles with a heart; change notes in lavender pills say who changed what; a phone number in its message is bold and underlined, tap it to call |
 | Quick asks | above the chat composer | Plan something, Find a spot, Book it, Remind us, Running late, tl;dr |
-| Call to book | a ticket stop that only books by phone | a confirm sheet that says who it calls, what it asks and that the voice says it's an AI, then Call now |
 | Voice | chat header and composer | a speaker that reads the butler's replies aloud, a mic for voice notes |
 | Map | Explore, itinerary, day page, saved | OpenStreetMap tiles under a paper wash, emoji spot pins with names, numbered plum teardrops on the route |
 | Onboarding | first run | three of the city's postcards fanned on paper, the rose wordmark, one question per screen with postcard-framed photo tiles |
@@ -77,9 +76,9 @@ TikTok in the Scores section) keep their own colors because they identify the so
 
 ## Words
 
-Plain and short. No em dashes. Say what happens ("Calling M Pot now"), not what the system is.
-Sample people are tagged **Sample**; rewards and payouts in this build are tagged **Test data**.
-The butler always says it's an AI when it phones anyone.
+Plain and short. No em dashes. Say what happens ("Moved the reminders to the new times"), not
+what the system is. Sample people are tagged **Sample**; rewards and payouts in this build are
+tagged **Test data**.
 
 ## Where ideas came from
 

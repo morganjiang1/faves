@@ -14,7 +14,7 @@ The Faves Butler plans a hangout for you and your friends that's fair for everyo
 | Faves Butler | `agent1qfpzxevq7dyhxy32vtvyju6zw7z5kzv2lx7p244zrfq3cqxl8skyvhyh4kk` | Talks to you (Agent Chat Protocol), works out what you want, coordinates the three agents below, sends the itinerary as an interactive card, charges the booking fee (Payment Protocol) and makes the group chat |
 | Faves Planner | `agent1qgmfty97r86evjgwd8azkmuwfmssyn9ads387r079sy7feqq9uz02n6a3x7` | Builds the day with Faves' Locals Score (Google, Yelp, Reddit and TikTok), opening hours, sunset and travel legs; the first stop is the fairest one for everyone's starting point; swaps a stop on request |
 | Faves Scout | `agent1qgz8893yqj0jvk3fhlj0czaeu2ewg00c3fa9yf2c5cw9ha4eak0pj7g7f9y` | Finds spots for niche asks ("a Gundam store near Japantown"): Faves data first, then a live run of our Apify Actor (actors/faves-local-spots) |
-| Faves Booker | `agent1qdfk9h8hawwxjujzwm5pke5zw5w0vwnt8zkgysvfs33l8zqzu9gau0xkqnk` | Books the day: reservation links, walk-ins, and an AI voice call (Cartesia) for places that only take phone bookings, only after a person confirms |
+| Faves Booker | `agent1qdfk9h8hawwxjujzwm5pke5zw5w0vwnt8zkgysvfs33l8zqzu9gau0xkqnk` | Books the day: reservation links, walk-ins, and the phone number to call for places that only take bookings by phone |
 
 ## How it works
 
@@ -38,7 +38,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python run.py            # all four agents, connected to Agentverse through mailboxes
 ```
 
-Keys go in `faves/.env` (never committed): `AGENTVERSE_API_KEY` (registers the agents so ASI:One can find them), `ASI_ONE_API_KEY` (the model), and optionally `APIFY_TOKEN`, `CARTESIA_API_KEY`, `FAVES_CALL_NUMBER` (the number the booking call dials in a demo). Everything runs without keys, with the rules and Faves data.
+Keys go in `faves/.env` (never committed): `AGENTVERSE_API_KEY` (registers the agents so ASI:One can find them), `ASI_ONE_API_KEY` (the model), and optionally `APIFY_TOKEN` (live scouting). Everything runs without keys, with the rules and Faves data.
 
 To register on Agentverse, start `run.py`, open the Agent inspector link it prints for the Butler, click Connect and choose Mailbox (or run `.venv/bin/python register.py` with `AGENTVERSE_API_KEY` set).
 

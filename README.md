@@ -22,8 +22,9 @@ starting point, and lets your group chat plan it together with a butler that boo
 - **Every group has a butler** ("Fave", rename it): ask it to plan, post two options and run the
   vote, find a spot by vibe, book, set reminders (the evening before, and a leave-now nudge with
   each person's own travel time), handle running late (times and reminders move), or sum up the
-  chat. Moments people post at a spot show up on its postcard wall for everyone. It can phone a place to book, only after someone in
-  the group confirms, and it always says it's an AI. It can read its replies aloud.
+  chat. Moments people post at a spot show up on its postcard wall for everyone. When a stop only
+  books by phone, it posts the number so anyone can tap it and call. It can read its replies
+  aloud, and voice notes become text it acts on.
 - **Spot Moments, Community, rankings, recaps**, plus Spot rewards and Faves Plus on test data.
 - 10 cities: New York, Los Angeles, San Francisco, Chicago, Seattle, Boston, Austin, Miami,
   Washington DC and San Diego.
@@ -44,7 +45,7 @@ Three things run side by side. Each works without the others, with less:
 
 ```sh
 npm run convex          # 1. Convex: live group chats, the butler, reminders (local, no account needed)
-npm run chat-server     # 2. the Faves server: planner API for the agents, voice, calls (port 8787)
+npm run chat-server     # 2. the Faves server: planner API for the agents, voice (port 8787)
 npx expo start          # 3. the app
 ```
 
@@ -85,35 +86,30 @@ cd agents && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 Names, addresses and badges are in `agents/README.md`. In ASI:One the Butler plans a fair day
-with everyone's travel times, swaps stops, books (links, or a phone call after you confirm),
-charges a booking fee through the Payment Protocol and makes the group chat with an invite link.
+with everyone's travel times, swaps stops, books (reservation links, walk-ins, and the number to
+call for places that only book by phone), charges a booking fee through the Payment Protocol and
+makes the group chat with an invite link.
 
-### Voice and the booking call (Cartesia)
+### Voice (Cartesia)
 
-1. Put `CARTESIA_API_KEY` in `.env` and restart `npm run chat-server`. The butler's replies can
-   then be read in Cartesia's voice, and the mic in the chat types out voice notes.
-2. For calls: get a phone number in the Cartesia dashboard, run `npm run cartesia:setup` (it
-   makes the "Faves Booker" agent and prints `CARTESIA_AGENT_ID` and `CARTESIA_FROM_NUMBER_ID`),
-   and set `FAVES_CALL_NUMBER` to the phone that plays the restaurant in a demo.
-3. In a chat, a stop that only books by phone shows **Call to book**. Nothing dials until someone
-   taps **Call now**; the voice says it's an AI and never gives card details; the outcome is
-   posted in the chat. `FAVES_CALL_REAL=1` rings the place itself instead of the demo phone.
+1. Put `CARTESIA_API_KEY` in `.env` and restart `npm run chat-server`.
+2. In a chat, tap the speaker and the butler's replies are read aloud in Cartesia's voice, so you
+   can plan hands-free while you're out. Tap the mic, talk, tap again, and your voice note is
+   typed out for you to send to the group or the butler ("@fave we're running 15 minutes late").
 
-Without Cartesia the speaker uses the phone's own voice and calls say they aren't set up yet.
+Without Cartesia the speaker uses the phone's own voice and the mic stays hidden.
 
 **Cartesia features used**
 
 - **Sonic text-to-speech** (`sonic-3`): the butler's replies read aloud in the group chat, so you can plan hands-free while you're out.
 - **Ink speech-to-text** (`ink-whisper`): voice notes in the chat become text the butler acts on ("we're running 15 minutes late").
-- **Voice Agents with phone calls**: the "Faves Booker" agent (made by `npm run cartesia:setup`) calls places that only book by phone, with turn-taking and interruptions, then the outcome is posted in the chat.
 - The API key stays on the Faves server (`server/cartesia.ts`); the app never sees it.
 
 **Known limitations**
 
 - English only for now.
-- Calls need a phone number on the Cartesia account, and in a demo they ring `FAVES_CALL_NUMBER` instead of the place unless `FAVES_CALL_REAL=1`.
-- The booking call is for reservations only: it never gives card details, and it says it's an AI at the start of every call.
-- Call audio isn't stored; only the outcome is posted in the chat.
+- Voice needs the Faves server; without it the speaker falls back to the phone's own voice and voice notes aren't typed out.
+- Voice notes aren't stored; only the text you send is posted in the chat.
 
 ### Live local scouting (Apify)
 
@@ -141,8 +137,7 @@ Nothing is required. Copy `.env.example` to `.env` to turn things on. Secrets st
 | `EXPO_PUBLIC_CHAT_URL` | the Faves server's address, if not found by itself | app |
 | `ASI_ONE_API_KEY` | ASI:One as the butler's model (Convex) and the Fetch.ai Butler's reader; keyless rules otherwise | Convex, agents |
 | `AGENTVERSE_API_KEY` | Agentverse mailboxes for the four agents | agents |
-| `CARTESIA_API_KEY`, `CARTESIA_AGENT_ID`, `CARTESIA_FROM_NUMBER_ID`, `CARTESIA_VOICE_ID` | voice and the booking call | server |
-| `FAVES_CALL_NUMBER`, `FAVES_CALL_REAL` | who the booking call rings | server |
+| `CARTESIA_API_KEY`, `CARTESIA_VOICE_ID` | the butler's voice (replies read aloud) and voice notes typed out | server |
 | `APIFY_TOKEN`, `APIFY_ACTOR` | live scouting with our Actor | server, agents |
 | `FAVES_API_URL`, `FAVES_WEB_URL` | where the agents and Convex reach the server, and the public web address for invite links | server, agents, Convex |
 | `EXPO_PUBLIC_GOOGLE_MAPS_KEY`, `EXPO_PUBLIC_YELP_KEY`, `EXPO_PUBLIC_LLM_*`, `EXPO_PUBLIC_TICKETMASTER_KEY` | optional live data adapters from the first build; these are built into the app, so use restricted keys or leave them empty | app |
