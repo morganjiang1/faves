@@ -8,6 +8,8 @@
 //   POST /api/book   { planId }                                               -> how each stop is booked
 //   POST /api/group  { planId, name? }                                        -> a Faves group chat with the plan pinned
 //   POST /api/scout  { city?, query }                                         -> spots for a niche ask
+//   POST /api/replan { plan | planId, text }                                  -> "it's raining", "running late"...
+// swap, book and replan also take a whole plan (a group chat's ticket) instead of a planId.
 //   GET  /api/plan/:id
 import "./node-shim.cjs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -18,7 +20,7 @@ import type { City, Place } from "../src/data/types";
 import { fairLine, hoodPoint, type Start } from "../src/lib/fair";
 import { bestLeg, formatLeg, type Mode } from "../src/lib/geo";
 import { activitiesIn, parseRequest } from "../src/lib/parser";
-import { alternativesFor, makePlan, planCost, swapStop, type Plan } from "../src/lib/planner";
+import { alternativesFor, makePlan, planCost, replan, swapStop, type Plan } from "../src/lib/planner";
 import { costOf, scoreOutOf10 } from "../src/lib/score";
 import { formatClock } from "../src/lib/time";
 import { inviteCode } from "../src/chat/reduce.mjs";
@@ -38,7 +40,7 @@ const NEARBY: Record<string, Record<string, [number, number]>> = {
 };
 const ALIASES: Record<string, string> = { "the mission": "mission district", mission: "mission district", "the richmond": "richmond district", richmond: "richmond district", "inner richmond": "richmond district", "outer richmond": "richmond district", "the sunset": "sunset district", sunset: "sunset district", "outer sunset": "sunset district", "inner sunset": "sunset district", soma: "south of market", "the castro": "castro", "the haight": "haight-ashbury", haight: "haight-ashbury" };
 
-type Friend = { name: string; from?: string; mode?: Mode };
+type Friend = { name: string; from?: string; mode?: Mode; lat?: number; lng?: number; id?: string };
 type Stored = { plan: Plan; city: City; friends: Friend[]; starts: Start[]; text: string };
 const plans = new Map<string, Stored>();
 
@@ -52,6 +54,8 @@ function citySlug(name?: string): string {
 }
 
 function startFor(city: City, f: Friend, i: number): Start | null {
+  // A group chat's starting points arrive as neighborhood-level points already.
+  if (typeof f.lat === "number" && typeof f.lng === "number") return { memberId: f.id ?? `f${i}`, name: f.name, hood: f.from ?? null, lat: f.lat, lng: f.lng, mode: f.mode ?? "transit" };
   if (!f.from) return null;
   const q = (ALIASES[f.from.toLowerCase().trim()] ?? f.from).toLowerCase().replace(/^the /, "").trim();
   const near = NEARBY[city.slug]?.[q];
@@ -104,10 +108,30 @@ async function plan(body: { city?: string; text?: string; friends?: Friend[] }) 
   const made = makePlan(req, { city, starts, idSeed: "agent" });
   const stored: Stored = { plan: made, city, friends, starts, text: body.text ?? "" };
   plans.set(made.id, stored);
-  return summarize(made.id, stored);
+  return { ...summarize(made.id, stored), raw: made };
 }
 
-function swap(body: { planId: string; stop?: number | string; want?: string }) {
+// A plan made elsewhere (a group chat's ticket) becomes known to the API for swaps and booking.
+async function adopt(body: { plan?: Plan; planId?: string }): Promise<string> {
+  if (body.planId && plans.has(body.planId)) return body.planId;
+  if (!body.plan) throw new Error("No plan with that id. Plan again first.");
+  const city = await loadCity(body.plan.citySlug);
+  const starts = (body.plan.fairness?.toFirst ?? []).map((l) => ({ memberId: l.memberId, name: l.name, hood: l.hood, lat: 0, lng: 0, mode: l.mode }));
+  plans.set(body.plan.id, { plan: body.plan, city, friends: [], starts: starts as Start[], text: body.plan.request?.raw ?? "" });
+  return body.plan.id;
+}
+
+async function replanApi(body: { plan?: Plan; planId?: string; text: string }) {
+  const id = await adopt(body);
+  const st = plans.get(id)!;
+  const r = replan(st.plan, st.city, body.text, { lexicon: activitiesIn });
+  const stored = { ...st, plan: { ...r.plan, fairness: r.plan.fairness ?? st.plan.fairness } };
+  plans.set(id, stored);
+  return { ...summarize(id, stored), raw: stored.plan, message: r.message, changed: r.changed };
+}
+
+async function swap(body: { planId?: string; plan?: Plan; stop?: number | string; want?: string }) {
+  body.planId = await adopt(body);
   const st = plans.get(body.planId);
   if (!st) throw new Error("No plan with that id. Plan again first.");
   const { plan: p, city } = st;
@@ -140,10 +164,11 @@ function swap(body: { planId: string; stop?: number | string; want?: string }) {
   const next = swapStop(p, city, index, pick.place.id);
   const stored = { ...st, plan: { ...next, fairness: st.starts.length ? next.fairness ?? p.fairness : null } };
   plans.set(p.id, stored);
-  return { ...summarize(p.id, stored), changed: { stop: index + 1, from: before.name, to: pick.place.name } };
+  return { ...summarize(p.id, stored), raw: stored.plan, changed: { stop: index + 1, from: before.name, to: pick.place.name } };
 }
 
-function book(body: { planId: string }) {
+async function book(body: { planId?: string; plan?: Plan }) {
+  body.planId = await adopt(body);
   const st = plans.get(body.planId);
   if (!st) throw new Error("No plan with that id. Plan again first.");
   const bookings = st.plan.stops.map((s, i) => {
@@ -208,8 +233,9 @@ const http = createServer(async (req, res) => {
     if (req.method === "POST") {
       const body = await readBody(req);
       if (url === "/api/plan") return send(res, 200, await plan(body as never));
-      if (url === "/api/swap") return send(res, 200, swap(body as never));
-      if (url === "/api/book") return send(res, 200, book(body as never));
+      if (url === "/api/swap") return send(res, 200, await swap(body as never));
+      if (url === "/api/book") return send(res, 200, await book(body as never));
+      if (url === "/api/replan") return send(res, 200, await replanApi(body as never));
       if (url === "/api/group") return send(res, 200, group(body as never));
       if (url === "/api/scout") return send(res, 200, await scout(body as never));
     }
