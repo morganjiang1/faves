@@ -114,7 +114,7 @@ export function applyOp(state, op, ctx) {
     }
     case "postTicket": {
       const g = state.groups[op.ticket.groupId];
-      if (!isMember(g, ctx.actorId)) return { events: [], error: "not-a-member" };
+      if (!g || (!isMember(g, ctx.actorId) && ctx.actorId !== FAVES_ID)) return { events: [], error: "not-a-member" };
       // Whoever proposes a plan is in, unless the proposer says otherwise (the butler proposes for everyone).
       const ticket = state.tickets[op.ticket.id] || { ...op.ticket, rsvps: op.ticket.rsvps || { [ctx.actorId]: "in" }, thumbs: op.ticket.thumbs || {}, createdAt: now, updatedAt: now, revision: 1 };
       state.tickets[ticket.id] = ticket;
@@ -135,12 +135,12 @@ export function applyOp(state, op, ctx) {
     }
     case "updateTicket": {
       const t = state.tickets[op.ticketId];
-      if (!t || !isMember(state.groups[t.groupId], ctx.actorId)) return { events: [], error: "no-ticket" };
+      if (!t || (!isMember(state.groups[t.groupId], ctx.actorId) && ctx.actorId !== FAVES_ID)) return { events: [], error: "no-ticket" };
       const ticket = { ...t, ...pick(op.patch, ["plan", "status"]), revision: (t.revision || 1) + 1, updatedAt: now };
       state.tickets[t.id] = ticket;
       const events = [{ type: "ticket", ticket }];
       if (op.note) {
-        const message = { id: `change-${t.id}-${ticket.revision}`, groupId: t.groupId, authorId: ctx.actorId, authorName: actor ? actor.name : "Someone", kind: "change", text: op.note, ticketId: t.id, createdAt: now };
+        const message = { id: `change-${t.id}-${ticket.revision}`, groupId: t.groupId, authorId: ctx.actorId, authorName: actor ? actor.name : ctx.actorId === FAVES_ID ? "Fave" : "Someone", kind: "change", text: op.note, ticketId: t.id, createdAt: now };
         pushMessage(state, message);
         events.push({ type: "message", message });
       }

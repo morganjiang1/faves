@@ -16,7 +16,7 @@ import { groupStarts, planForGroup } from "./plan";
 import type { Group, Member, Ticket } from "./reduce.mjs";
 import { chat } from "./store";
 
-export const mentionsFaves = (text: string) => /(^|\s)@faves\b/i.test(text);
+export const mentionsFaves = (text: string) => /(^|\s)@(faves?|butler)\b/i.test(text);
 
 export function currentTicket(tickets: Record<string, Ticket>, groupId: string): Ticket | null {
   const list = Object.values(tickets).filter((t) => t.groupId === groupId);
@@ -47,7 +47,7 @@ export function nearbyPick(city: City, text: string, at: LatLng, exclude: Set<st
 
 export async function answer(input: { city: City; group: Group; users: Record<string, Member>; tickets: Record<string, Ticket>; text: string }): Promise<void> {
   const { city, group, users, tickets } = input;
-  const text = input.text.replace(/@faves/gi, "").trim();
+  const text = input.text.replace(/@(faves?|butler)\b/gi, "").trim();
   const ticket = currentTicket(tickets, group.id);
   const plan = ticket ? (ticket.plan as Plan) : null;
   const intent = parseReplan(text, activitiesIn);
