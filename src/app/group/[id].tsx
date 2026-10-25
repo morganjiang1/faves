@@ -30,7 +30,7 @@ import { newId, swapStop } from "@/lib/planner";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, getState, groupActions, useStore, type Group } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? null;
 const VOTE_WORD: Record<Vote, string> = { going: "Going", maybe: "Maybe", cant: "Can't" };
@@ -243,7 +243,7 @@ export default function GroupScreen() {
           </>
         ) : mine ? (
           <Pressable testID="group-send-back" accessibilityRole="button" onPress={() => setShare("back")} style={({ pressed }) => [styles.white, pressed && { opacity: 0.85 }]}>
-            <Icon name="paper-plane" size={18} tint="#000" />
+            <Icon name="paper-plane" size={18} tint={palette.ink} />
             <Text style={styles.whiteLabel}>Send my votes back</Text>
           </Pressable>
         ) : (
@@ -283,7 +283,7 @@ export default function GroupScreen() {
 
 function Loading() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} testID="group-loading">
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} testID="group-loading">
       <View style={{ padding: 16, gap: 12 }}>
         <Skeleton style={{ width: "50%", height: 22, borderRadius: 8 }} />
         <Skeleton style={{ height: 117, borderRadius: 6 }} />
@@ -295,14 +295,14 @@ function Loading() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.partifulNight },
-  center: { flex: 1, justifyContent: "center", backgroundColor: "#fff" },
+  center: { flex: 1, justifyContent: "center", backgroundColor: palette.paper },
   nav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, height: 48 },
   navTitle: { flex: 1, textAlign: "center", fontFamily: font.sans, color: "#fff", fontSize: 20, fontWeight: "600", marginHorizontal: 12 },
   planTitle: { fontFamily: font.sans, color: "#fff", fontSize: 15, fontWeight: "600", textAlign: "center", marginTop: 2, paddingHorizontal: 24 },
   host: { fontFamily: font.sans, color: "rgba(255,255,255,0.65)", fontSize: 13, textAlign: "center", marginTop: 3 },
   footer: { paddingHorizontal: 16, paddingTop: 12, backgroundColor: "#140045" },
   white: { height: 47, borderRadius: 3, backgroundColor: "#FEFCFF", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  whiteLabel: { fontFamily: font.sans, color: "#000", fontSize: 17, fontWeight: "600" },
+  whiteLabel: { fontFamily: font.sans, color: palette.ink, fontSize: 17, fontWeight: "600" },
   link: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600", textDecorationLine: "underline" },
   hint: { fontFamily: font.sans, color: "rgba(255,255,255,0.75)", fontSize: 15, textAlign: "center", paddingVertical: 8 },
 });

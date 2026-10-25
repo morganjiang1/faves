@@ -19,6 +19,7 @@ import { shareUrl } from "@/lib/links";
 import { useCity } from "@/state/city";
 import { actions, useStore } from "@/state/store";
 
+import { palette } from "@/theme/tokens";
 type Tab = "top" | "new" | "saved";
 type Row = { key: string; kind: "caps"; title: string } | { key: string; kind: "post"; post: DayPost; index: number } | { key: string; kind: "invite" } | { key: string; kind: "empty-saved" } | { key: string; kind: "sample" };
 
@@ -156,8 +157,8 @@ export default function Feed() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   chips: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 10, gap: 8 },
-  hairline: { height: 1, backgroundColor: "#F4F5F8" },
+  hairline: { height: 1, backgroundColor: palette.paperDeep },
   sample: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 22, paddingBottom: 6 },
 });

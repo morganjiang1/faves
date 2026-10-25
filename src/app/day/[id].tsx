@@ -29,7 +29,7 @@ import { formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { color, font, shadow } from "@/theme/tokens";
+import { color, font, palette, shadow } from "@/theme/tokens";
 
 const MODE_ICON: Record<Mode, IconName> = { walk: "walk", transit: "bus", drive: "car", bike: "bicycle" };
 const MODE_WORD: Record<Mode, string> = { walk: "on foot", transit: "by transit", drive: "by car", bike: "by bike" };
@@ -72,12 +72,12 @@ export default function DayPage() {
   const nav = (
     <View style={styles.nav}>
       <Pressable testID="day-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={back}>
-        <Icon name="chevron-back" size={28} tint="#000" />
+        <Icon name="chevron-back" size={28} tint={palette.ink} />
       </Pressable>
       {post ? (
         <View style={{ flexDirection: "row", gap: 20 }}>
           <Pressable testID="day-share" accessibilityRole="button" accessibilityLabel="Share this day" hitSlop={8} onPress={() => setShare(true)}>
-            <Icon name="share-outline" size={25} tint="#000" />
+            <Icon name="share-outline" size={25} tint={palette.ink} />
           </Pressable>
           {post.kind === "community" ? (
             <Pressable testID="day-save" accessibilityRole="button" accessibilityLabel={saved ? "Remove from saved days" : "Save this day"} accessibilityState={{ selected: saved }} hitSlop={8} onPress={() => { setToast(saved ? "Removed from saved days" : "Saved to your days"); actions.toggleSaveDay(post.id); }}>
@@ -126,7 +126,7 @@ export default function DayPage() {
 
   return (
     <View style={styles.screen} testID="day-page">
-      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#fff" }}>{nav}</SafeAreaView>
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: palette.card }}>{nav}</SafeAreaView>
       {!online ? <OfflineBanner /> : null}
       <DayBody post={post} city={city} liked={likes.includes(post.id)} faces={community ? facesFor(post, community, 0) : []} bottomPad={insets.bottom + 100} />
       <Footer post={post} city={city} done={doneDays.includes(post.id)} bottom={Math.max(insets.bottom, 12)} />
@@ -228,22 +228,22 @@ function Footer({ post, city, done, bottom }: { post: DayPost; city: City; done:
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   nav: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12 },
   kudos: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18, flexWrap: "wrap" },
-  kudosCount: { fontFamily: font.sans, fontSize: 16, color: "#000", marginRight: 4 },
-  kudosText: { fontFamily: font.sans, fontSize: 14, color: "#323232" },
-  mapControl: { position: "absolute", top: 12, right: 12, width: 43, height: 43, borderRadius: 22, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", zIndex: 500 },
+  kudosCount: { fontFamily: font.sans, fontSize: 16, color: palette.ink, marginRight: 4 },
+  kudosText: { fontFamily: font.sans, fontSize: 14, color: palette.ink },
+  mapControl: { position: "absolute", top: 12, right: 12, width: 43, height: 43, borderRadius: 22, backgroundColor: palette.card, alignItems: "center", justifyContent: "center", zIndex: 500 },
   mapWrap: { height: 250, marginTop: 22, backgroundColor: color.cornerLand, overflow: "hidden" },
   h2: { fontFamily: font.sans, fontSize: 22, fontWeight: "600", color: color.airbnbText, marginTop: 24 },
   sub: { fontFamily: font.sans, fontSize: 15, color: color.airbnbSub, marginTop: 4 },
   stop: { flexDirection: "row", gap: 16, marginBottom: 18 },
-  connector: { position: "absolute", left: 24.25, top: 75, bottom: -18, width: 1.5, backgroundColor: "#EBEBEB" },
+  connector: { position: "absolute", left: 24.25, top: 75, bottom: -18, width: 1.5, backgroundColor: palette.paperDeep },
   stopTitle: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "600", color: color.airbnbText },
   stopDesc: { fontFamily: font.sans, fontSize: 16, lineHeight: 22, color: color.airbnbSub, marginTop: 2 },
   legRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
   legText: { fontFamily: font.sans, fontSize: 14, color: color.airbnbSub, flexShrink: 1 },
-  footer: { position: "absolute", left: 15, right: 15, minHeight: 61, borderRadius: 31, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", paddingLeft: 22, paddingRight: 6, paddingVertical: 6, maxWidth: Platform.OS === "web" ? 490 : undefined },
+  footer: { position: "absolute", left: 15, right: 15, minHeight: 61, borderRadius: 31, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", paddingLeft: 22, paddingRight: 6, paddingVertical: 6, maxWidth: Platform.OS === "web" ? 490 : undefined },
   footTop: { fontFamily: font.sans, fontSize: 16, color: color.airbnbText },
   footSub: { fontFamily: font.sans, fontSize: 12, color: color.airbnbSub, marginTop: 2 },
   footButton: { width: 162, height: 49, borderRadius: 25, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },

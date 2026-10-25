@@ -37,7 +37,7 @@ import { DAY_NAMES, MONTHS, formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, useStore, type Ranked } from "@/state/store";
-import { categoryInfo, color, font } from "@/theme/tokens";
+import { categoryInfo, color, font, palette } from "@/theme/tokens";
 
 type Phase = "rate" | "compare" | "story" | "share";
 const EMPTY: Record<string, never> = {};
@@ -150,16 +150,16 @@ export default function RecapScreen() {
   const covers = plan.stops.slice(0, 2).map((s) => city.byId.get(s.placeId)).filter((p): p is Place => Boolean(p));
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }} testID="recap-screen">
+    <View style={{ flex: 1, backgroundColor: palette.paper }} testID="recap-screen">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: Math.max(insets.top, 12), paddingBottom: 24 }}>
           {/* Uber Eats top bar: back arrow, grey pill at the right */}
           <View style={styles.topBar}>
             <Pressable testID="recap-back" accessibilityRole="button" accessibilityLabel="Close recap" hitSlop={10} onPress={close}>
-              <Icon name="arrow-back" size={26} tint="#000" />
+              <Icon name="arrow-back" size={26} tint={palette.ink} />
             </Pressable>
             <Pressable testID="recap-skip" accessibilityRole="button" onPress={toRecap} style={({ pressed }) => [styles.helpPill, pressed && { opacity: 0.7 }]}>
-              <Icon name="play-forward-outline" size={16} tint="#000" />
+              <Icon name="play-forward-outline" size={16} tint={palette.ink} />
               <Text style={styles.helpLabel}>Skip</Text>
             </Pressable>
           </View>
@@ -200,7 +200,7 @@ export default function RecapScreen() {
               value={note}
               onChangeText={setNote}
               placeholder="You can mention what you'd do again."
-              placeholderTextColor="#6B6B6B"
+              placeholderTextColor={palette.inkSoft}
               multiline
               maxLength={280}
               style={styles.noteBox}
@@ -236,7 +236,7 @@ const side = (key: string, p: Place | undefined) => ({ key, name: p?.name ?? "Th
 
 function Loading() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} testID="recap-loading">
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} testID="recap-loading">
       <View style={{ padding: 16, gap: 12 }}>
         <Skeleton style={{ width: 26, height: 26, borderRadius: 13 }} />
         <Skeleton style={{ width: "62%", height: 30, borderRadius: 8 }} />
@@ -438,7 +438,7 @@ function SharePhase({ planId, plan, stats, posted, note, reasons, online, onBack
       </View>
       <View style={{ alignItems: "center", marginTop: 10 }}>
         <Pressable testID="recap-share-card" accessibilityRole="button" accessibilityLabel="Share your day card" disabled={busy} onPress={share} style={({ pressed }) => [styles.spotifyPill, (pressed || busy) && { opacity: 0.75 }]}>
-          <Icon name="share-outline" size={18} tint="#000" />
+          <Icon name="share-outline" size={18} tint={palette.ink} />
           <Text style={styles.spotifyLabel}>Share</Text>
         </Pressable>
       </View>
@@ -469,24 +469,24 @@ function SharePhase({ planId, plan, stats, posted, note, reasons, online, onBack
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", backgroundColor: "#fff" },
+  center: { flex: 1, justifyContent: "center", backgroundColor: palette.paper },
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 48 },
-  helpPill: { flexDirection: "row", alignItems: "center", gap: 6, height: 34, borderRadius: 17, backgroundColor: "#F3F3F3", paddingHorizontal: 14 },
-  helpLabel: { fontFamily: font.sans, fontSize: 16, fontWeight: "500", color: "#000" },
+  helpPill: { flexDirection: "row", alignItems: "center", gap: 6, height: 34, borderRadius: 17, backgroundColor: palette.paperDeep, paddingHorizontal: 14 },
+  helpLabel: { fontFamily: font.sans, fontSize: 16, fontWeight: "500", color: palette.ink },
   titleRow: { flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, marginTop: 14, gap: 10 },
-  title: { fontFamily: font.sans, fontSize: 34, lineHeight: 40, fontWeight: "700", color: "#000", letterSpacing: -0.5 },
-  sub: { fontFamily: font.sans, fontSize: 16, lineHeight: 22, color: "#717171", marginTop: 4 },
-  cover: { borderRadius: 25, borderWidth: 2, borderColor: "#fff", marginTop: 8 },
-  rule: { height: 1, backgroundColor: "#F3F3F3", marginHorizontal: 16 },
-  section: { fontFamily: font.sans, fontSize: 22, lineHeight: 28, fontWeight: "700", color: "#000" },
-  question: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: "#717171", marginTop: 3 },
-  noteBox: { fontFamily: font.sans, marginTop: 18, minHeight: 100, borderRadius: 8, backgroundColor: "#F3F3F3", padding: 14, paddingTop: 14, fontSize: 16, color: "#000", textAlignVertical: "top" },
-  footer: { paddingHorizontal: 16, paddingTop: 10, backgroundColor: "#fff" },
+  title: { fontFamily: font.sans, fontSize: 34, lineHeight: 40, fontWeight: "700", color: palette.ink, letterSpacing: -0.5 },
+  sub: { fontFamily: font.sans, fontSize: 16, lineHeight: 22, color: palette.inkMuted, marginTop: 4 },
+  cover: { borderRadius: 25, borderWidth: 2, borderColor: palette.line, marginTop: 8 },
+  rule: { height: 1, backgroundColor: palette.paperDeep, marginHorizontal: 16 },
+  section: { fontFamily: font.sans, fontSize: 22, lineHeight: 28, fontWeight: "700", color: palette.ink },
+  question: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.inkMuted, marginTop: 3 },
+  noteBox: { fontFamily: font.sans, marginTop: 18, minHeight: 100, borderRadius: 8, backgroundColor: palette.paperDeep, padding: 14, paddingTop: 14, fontSize: 16, color: palette.ink, textAlignVertical: "top" },
+  footer: { paddingHorizontal: 16, paddingTop: 10, backgroundColor: palette.card },
   stravaPill: { alignSelf: "stretch", marginHorizontal: 20, height: 48, borderRadius: 24, backgroundColor: color.strava, alignItems: "center", justifyContent: "center" },
   stravaLabel: { fontFamily: font.sans, color: "#fff", fontSize: 17, fontWeight: "700" },
   shareTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, minHeight: 52 },
   dots: { flexDirection: "row", justifyContent: "center", gap: 10, marginTop: 6, height: 20, alignItems: "center" },
   dot: { width: 8, height: 8, borderRadius: 4 },
   spotifyPill: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 48, minWidth: 176, paddingHorizontal: 28, borderRadius: 24, backgroundColor: color.wrappedPaper },
-  spotifyLabel: { fontFamily: font.sans, color: "#000", fontSize: 16, fontWeight: "700" },
+  spotifyLabel: { fontFamily: font.sans, color: palette.ink, fontSize: 16, fontWeight: "700" },
 });

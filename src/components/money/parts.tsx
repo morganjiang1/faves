@@ -7,7 +7,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { WalletEntry } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Icon, type IconName } from "../ui";
 
 // Ibotta values (2.47 px/pt): box 330 pt wide with 31 pt margins, radius 9.7, 1 pt #C2C2C2;
@@ -95,7 +95,7 @@ export function MethodCard({ icon, label, speed, on, onPress, testID }: { icon: 
       <View style={[styles.cardCircle, { backgroundColor: on ? color.brand : "#929498" }]}>
         <Icon name={icon} size={26} tint="#fff" />
       </View>
-      <Text style={[styles.cardLabel, !on && { color: "#7A7A7E" }]}>{label}</Text>
+      <Text style={[styles.cardLabel, !on && { color: palette.inkMuted }]}>{label}</Text>
       <Text style={styles.cardSpeed}>{speed}</Text>
     </Pressable>
   );
@@ -106,7 +106,7 @@ export function MethodCard({ icon, label, speed, on, onPress, testID }: { icon: 
 export function MethodRow({ method, on, onPress }: { method: PayoutMethod; on: boolean; onPress: () => void }) {
   return (
     <Pressable testID={`method-${method.id}`} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={method.label} onPress={onPress} style={styles.row}>
-      <View style={styles.rowLogo}><Icon name={method.icon} size={23} tint="#22202D" /></View>
+      <View style={styles.rowLogo}><Icon name={method.icon} size={23} tint={palette.ink} /></View>
       <View style={{ flex: 1, gap: 12 }}>
         <View>
           <Text style={styles.rowName}>{method.label}</Text>
@@ -130,43 +130,43 @@ export function ProgressRing({ icon }: { icon: IconName }) {
     <View style={styles.ringWrap}>
       <View style={styles.ring} />
       <View style={styles.ringGap} />
-      <Icon name={icon} size={34} tint="#5E6B6E" />
-      <View style={styles.ringCheck}><Icon name="checkmark" size={20} tint="#5E6B6E" /></View>
+      <Icon name={icon} size={34} tint={palette.inkSoft} />
+      <View style={styles.ringCheck}><Icon name="checkmark" size={20} tint={palette.inkSoft} /></View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  box: { marginHorizontal: 31, borderRadius: 9.7, borderWidth: 1, borderColor: "#C2C2C2", overflow: "hidden", backgroundColor: "#fff" },
+  box: { marginHorizontal: 31, borderRadius: 9.7, borderWidth: 1, borderColor: palette.line, overflow: "hidden", backgroundColor: palette.card },
   band: { height: 41, backgroundColor: color.brand, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 17 },
   bandLabel: { fontFamily: font.sans, color: "#fff", fontSize: 18, fontWeight: "500" },
   bandValue: { fontFamily: font.sans, color: "#fff", fontSize: 18, fontWeight: "700" },
   body: { height: 103, paddingHorizontal: 17, paddingTop: 14 },
   bodyTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  bodyLabel: { fontFamily: font.sans, color: "#000", fontSize: 18 },
-  amount: { fontFamily: font.sans, color: "#1B2128", fontSize: 46, lineHeight: 54, fontWeight: "800", letterSpacing: -0.5, marginTop: 4 },
+  bodyLabel: { fontFamily: font.sans, color: palette.ink, fontSize: 18 },
+  amount: { fontFamily: font.sans, color: palette.ink, fontSize: 46, lineHeight: 54, fontWeight: "800", letterSpacing: -0.5, marginTop: 4 },
   strip: { height: 15, backgroundColor: color.brand },
-  txWrap: { backgroundColor: "#fff" },
+  txWrap: { backgroundColor: palette.card },
   tx: { minHeight: 70.5, flexDirection: "row", alignItems: "center", paddingLeft: 25, paddingRight: 23.5, gap: 8, paddingVertical: 10 },
   txCircle: { width: 33, height: 33, borderRadius: 16.5, alignItems: "center", justifyContent: "center" },
   txName: { fontFamily: font.sans, fontSize: 17, lineHeight: 22, fontWeight: "700", color: "#050A0E" },
   txNameMuted: { fontWeight: "500", fontSize: 16, lineHeight: 21 },
   txAmount: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: "#050A0E", marginLeft: 10 },
-  txDivider: { height: 1, backgroundColor: "#E8E8E8", marginLeft: 21.5, marginRight: 22 },
+  txDivider: { height: 1, backgroundColor: palette.paperDeep, marginLeft: 21.5, marginRight: 22 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 25, paddingTop: 30, paddingBottom: 6 },
   headerText: { fontFamily: font.sans, fontSize: 24, fontWeight: "600", color: "#010300" },
   headerLink: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: color.brand },
-  card: { flex: 1, height: 160, borderRadius: 7.6, borderWidth: 1, alignItems: "center", paddingTop: 9, backgroundColor: "#fff" },
+  card: { flex: 1, height: 160, borderRadius: 7.6, borderWidth: 1, alignItems: "center", paddingTop: 9, backgroundColor: palette.paper },
   cardCircle: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center" },
-  cardLabel: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: "#000", marginTop: 20 },
-  cardSpeed: { fontFamily: font.sans, fontSize: 15, color: "#5E5E5E", marginTop: 8 },
-  row: { marginHorizontal: 20.6, minHeight: 92.6, borderWidth: 1, borderColor: "#DDDDDD", borderRadius: 7, flexDirection: "row", gap: 11, paddingHorizontal: 15, paddingVertical: 15, backgroundColor: "#fff" },
+  cardLabel: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: palette.ink, marginTop: 20 },
+  cardSpeed: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft, marginTop: 8 },
+  row: { marginHorizontal: 20.6, minHeight: 92.6, borderWidth: 1, borderColor: palette.line, borderRadius: 7, flexDirection: "row", gap: 11, paddingHorizontal: 15, paddingVertical: 15, backgroundColor: palette.card },
   rowLogo: { width: 23, alignItems: "center", paddingTop: 1 },
-  rowName: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#22202D" },
-  rowSub: { fontFamily: font.sans, fontSize: 14, color: "#464356", marginTop: 2 },
+  rowName: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: palette.ink },
+  rowSub: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft, marginTop: 2 },
   rowLink: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: color.brand },
   ringWrap: { width: 94, height: 94, alignItems: "center", justifyContent: "center" },
   ring: { position: "absolute", width: 94, height: 94, borderRadius: 47, borderWidth: 1.5, borderColor: "#5E6B6E" },
-  ringGap: { position: "absolute", right: -4, top: 33, width: 14, height: 28, backgroundColor: "#fff" },
+  ringGap: { position: "absolute", right: -4, top: 33, width: 14, height: 28, backgroundColor: palette.card },
   ringCheck: { position: "absolute", right: -8, top: 37 },
 });

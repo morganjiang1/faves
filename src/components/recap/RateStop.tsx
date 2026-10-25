@@ -5,7 +5,7 @@
 // (on = black / white text, off = #F3F3F3 / black), 8 pt apart, about 15 pt between rows.
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Chip, Icon } from "@/components/ui";
-import { font } from "@/theme/tokens";
+import { font, palette } from "@/theme/tokens";
 
 export const UP_REASONS = ["Worth the wait", "Great for groups", "Cheap", "Great view", "Would go again"];
 export const DOWN_REASONS = ["Too crowded", "Overpriced", "Closed early", "Not as pictured"];
@@ -40,8 +40,8 @@ function Thumb({ kind, on, onPress, testID }: { kind: "up" | "down"; on: boolean
 
 const s = StyleSheet.create({
   block: { paddingHorizontal: 16, paddingTop: 22, paddingBottom: 26 },
-  title: { fontFamily: font.sans, fontSize: 22, lineHeight: 28, fontWeight: "700", color: "#000" },
-  line: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: "#717171", marginTop: 3 },
+  title: { fontFamily: font.sans, fontSize: 22, lineHeight: 28, fontWeight: "700", color: palette.ink },
+  line: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.inkMuted, marginTop: 3 },
   thumbs: { flexDirection: "row", gap: 18, marginTop: 22 },
   thumb: { width: 62, height: 62, borderRadius: 31, alignItems: "center", justifyContent: "center" },
   chips: { flexDirection: "row", flexWrap: "wrap", columnGap: 8, rowGap: 15, marginTop: 26 },

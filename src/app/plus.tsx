@@ -19,7 +19,7 @@ import { CITY_INDEX } from "@/data/cities";
 import { formatDate, toWall } from "@/lib/time";
 import { useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 type PlanId = "monthly" | "annual";
 
@@ -47,7 +47,7 @@ const ALSO: { icon: IconName; title: string; line: string }[] = [
   { icon: "shield-checkmark", title: "No ads", line: "Locals Scores are never for sale." },
 ];
 
-const TINT_ON = "#EEF3F4"; // Meetup's #F4F3FB selected fill, re-tinted from its purple to Faves' brand.
+const TINT_ON = palette.roseTint; // the selected fill
 
 export default function Plus() {
   const plus = useStore((s) => s.plus);
@@ -84,7 +84,7 @@ export default function Plus() {
     <SafeAreaView style={styles.screen} testID={active ? "plus-active" : "plus-paywall"}>
       <View style={styles.top}>
         <Pressable testID="plus-close" accessibilityRole="button" accessibilityLabel="Close" hitSlop={12} onPress={close}>
-          <Icon name="close-outline" size={32} tint="#424242" />
+          <Icon name="close-outline" size={32} tint={palette.inkSoft} />
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
@@ -146,7 +146,7 @@ export default function Plus() {
         <View style={{ gap: 20 }}>
           {ALSO.map((a) => (
             <View key={a.title} style={styles.also} testID={`plus-also-${a.title.toLowerCase().replace(/\s+/g, "-")}`}>
-              <View style={styles.alsoIcon}><Icon name={a.icon} size={24} tint="#000" /></View>
+              <View style={styles.alsoIcon}><Icon name={a.icon} size={24} tint={palette.ink} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.alsoName}>{a.title}</Text>
                 <Text style={styles.alsoLine}>{a.line}</Text>
@@ -189,38 +189,38 @@ export default function Plus() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   top: { height: 52, justifyContent: "center", paddingLeft: 18 },
   logo: { width: 80, height: 80, alignSelf: "center", marginTop: 4 },
-  title: { fontFamily: font.sans, fontSize: 30, lineHeight: 36, fontWeight: "800", color: "#000", textAlign: "center", marginTop: 18, letterSpacing: -0.4 },
+  title: { fontFamily: font.sans, fontSize: 30, lineHeight: 36, fontWeight: "800", color: palette.ink, textAlign: "center", marginTop: 18, letterSpacing: -0.4 },
   features: { marginTop: 26, paddingHorizontal: 24 },
   feature: { minHeight: 36, flexDirection: "row", alignItems: "center", gap: 12 },
   check: { width: 18.7, height: 18.7, borderRadius: 9.35, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },
-  featureText: { flex: 1, fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: "#000" },
-  trial: { marginTop: 30, marginHorizontal: 24, minHeight: 75, borderRadius: 16, borderWidth: 1, borderColor: "#CECECE", flexDirection: "row", alignItems: "center", paddingHorizontal: 15 },
-  trialTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#000" },
-  trialSub: { fontFamily: font.sans, fontSize: 14, color: "#484848", marginTop: 3 },
+  featureText: { flex: 1, fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: palette.ink },
+  trial: { marginTop: 30, marginHorizontal: 24, minHeight: 75, borderRadius: 16, borderWidth: 1, borderColor: palette.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 15 },
+  trialTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: palette.ink },
+  trialSub: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft, marginTop: 3 },
   radio: { width: 28.7, height: 28.7, borderRadius: 14.35, borderWidth: 1.5, borderColor: "#A9A9A9", alignItems: "center", justifyContent: "center" },
   radioOn: { backgroundColor: color.brand, borderColor: color.brand },
-  planRow: { marginHorizontal: 24, minHeight: 65, borderRadius: 16, borderWidth: 1, borderColor: "#CACACA", backgroundColor: "#fff", flexDirection: "row", alignItems: "center", paddingHorizontal: 13 },
+  planRow: { marginHorizontal: 24, minHeight: 65, borderRadius: 16, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", paddingHorizontal: 13 },
   planOn: { backgroundColor: TINT_ON, borderColor: color.brand },
-  planName: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#000" },
-  planSub: { fontFamily: font.sans, fontSize: 13, color: "#393840", marginTop: 2 },
-  planPrice: { fontFamily: font.sans, fontSize: 15, color: "#393840" },
+  planName: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: palette.ink },
+  planSub: { fontFamily: font.sans, fontSize: 13, color: palette.inkSoft, marginTop: 2 },
+  planPrice: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft },
   badge: { position: "absolute", left: 13, top: -12, height: 22, borderRadius: 11, backgroundColor: "#D8884B", paddingHorizontal: 9, justifyContent: "center" },
   badgeText: { fontFamily: font.sans, fontSize: 12, fontWeight: "600", color: "#fff", letterSpacing: 0.2 },
   testLine: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 24, marginTop: 10 },
   testText: { fontFamily: font.sans, fontSize: 13, color: color.textSub },
-  alsoTitle: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: "#000", marginTop: 34, marginBottom: 16, paddingHorizontal: 24 },
+  alsoTitle: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: palette.ink, marginTop: 34, marginBottom: 16, paddingHorizontal: 24 },
   also: { flexDirection: "row", gap: 18, paddingHorizontal: 24 },
   alsoIcon: { width: 28, alignItems: "center", paddingTop: 2 },
-  alsoName: { fontFamily: font.sans, fontSize: 17, fontWeight: "500", color: "#000" },
-  alsoLine: { fontFamily: font.sans, fontSize: 14, lineHeight: 19, color: "#6E6E73", marginTop: 3 },
-  footer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6, backgroundColor: "#fff" },
+  alsoName: { fontFamily: font.sans, fontSize: 17, fontWeight: "500", color: palette.ink },
+  alsoLine: { fontFamily: font.sans, fontSize: 14, lineHeight: 19, color: palette.inkMuted, marginTop: 3 },
+  footer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6, backgroundColor: palette.card },
   legal: { fontFamily: font.sans, fontSize: 11, lineHeight: 13, color: color.textMuted, textAlign: "center", paddingHorizontal: 10, marginBottom: 10 },
   error: { fontFamily: font.sans, fontSize: 13, color: color.closed, textAlign: "center", marginBottom: 8 },
   cta: { height: 62, borderRadius: 31, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },
   ctaLabel: { fontFamily: font.sans, fontSize: 19, fontWeight: "600", color: "#fff" },
   restore: { alignSelf: "center", paddingVertical: 10 },
-  restoreText: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000", textDecorationLine: "underline" },
+  restoreText: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: palette.ink, textDecorationLine: "underline" },
 });

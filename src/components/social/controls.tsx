@@ -3,7 +3,7 @@
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Icon, type IconName } from "@/components/ui";
 
 const pressed = ({ pressed: p }: { pressed: boolean }) => (p ? { opacity: 0.7 } : null);
@@ -25,7 +25,7 @@ export function WordmarkHeader({ right }: { right?: ReactNode }) {
 export function HeaderIcon({ icon, label, onPress, testID, dot }: { icon: IconName; label: string; onPress: () => void; testID: string; dot?: boolean }) {
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} hitSlop={8} onPress={onPress} style={pressed}>
-      <Icon name={icon} size={27} tint="#000" />
+      <Icon name={icon} size={27} tint={palette.ink} />
       {dot ? <View style={styles.dot} /> : null}
     </Pressable>
   );
@@ -35,7 +35,7 @@ export function HeaderIcon({ icon, label, onPress, testID, dot }: { icon: IconNa
 export function SearchField({ placeholder, onPress, testID }: { placeholder: string; onPress: () => void; testID: string }) {
   return (
     <Pressable testID={testID} accessibilityRole="search" accessibilityLabel={placeholder} onPress={onPress} style={styles.search}>
-      <Icon name="search" size={19} tint="#727073" />
+      <Icon name="search" size={19} tint={palette.inkMuted} />
       <Text style={styles.searchText} numberOfLines={1}>{placeholder}</Text>
     </Pressable>
   );
@@ -144,31 +144,31 @@ const styles = StyleSheet.create({
   wordHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22, paddingTop: 6, paddingBottom: 12 },
   wordmark: { fontFamily: font.serifBlack, fontSize: 31, lineHeight: 36, color: "#163E44", letterSpacing: -0.5 },
   dot: { position: "absolute", right: -1, bottom: 1, width: 8, height: 8, borderRadius: 4, backgroundColor: "#E5534B" },
-  search: { marginHorizontal: 22, height: 37, borderRadius: 10, backgroundColor: "#EBEBED", flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12 },
-  searchText: { fontFamily: font.sans, fontSize: 17, color: "#727073", flex: 1 },
+  search: { marginHorizontal: 22, height: 37, borderRadius: 10, backgroundColor: palette.paperDeep, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12 },
+  searchText: { fontFamily: font.sans, fontSize: 17, color: palette.inkMuted, flex: 1 },
   fchip: { height: 32, borderRadius: 16, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 6 },
   fchipText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "500" },
   caps: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
-  capsText: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: "#000", letterSpacing: 0.6 },
+  capsText: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.ink, letterSpacing: 0.6 },
   capsAction: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: "#18383C", letterSpacing: 0.3 },
-  invite: { marginHorizontal: 22, borderWidth: 1, borderColor: "#CDCDCD", borderRadius: 8, padding: 16, paddingTop: 18 },
+  invite: { marginHorizontal: 22, borderWidth: 1, borderColor: palette.line, borderRadius: 8, padding: 16, paddingTop: 18 },
   inviteTitle: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: "#153A3F" },
-  inviteBody: { fontFamily: font.sans, fontSize: 16, color: "#89898B", marginTop: 4 },
+  inviteBody: { fontFamily: font.sans, fontSize: 16, color: palette.inkMuted, marginTop: 4 },
   inviteButton: { height: 43, borderRadius: 5, backgroundColor: "#144554", alignItems: "center", justifyContent: "center", marginTop: 16 },
   inviteButtonText: { fontFamily: font.sans, color: "#fff", fontSize: 17, fontWeight: "700" },
   toggle: { flexDirection: "row", height: 32, borderRadius: 8.5, borderWidth: 2, borderColor: color.brand, overflow: "hidden" },
-  toggleHalf: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#fff" },
+  toggleHalf: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: palette.paper },
   toggleText: { fontFamily: font.sans, fontSize: 16, fontWeight: "500" },
-  track: { flexDirection: "row", height: 33, borderRadius: 9, backgroundColor: "#F0F0F5", padding: 2, borderWidth: 1, borderColor: "#E2E2E8" },
+  track: { flexDirection: "row", height: 33, borderRadius: 9, backgroundColor: palette.paperDeep, padding: 2, borderWidth: 1, borderColor: palette.line },
   seg: { flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 7, flexDirection: "row" },
-  segOn: { backgroundColor: "#fff", shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  segOn: { backgroundColor: palette.card, shadowColor: palette.ink, shadowOpacity: 0.1, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
   segDivider: { position: "absolute", left: 0, top: 7, bottom: 7, width: 1, backgroundColor: "#D3D3D8" },
-  segText: { fontFamily: font.sans, fontSize: 15, color: "#000" },
-  utabs: { flexDirection: "row", gap: 24, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#E9E9E9" },
+  segText: { fontFamily: font.sans, fontSize: 15, color: palette.ink },
+  utabs: { flexDirection: "row", gap: 24, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: palette.line },
   utab: { paddingTop: 6 },
-  utabText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#A2A4AB", letterSpacing: 0.4, paddingBottom: 8 },
-  utabOn: { color: "#222428", fontWeight: "700" },
+  utabText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: palette.inkMuted, letterSpacing: 0.4, paddingBottom: 8 },
+  utabOn: { color: palette.ink, fontWeight: "700" },
   utabLine: { height: 2, borderRadius: 1, backgroundColor: "transparent" },
-  drop: { height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#A2ABC8", backgroundColor: "#EAEDEF", paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
+  drop: { height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#A2ABC8", backgroundColor: palette.paperDeep, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
   dropText: { fontFamily: font.sans, fontSize: 16, color: "#0F3F49" },
 });

@@ -17,13 +17,13 @@ import type { Mode } from "@/lib/geo";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, resetAll, useStore } from "@/state/store";
-import { CATEGORIES, color, font, type CategoryId } from "@/theme/tokens";
+import { CATEGORIES, color, font, palette, type CategoryId } from "@/theme/tokens";
 
-const BG = "#F2F2F6";
-const SUB = "#7C7C81";
-const SEP = "#DFDFE1";
-const LIVE = "#34C458";
-const RED = "#FF3B30";
+const BG = palette.paper;
+const SUB = palette.inkMuted;
+const SEP = palette.line;
+const LIVE = palette.open;
+const RED = palette.roseInk;
 
 // Expo inlines EXPO_PUBLIC_ variables only when they are read by their full name.
 const SERVICES: { id: string; label: string; what: string; set: boolean }[] = [
@@ -69,7 +69,7 @@ export default function Settings() {
         <View style={{ width: 43 }} />
         <Text style={styles.title} accessibilityRole="header">Settings</Text>
         <Pressable testID="settings-close" accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={styles.close}>
-          <Icon name="close" size={24} tint="#000" />
+          <Icon name="close" size={24} tint={palette.ink} />
         </Pressable>
       </View>
       {!online ? <OfflineBanner /> : null}
@@ -83,7 +83,7 @@ export default function Settings() {
           </Row>
           <Row label="City" onPress={() => router.push("/city")} testID="settings-city">
             <Text style={styles.value} numberOfLines={1}>{city?.name ?? "Loading"}</Text>
-            <Icon name="chevron-forward" size={18} tint="#C4C4C7" />
+            <Icon name="chevron-forward" size={18} tint={palette.inkMuted} />
           </Row>
         </Section>
 
@@ -140,7 +140,7 @@ export default function Settings() {
         </Section>
 
         <Section>
-          <Pressable testID="settings-reset" accessibilityRole="button" onPress={() => setConfirm(true)} style={({ pressed }) => [styles.row, pressed && { backgroundColor: "#F7F7F9" }]}>
+          <Pressable testID="settings-reset" accessibilityRole="button" onPress={() => setConfirm(true)} style={({ pressed }) => [styles.row, pressed && { backgroundColor: palette.paperDeep }]}>
             <Text style={[styles.label, { color: RED }]}>Reset app data</Text>
           </Pressable>
         </Section>
@@ -187,7 +187,7 @@ function Row({ label, children, first, onPress, testID, wrap }: { label: string;
       <View style={styles.rowRight}>{children}</View>
     </>
   );
-  if (onPress) return <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.row, !first && styles.sep, pressed && { backgroundColor: "#F7F7F9" }]}>{body}</Pressable>;
+  if (onPress) return <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.row, !first && styles.sep, pressed && { backgroundColor: palette.paperDeep }]}>{body}</Pressable>;
   return <View testID={testID} style={[styles.row, !first && styles.sep, wrap && { minHeight: 56 }]}>{body}</View>;
 }
 
@@ -195,16 +195,16 @@ const styles = StyleSheet.create({
   credits: { marginTop: 6, marginHorizontal: 32, textAlign: "center", fontSize: 12, lineHeight: 17, color: SUB },
   screen: { flex: 1, backgroundColor: BG },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
-  title: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: "#000" },
-  close: { width: 43, height: 43, borderRadius: 22, backgroundColor: "#fff", borderWidth: 1, borderColor: "#E3E3E8", alignItems: "center", justifyContent: "center" },
-  section: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: "#000", marginHorizontal: 17, marginBottom: 10 },
-  card: { marginHorizontal: 16, backgroundColor: "#fff", borderRadius: 18, overflow: "hidden" },
+  title: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: palette.ink },
+  close: { width: 43, height: 43, borderRadius: 22, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
+  section: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: palette.ink, marginHorizontal: 17, marginBottom: 10 },
+  card: { marginHorizontal: 16, backgroundColor: palette.card, borderRadius: 18, overflow: "hidden" },
   footer: { fontFamily: font.sans, fontSize: 13, lineHeight: 18, color: SUB, marginHorizontal: 32, marginTop: 8 },
   row: { minHeight: 45, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10 },
   rowTall: { minHeight: 58 },
   sep: { borderTopWidth: 1, borderTopColor: SEP },
   rowRight: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 6 },
-  label: { fontFamily: font.sans, fontSize: 17, color: "#000" },
+  label: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
   value: { fontFamily: font.sans, fontSize: 17, color: SUB, flexShrink: 1, textAlign: "right" },
   sub: { fontFamily: font.sans, fontSize: 15, color: SUB, marginTop: 2 },
   subSmall: { fontFamily: font.sans, fontSize: 13, color: SUB, maxWidth: 130, textAlign: "right" },

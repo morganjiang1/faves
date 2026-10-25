@@ -18,7 +18,7 @@ import type { Who } from "@/lib/parser";
 import { seedWallet } from "@/lib/rewards";
 import { useCity } from "@/state/city";
 import { actions, getState, useStore } from "@/state/store";
-import { CATEGORIES, font, logo, type CategoryId } from "@/theme/tokens";
+import { CATEGORIES, font, logo, palette, type CategoryId } from "@/theme/tokens";
 
 const CREW: { id: Who; label: string; emoji: string }[] = [
   { id: "friends", label: "Friends", emoji: "👯" },
@@ -99,7 +99,7 @@ export default function Onboarding() {
             <View style={styles.body}>
               <Header title="What's your name?" sub="So your friends know it's you 🫶" />
               <Text style={styles.fieldLabel}>First name</Text>
-              <TextInput testID="name-input" value={name} onChangeText={setName} placeholder="Beyoncé" placeholderTextColor="#747478" autoFocus autoCapitalize="words" returnKeyType="next" onSubmitEditing={() => name.trim() && go("city")} style={styles.input} />
+              <TextInput testID="name-input" value={name} onChangeText={setName} placeholder="Beyoncé" placeholderTextColor={palette.inkMuted} autoFocus autoCapitalize="words" returnKeyType="next" onSubmitEditing={() => name.trim() && go("city")} style={styles.input} />
               <View style={{ flex: 1 }} />
               <NextButton enabled={Boolean(name.trim())} onPress={() => go("city")} />
             </View>
@@ -134,7 +134,7 @@ export default function Onboarding() {
                       <PlaceImage uri={tilePhoto[c.id]} category={c.id} style={StyleSheet.absoluteFill} emojiSize={44} />
                       <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.6)"]} locations={[0.45, 1]} style={StyleSheet.absoluteFill} />
                       <Text style={styles.tileLabel}>{c.label.toLowerCase()}</Text>
-                      {on ? <View style={styles.tileCheck}><Icon name="checkmark" size={16} tint="#000" /></View> : null}
+                      {on ? <View style={styles.tileCheck}><Icon name="checkmark" size={16} tint={palette.ink} /></View> : null}
                     </Pressable>
                   );
                 })}
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   wordmark: { fontFamily: font.serif, fontSize: 52, color: "#fff", letterSpacing: -0.5 },
   splashLine: { fontFamily: font.sans, fontSize: 17, color: "rgba(255,255,255,0.92)", textAlign: "center" },
   glassButton: { height: 47, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.88)", alignItems: "center", justifyContent: "center" },
-  glassLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "500", color: "#000" },
+  glassLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "500", color: palette.ink },
   legal: { fontFamily: font.sans, fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 12, lineHeight: 18 },
   legalBold: { fontWeight: "700", color: "#fff" },
   aurora: { position: "absolute", top: 0, left: 0, right: 0, height: 300 },
@@ -217,12 +217,12 @@ const styles = StyleSheet.create({
   cityText: { fontFamily: font.sans, fontSize: 17, color: "#fff" },
   tiles: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingHorizontal: 16, paddingBottom: 16 },
   tile: { width: "48%", aspectRatio: 0.82, borderRadius: 16, overflow: "hidden", justifyContent: "flex-end", padding: 12, borderWidth: 3, borderColor: "transparent" },
-  tileOn: { borderColor: "#fff" },
+  tileOn: { borderColor: palette.line },
   tileLabel: { fontFamily: font.sans, fontSize: 20, fontWeight: "800", color: "#fff", lineHeight: 23 },
-  tileCheck: { position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  tileCheck: { position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
   next: { height: 47, borderRadius: 3, alignItems: "center", justifyContent: "center", marginTop: 12 },
   nextLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "600" },
   option: { minHeight: 76, borderRadius: 16, borderWidth: 1, borderColor: "#707074", backgroundColor: "#111114", flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22 },
-  optionOn: { borderWidth: 1.5, borderColor: "#fff", backgroundColor: "#1C1C22" },
+  optionOn: { borderWidth: 1.5, borderColor: palette.line, backgroundColor: "#1C1C22" },
   optionLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "500", color: "#fff", flex: 1, paddingRight: 12 },
 });

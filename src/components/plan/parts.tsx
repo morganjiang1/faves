@@ -17,7 +17,7 @@ import { formatLeg, legFor, metersBetween, type Leg, type Mode } from "@/lib/geo
 import { keywordStrength, type Candidate, type PlanStop } from "@/lib/planner";
 import { costOf, scoreOutOf10 } from "@/lib/score";
 import { formatClock, formatPillTime } from "@/lib/time";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Sheet } from "../Sheet";
 import { ActionPill, Icon, PlaceImage, type IconName } from "../ui";
 import { StopClip } from "../video/StopClip";
@@ -100,7 +100,7 @@ export function LegModeSheet({ open, onClose, from, to, current, onPick }: { ope
     <Sheet open={open} onClose={onClose} title="How are you getting there?" background="#F7FAFA" testID="leg-sheet">
       {rows.map(({ m, leg }) => (
         <Pressable key={m} testID={`leg-mode-${m}`} onPress={() => onPick(m)} style={styles.modeRow}>
-          <Icon name={MODE_ICON[m]} size={22} tint="#191E1E" />
+          <Icon name={MODE_ICON[m]} size={22} tint={palette.ink} />
           <Text style={[styles.modeLabel, current === m && { fontWeight: "700" }]}>{label[m]}</Text>
           <Text style={styles.modeValue}>{leg.minutes} mins • {leg.miles < 10 ? leg.miles.toFixed(1) : Math.round(leg.miles)} mi</Text>
           {current === m ? <Icon name="checkmark" size={18} tint={color.wanderBlue} /> : <View style={{ width: 18 }} />}
@@ -134,18 +134,18 @@ export function SwapSheet({ open, onClose, city, stop, alternatives, onPick }: {
               <Text style={styles.recMeta} numberOfLines={1}>{c.place.unrated ? "No ratings yet" : `${scoreOutOf10(c.place.locals)} Locals Score`}</Text>
               <Text style={styles.recMeta} numberOfLines={1}>{c.leg ? `${c.leg.minutes} min ${c.leg.mode}` : c.place.hood ?? ""}</Text>
             </View>
-            <View style={styles.recAdd}><Icon name="add" size={18} tint="#000" /></View>
+            <View style={styles.recAdd}><Icon name="add" size={18} tint={palette.ink} /></View>
           </Pressable>
         ))}
         {!alternatives.length ? <Text style={styles.recEmpty}>No other spots of this kind are open then. Search for one below.</Text> : null}
       </ScrollView>
       <View style={styles.searchField}>
-        <TextInput testID="swap-search" value={q} onChangeText={setQ} placeholder="Search any spot" placeholderTextColor="#717474" style={styles.searchInput} />
-        {q ? <Pressable accessibilityLabel="Clear" onPress={() => setQ("")} style={styles.clear}><Icon name="close" size={16} tint="#676E73" /></Pressable> : null}
+        <TextInput testID="swap-search" value={q} onChangeText={setQ} placeholder="Search any spot" placeholderTextColor={palette.inkMuted} style={styles.searchInput} />
+        {q ? <Pressable accessibilityLabel="Clear" onPress={() => setQ("")} style={styles.clear}><Icon name="close" size={16} tint={palette.inkMuted} /></Pressable> : null}
       </View>
       {results.map((p, i) => (
         <Pressable key={p.id} testID={`swap-result-${i}`} onPress={() => { setQ(""); onPick(p.id); }} style={styles.resultRow}>
-          <Icon name="location" size={22} tint="#303535" />
+          <Icon name="location" size={22} tint={palette.inkSoft} />
           <View style={{ flex: 1 }}>
             <Text style={styles.resultTitle} numberOfLines={1}>{p.name}</Text>
             <Text style={styles.resultSub} numberOfLines={1}>{[p.kind, p.hood, p.unrated ? null : `${scoreOutOf10(p.locals)} Locals Score`].filter(Boolean).join(" · ")}</Text>
@@ -166,10 +166,10 @@ const styles = StyleSheet.create({
   legText: { fontFamily: font.sans, fontSize: 15, color: color.wanderMuted },
   legLink: { fontFamily: font.sans, fontSize: 15, color: color.wanderBlue },
   legDash: { flex: 1, borderBottomWidth: 1.5, borderColor: color.wanderDash, borderStyle: "dashed", marginLeft: 4 },
-  card: { flexDirection: "row", gap: 14, backgroundColor: "#fff", borderRadius: 18, padding: 10, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  card: { flexDirection: "row", gap: 14, backgroundColor: palette.card, borderRadius: 18, padding: 10, alignItems: "center", shadowColor: palette.ink, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   cardLive: { borderWidth: 1.5, borderColor: color.airbnbText },
   thumb: { width: 65, height: 65, borderRadius: 14 },
-  thumbNum: { position: "absolute", top: -6, left: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: color.dayColor, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" },
+  thumbNum: { position: "absolute", top: -6, left: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: color.dayColor, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: palette.line },
   thumbNumText: { fontFamily: font.sans, color: "#fff", fontSize: 11, fontWeight: "800" },
   cardTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: color.airbnbText },
   cardSub: { fontFamily: font.sans, fontSize: 14, color: color.airbnbSub },
@@ -178,27 +178,27 @@ const styles = StyleSheet.create({
   score: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: color.score },
   cardMeta: { fontFamily: font.sans, fontSize: 13, color: color.airbnbSub, flexShrink: 1 },
   livePill: { alignSelf: "flex-start", overflow: "hidden", backgroundColor: "#000", color: "#fff", fontFamily: font.sans, fontSize: 11, fontWeight: "700", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  why: { fontFamily: font.sans, fontSize: 15, lineHeight: 21, color: "#22262A" },
+  why: { fontFamily: font.sans, fontSize: 15, lineHeight: 21, color: palette.ink },
   warning: { flexDirection: "row", alignItems: "center", gap: 6 },
   warningText: { fontFamily: font.sans, fontSize: 13, color: color.closed, flexShrink: 1 },
-  planB: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#F7F7F7", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
-  planBText: { fontFamily: font.sans, fontSize: 14, color: "#333", flexShrink: 1 },
+  planB: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: palette.paperDeep, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
+  planBText: { fontFamily: font.sans, fontSize: 14, color: palette.ink, flexShrink: 1 },
   planBLink: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: color.wanderBlue, marginLeft: 8 },
-  modeRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 18, height: 54, borderBottomWidth: 1, borderBottomColor: "#E9ECEC" },
-  modeLabel: { fontFamily: font.sans, fontSize: 17, color: "#222525", flex: 1 },
-  modeValue: { fontFamily: font.sans, fontSize: 16, color: "#767878" },
+  modeRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 18, height: 54, borderBottomWidth: 1, borderBottomColor: palette.line },
+  modeLabel: { fontFamily: font.sans, fontSize: 17, color: palette.ink, flex: 1 },
+  modeValue: { fontFamily: font.sans, fontSize: 16, color: palette.inkMuted },
   modeNote: { fontFamily: font.sans, fontSize: 13, color: color.textMuted, paddingHorizontal: 18, paddingTop: 10 },
-  recHeader: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: "#6B6D6D", paddingHorizontal: 16, paddingBottom: 10 },
-  recCard: { width: 270, height: 92, flexDirection: "row", backgroundColor: "#fff", borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: "#E4E7EB", borderStyle: "dashed" },
+  recHeader: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.inkMuted, paddingHorizontal: 16, paddingBottom: 10 },
+  recCard: { width: 270, height: 92, flexDirection: "row", backgroundColor: palette.card, borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: palette.line, borderStyle: "dashed" },
   recThumb: { width: 92, height: 92 },
-  recName: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: "#1A1C1C" },
-  recMeta: { fontFamily: font.sans, fontSize: 13, color: "#787B7B" },
-  recAdd: { position: "absolute", right: 8, bottom: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: "#EDEFEF", alignItems: "center", justifyContent: "center" },
-  recEmpty: { fontFamily: font.sans, fontSize: 14, color: "#787B7B", paddingHorizontal: 16, paddingVertical: 10, maxWidth: 320 },
-  searchField: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginTop: 16, marginBottom: 6, height: 44, borderRadius: 10, backgroundColor: "#EDEFEF", paddingLeft: 14, paddingRight: 4 },
-  searchInput: { flex: 1, fontFamily: font.sans, fontSize: 17, color: "#1A1C1C", height: 44 },
-  clear: { width: 35, height: 35, borderRadius: 18, backgroundColor: "#D8DEDF", alignItems: "center", justifyContent: "center" },
+  recName: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.ink },
+  recMeta: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted },
+  recAdd: { position: "absolute", right: 8, bottom: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
+  recEmpty: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted, paddingHorizontal: 16, paddingVertical: 10, maxWidth: 320 },
+  searchField: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginTop: 16, marginBottom: 6, height: 44, borderRadius: 10, backgroundColor: palette.paperDeep, paddingLeft: 14, paddingRight: 4 },
+  searchInput: { flex: 1, fontFamily: font.sans, fontSize: 17, color: palette.ink, height: 44 },
+  clear: { width: 35, height: 35, borderRadius: 18, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
   resultRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 18, paddingVertical: 12 },
-  resultTitle: { fontFamily: font.sans, fontSize: 17, color: "#1A1C1C" },
-  resultSub: { fontFamily: font.sans, fontSize: 13, color: "#787B7B", marginTop: 1 },
+  resultTitle: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  resultSub: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 1 },
 });

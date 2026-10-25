@@ -8,7 +8,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar, Icon, SampleTag } from "@/components/ui";
 import { mood, type Vote } from "@/lib/group";
-import { font } from "@/theme/tokens";
+import { font, palette } from "@/theme/tokens";
 
 const BADGE: Record<Vote, string> = { going: "👍", maybe: "🤔", cant: "😢" };
 const AVATAR_TINTS = ["#C2185B", "#7B1FA2", "#1976D2", "#00897B", "#F57C00", "#5D4037"];
@@ -55,7 +55,7 @@ export function InviteBlock({ onShare, title = "Invite friends to vote", body = 
       <Text style={s.inviteTitle}>{title}</Text>
       <Text style={s.inviteBody}>{body}</Text>
       <Pressable testID="invite-share" accessibilityRole="button" onPress={onShare} style={({ pressed }) => [s.inviteButton, pressed && { opacity: 0.85 }]}>
-        <Icon name="people" size={20} tint="#000" />
+        <Icon name="people" size={20} tint={palette.ink} />
         <Text style={s.inviteLabel}>Share invite link</Text>
       </Pressable>
     </View>
@@ -71,7 +71,7 @@ function hash(t: string) {
 const s = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 22, paddingBottom: 16 },
   title: { fontFamily: font.sans, color: "#fff", fontSize: 20, fontWeight: "600" },
-  sort: { fontFamily: font.sans, color: "#9999B5", fontSize: 17 },
+  sort: { fontFamily: font.sans, color: palette.inkMuted, fontSize: 17 },
   divider: { height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
   row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, paddingVertical: 11, minHeight: 74 },
   badge: { position: "absolute", right: -6, bottom: -4, fontSize: 20 },
@@ -82,6 +82,6 @@ const s = StyleSheet.create({
   invite: { alignItems: "center", paddingHorizontal: 28, paddingTop: 30, paddingBottom: 12 },
   inviteTitle: { fontFamily: font.sans, color: "#fff", fontSize: 20, fontWeight: "600", marginTop: 10, textAlign: "center" },
   inviteBody: { fontFamily: font.sans, color: "rgba(255,255,255,0.72)", fontSize: 16, lineHeight: 22, textAlign: "center", marginTop: 8 },
-  inviteButton: { alignSelf: "stretch", height: 47, borderRadius: 3, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 22 },
-  inviteLabel: { fontFamily: font.sans, color: "#000", fontSize: 17, fontWeight: "600" },
+  inviteButton: { alignSelf: "stretch", height: 47, borderRadius: 3, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 22 },
+  inviteLabel: { fontFamily: font.sans, color: palette.ink, fontSize: 17, fontWeight: "600" },
 });

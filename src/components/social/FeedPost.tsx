@@ -12,11 +12,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { City } from "@/data/types";
 import { openUrl } from "@/lib/links";
 import { scoreOutOf10 } from "@/lib/score";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Avatar, Icon, PlaceImage, SampleTag, ScoreBadge, Skeleton } from "@/components/ui";
 import { categoryGlyph, dayScore, mainCategory, mainHood, postDate, stopPlaces, withWhom, type DayPost } from "./dayPost";
 
-const GREY = "#989AA3";
+const GREY = palette.inkMuted;
 
 export function PostHeader({ post, city, done, testID }: { post: DayPost; city: City; done?: boolean; testID?: string }) {
   const score = dayScore(post.plan, city);
@@ -82,7 +82,7 @@ export function Facepile({ names, size = 22 }: { names: string[]; size?: number 
   return (
     <View style={{ flexDirection: "row" }}>
       {names.map((n, i) => (
-        <View key={`${n}-${i}`} style={{ marginLeft: i ? -2 : 0, borderRadius: size, borderWidth: 1.5, borderColor: "#fff", zIndex: names.length - i }}>
+        <View key={`${n}-${i}`} style={{ marginLeft: i ? -2 : 0, borderRadius: size, borderWidth: 1.5, borderColor: palette.line, zIndex: names.length - i }}>
           <Avatar name={n} size={size} />
         </View>
       ))}
@@ -134,7 +134,7 @@ export function FeedPost({ post, city, state, faces, handlers, testID }: { post:
             <Icon name={state.liked ? "thumbs-up" : "thumbs-up-outline"} size={26} tint={state.liked ? color.strava : "#000"} />
           </Pressable>
           <Pressable testID={`${testID}-share`} accessibilityRole="button" accessibilityLabel="Share this day" hitSlop={8} onPress={handlers.onShare} style={{ marginLeft: 12 }}>
-            <Icon name="paper-plane-outline" size={25} tint="#000" />
+            <Icon name="paper-plane-outline" size={25} tint={palette.ink} />
           </Pressable>
           <View style={{ flex: 1 }} />
           <ReorderPill label={state.done ? "Do it again" : "Do this day"} onPress={handlers.onDo} testID={`${testID}-do`} />
@@ -176,10 +176,10 @@ export function FeedSkeleton({ posts = 2 }: { posts?: number }) {
 }
 
 const styles = StyleSheet.create({
-  post: { borderBottomWidth: 1, borderBottomColor: color.divider, paddingTop: 16, backgroundColor: "#fff" },
+  post: { borderBottomWidth: 1, borderBottomColor: color.divider, paddingTop: 16, backgroundColor: palette.card },
   header: { flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 14 },
   headerText: { flex: 1, marginLeft: 22, marginRight: 10, paddingTop: 4 },
-  headline: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: "#000" },
+  headline: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: palette.ink },
   bold: { fontWeight: "600" },
   notesLabel: { fontWeight: "700" },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
@@ -187,13 +187,13 @@ const styles = StyleSheet.create({
   photos: { paddingHorizontal: 21, gap: 8, marginTop: 18 },
   photo: { width: 156, height: 156, borderRadius: 7 },
   body: { paddingHorizontal: 21 },
-  notes: { fontFamily: font.sans, fontSize: 16, lineHeight: 20, color: "#000", marginTop: 26 },
+  notes: { fontFamily: font.sans, fontSize: 16, lineHeight: 20, color: palette.ink, marginTop: 26 },
   source: { color: GREY, fontSize: 14 },
   countsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 18 },
   kudos: { flexDirection: "row", alignItems: "center", gap: 7, flexShrink: 1 },
-  counts: { fontFamily: font.sans, fontSize: 14, color: "#323232" },
+  counts: { fontFamily: font.sans, fontSize: 14, color: palette.ink },
   actions: { flexDirection: "row", alignItems: "center", marginTop: 12, minHeight: 30 },
   pill: { height: 25, borderRadius: 13, backgroundColor: color.reorderPill, paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 4 },
   pillText: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: color.reorderText },
-  date: { fontFamily: font.sans, fontSize: 13, color: "#9B9DA6", marginTop: 20, marginBottom: 12 },
+  date: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 20, marginBottom: 12 },
 });

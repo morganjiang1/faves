@@ -11,7 +11,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, Tex
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar, Icon } from "@/components/ui";
 import type { Vote } from "@/lib/group";
-import { font, shadow } from "@/theme/tokens";
+import { font, palette, shadow } from "@/theme/tokens";
 
 // Each circle is a soft pastel, like Partiful's radial gradients (sampled centers).
 const CHOICES: { id: Vote; emoji: string; label: string; fill: [string, string] }[] = [
@@ -59,13 +59,13 @@ export function RsvpSheet({ open, title, sub, current, name, isHost, picked, onC
           <View style={s.asRow}>
             <Text style={s.asLabel}>VOTING AS</Text>
             {editing ? (
-              <TextInput testID="rsvp-name" accessibilityLabel="Your first name" autoFocus={!name} value={who} onChangeText={setWho} placeholder="Your first name" placeholderTextColor="#8A9086" maxLength={24} autoCapitalize="words" style={s.nameInput} returnKeyType="done" onSubmitEditing={() => who.trim() && setEditing(false)} />
+              <TextInput testID="rsvp-name" accessibilityLabel="Your first name" autoFocus={!name} value={who} onChangeText={setWho} placeholder="Your first name" placeholderTextColor={palette.inkMuted} maxLength={24} autoCapitalize="words" style={s.nameInput} returnKeyType="done" onSubmitEditing={() => who.trim() && setEditing(false)} />
             ) : (
               <>
-                <Avatar name={who} size={28} tint="#7A8F6E" />
+                <Avatar name={who} size={28} tint={palette.inkMuted} />
                 <Text style={s.name} numberOfLines={1}>{who}</Text>
                 <Pressable testID="rsvp-edit-name" accessibilityRole="button" accessibilityLabel="Change your name" hitSlop={10} onPress={() => setEditing(true)}>
-                  <Icon name="pencil" size={18} tint="#000" />
+                  <Icon name="pencil" size={18} tint={palette.ink} />
                 </Pressable>
               </>
             )}
@@ -88,21 +88,21 @@ export function RsvpSheet({ open, title, sub, current, name, isHost, picked, onC
 const s = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center" },
   sheet: { flex: 1, width: "100%", maxWidth: Platform.OS === "web" ? 520 : undefined, marginTop: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, overflow: "hidden", paddingHorizontal: 16 },
-  cancel: { fontFamily: font.sans, fontSize: 17, color: "#21271A" },
-  title: { fontFamily: font.sans, fontSize: 22, lineHeight: 28, fontWeight: "700", color: "#21271A", marginTop: 18 },
-  sub: { fontFamily: font.sans, fontSize: 15, color: "#575D51", marginTop: 2 },
+  cancel: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  title: { fontFamily: font.sans, fontSize: 22, lineHeight: 28, fontWeight: "700", color: palette.ink, marginTop: 18 },
+  sub: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft, marginTop: 2 },
   choices: { flexDirection: "row", justifyContent: "space-between", marginTop: 18 },
   ring: { width: 112, height: 112, borderRadius: 56, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "transparent" },
   ringOn: { borderColor: "rgba(33,39,26,0.25)", backgroundColor: "rgba(255,255,255,0.6)" },
   circle: { width: 96, height: 96, borderRadius: 48, overflow: "hidden", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)" },
   emoji: { fontSize: 32, lineHeight: 38 },
-  choiceLabel: { fontFamily: font.sans, fontSize: 13, color: "#21271A", marginTop: 2 },
+  choiceLabel: { fontFamily: font.sans, fontSize: 13, color: palette.ink, marginTop: 2 },
   asRow: { flexDirection: "row", alignItems: "center", gap: 10, height: 47, borderRadius: 3, backgroundColor: "rgba(33,39,26,0.06)", paddingHorizontal: 12, marginTop: 24 },
-  asLabel: { fontFamily: font.sans, fontSize: 14, color: "#575D51", letterSpacing: 0.4 },
-  name: { flex: 1, fontFamily: font.sans, fontSize: 18, color: "#21271A" },
-  nameInput: { flex: 1, fontFamily: font.sans, fontSize: 18, color: "#21271A", height: 40 },
+  asLabel: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft, letterSpacing: 0.4 },
+  name: { flex: 1, fontFamily: font.sans, fontSize: 18, color: palette.ink },
+  nameInput: { flex: 1, fontFamily: font.sans, fontSize: 18, color: palette.ink, height: 40 },
   pick: { height: 46, borderRadius: 3, borderWidth: 1, borderColor: "#21271A", alignItems: "center", justifyContent: "center", marginBottom: 10 },
-  pickLabel: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: "#21271A" },
+  pickLabel: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: palette.ink },
   cta: { height: 46, borderRadius: 3, backgroundColor: "#040005", alignItems: "center", justifyContent: "center" },
   ctaLabel: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: "#fff" },
 });

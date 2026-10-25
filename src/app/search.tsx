@@ -24,7 +24,7 @@ import { communityDays, type CommunityDay } from "@/lib/community";
 import { useCity } from "@/state/city";
 import { useCityClock, useOnline } from "@/state/device";
 import { actions, momentsMoneyActions, setState, useStore } from "@/state/store";
-import { categoryInfo, color, font, shadow } from "@/theme/tokens";
+import { categoryInfo, color, font, palette, shadow } from "@/theme/tokens";
 
 type Kind = "spots" | "days";
 const CHIPS: { id: BrowseChip; label: string; icon: IconName; title: string; tab: ResultTab }[] = [
@@ -106,7 +106,7 @@ export default function Search() {
         <LinearGradient colors={["#FFFFFF", "#EEF3F9"]} style={StyleSheet.absoluteFill} />
         <View style={styles.resultsTop}>
           <Pressable testID="results-back" accessibilityRole="button" accessibilityLabel="Edit search" hitSlop={10} onPress={() => { setSubmitted(null); setTimeout(() => input.current?.focus(), 50); }}>
-            <Icon name="chevron-back" size={28} tint="#000" />
+            <Icon name="chevron-back" size={28} tint={palette.ink} />
           </Pressable>
           <Pressable testID="results-query" accessibilityRole="button" accessibilityLabel={`Search: ${submitted}. Edit`} onPress={() => { setSubmitted(null); setTimeout(() => input.current?.focus(), 50); }} style={[styles.bubble, shadow.soft]}>
             <Text style={styles.bubbleText}>{submitted}</Text>
@@ -139,7 +139,7 @@ export default function Search() {
             />
             <View style={[styles.specific, { paddingBottom: Math.max(insets.bottom, 12) }]}>
               <View style={styles.specificHead}>
-                <Icon name="chatbubble-ellipses-outline" size={22} tint="#8C8C8C" />
+                <Icon name="chatbubble-ellipses-outline" size={22} tint={palette.inkMuted} />
                 <Text style={styles.specificText}>get more specific</Text>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 16, paddingVertical: 4 }}>
@@ -173,7 +173,7 @@ export default function Search() {
       <View style={styles.head}>
         <Text style={styles.wordmark}>faves</Text>
         <Pressable testID="search-close" accessibilityRole="button" accessibilityLabel="Close search" hitSlop={8} onPress={close} style={styles.closeCircle}>
-          <Icon name="close" size={20} tint="#6F6F73" />
+          <Icon name="close" size={20} tint={palette.inkMuted} />
         </Pressable>
       </View>
       <View style={styles.kinds}>
@@ -186,7 +186,7 @@ export default function Search() {
       </View>
 
       <View style={styles.field}>
-        <Icon name="search" size={22} tint="#5B5B5F" />
+        <Icon name="search" size={22} tint={palette.inkSoft} />
         <TextInput
           ref={input}
           testID="search-input"
@@ -198,15 +198,15 @@ export default function Search() {
           returnKeyType="search"
           onSubmitEditing={() => (kind === "spots" ? submit(q) : undefined)}
           placeholder={kind === "spots" ? "Search spots, food, activities" : "Search days by name or stop"}
-          placeholderTextColor="#8E8E93"
+          placeholderTextColor={palette.inkMuted}
           style={[styles.fieldInput, noOutline]}
         />
-        {typing ? <Pressable testID="search-clear" accessibilityLabel="Clear" hitSlop={8} onPress={() => setQ("")}><Icon name="close" size={20} tint="#B0B0B4" /></Pressable> : null}
+        {typing ? <Pressable testID="search-clear" accessibilityLabel="Clear" hitSlop={8} onPress={() => setQ("")}><Icon name="close" size={20} tint={palette.inkMuted} /></Pressable> : null}
       </View>
       <Pressable testID="search-city" accessibilityRole="button" accessibilityLabel={`City: ${city.name}. Change`} onPress={() => router.push("/city")} style={[styles.field, { marginTop: 10 }]}>
-        <Icon name="location" size={20} tint="#5B5B5F" />
-        <Text style={[styles.fieldInput, { color: "#000" }]}>{city.name}</Text>
-        <Icon name="chevron-down" size={18} tint="#B0B0B4" />
+        <Icon name="location" size={20} tint={palette.inkSoft} />
+        <Text style={[styles.fieldInput, { color: palette.ink }]}>{city.name}</Text>
+        <Icon name="chevron-down" size={18} tint={palette.inkMuted} />
       </Pressable>
 
       {kind === "spots" ? (
@@ -238,7 +238,7 @@ export default function Search() {
                     <Text style={styles.rowSub} numberOfLines={1}>{d.plan.stops.map((s) => city.byId.get(s.placeId)?.name).filter(Boolean).join(", ")}</Text>
                   </View>
                   <Text style={styles.rowMeta}>{d.plan.stops.length} stops</Text>
-                  <Icon name="chevron-forward" size={18} tint="#BFBFBF" />
+                  <Icon name="chevron-forward" size={18} tint={palette.inkMuted} />
                 </Pressable>
               )) : (
                 <View style={styles.noDays} testID="days-empty">
@@ -254,7 +254,7 @@ export default function Search() {
             <Pressable testID="search-submit-row" accessibilityRole="button" onPress={() => submit(q)} style={styles.row}>
               <View style={styles.rowIcon}><Icon name="search" size={18} tint={color.brand} /></View>
               <Text style={[styles.rowName, { flex: 1 }]} numberOfLines={1}>Search "{q.trim()}"</Text>
-              <Icon name="arrow-forward" size={18} tint="#BFBFBF" />
+              <Icon name="arrow-forward" size={18} tint={palette.inkMuted} />
             </Pressable>
             <Pressable testID="search-plan-row" accessibilityRole="button" onPress={() => planIt(q)} style={styles.row}>
               <View style={styles.rowIcon}><Icon name="sparkles" size={18} tint={color.brand} /></View>
@@ -262,7 +262,7 @@ export default function Search() {
                 <Text style={styles.rowName} numberOfLines={1}>Plan a day for this</Text>
                 <Text style={styles.rowSub} numberOfLines={1}>The planner builds a whole day around "{q.trim()}"</Text>
               </View>
-              <Icon name="arrow-forward" size={18} tint="#BFBFBF" />
+              <Icon name="arrow-forward" size={18} tint={palette.inkMuted} />
             </Pressable>
             {liveRows.map((p, i) => <SpotRow key={p.id} place={p} index={i} />)}
             {live && !liveRows.length ? <Text testID="search-no-live" style={styles.hint}>No spot names match yet. Press search to look through what locals say too.</Text> : null}
@@ -277,9 +277,9 @@ export default function Search() {
                 </View>
                 {recent.map((t, i) => (
                   <Pressable key={t} testID={`recent-${i}`} accessibilityRole="button" accessibilityLabel={`Search ${t}`} onPress={() => submit(t)} style={styles.row}>
-                    <View style={styles.rowIcon}><Icon name="time-outline" size={18} tint="#8E8E93" /></View>
+                    <View style={styles.rowIcon}><Icon name="time-outline" size={18} tint={palette.inkMuted} /></View>
                     <Text style={[styles.rowName, { flex: 1 }]} numberOfLines={1}>{t}</Text>
-                    <Pressable testID={`recent-remove-${i}`} accessibilityLabel={`Remove ${t}`} hitSlop={10} onPress={() => removeRecent(t)}><Icon name="close" size={20} tint="#B0B0B4" /></Pressable>
+                    <Pressable testID={`recent-remove-${i}`} accessibilityLabel={`Remove ${t}`} hitSlop={10} onPress={() => removeRecent(t)}><Icon name="close" size={20} tint={palette.inkMuted} /></Pressable>
                   </Pressable>
                 ))}
               </>
@@ -307,14 +307,14 @@ function SpotRow({ place, index, onDismiss }: { place: Place; index: number; onD
         <Text style={styles.rowSub} numberOfLines={1}>{sub}</Text>
       </View>
       <Pressable testID={`search-row-add-${index}`} accessibilityLabel={`Add ${place.name} to a day`} hitSlop={6} onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)}>
-        <Icon name="add-circle-outline" size={30} tint="#000" />
+        <Icon name="add-circle-outline" size={30} tint={palette.ink} />
       </Pressable>
       <Pressable testID={`search-row-save-${index}`} accessibilityLabel={saved ? `Unsave ${place.name}` : `Save ${place.name}`} hitSlop={6} onPress={() => actions.toggleSave(place.id)}>
         <Icon name={saved ? "bookmark" : "bookmark-outline"} size={27} tint={saved ? color.brand : "#000"} />
       </Pressable>
       {onDismiss ? (
         <Pressable testID={`search-row-dismiss-${index}`} accessibilityLabel={`Hide ${place.name}`} hitSlop={6} onPress={onDismiss}>
-          <Icon name="close" size={22} tint="#A0A0A4" />
+          <Icon name="close" size={22} tint={palette.inkMuted} />
         </Pressable>
       ) : null}
     </Pressable>
@@ -362,7 +362,7 @@ function AddSpotSheet({ open, onClose, query, city, onSaved }: { open: boolean; 
     <Sheet open={open} onClose={onClose} title="Add a spot" testID="add-spot-sheet">
       <View style={{ paddingHorizontal: 16, gap: 12, paddingBottom: 8 }}>
         <Text style={styles.sheetBody}>Faves lists spots from Google, Yelp, Reddit and TikTok. Tell us the name and neighborhood of what's missing.</Text>
-        <TextInput testID="add-spot-input" value={text} onChangeText={setText} placeholder="Name and neighborhood" placeholderTextColor="#8E8E93" multiline style={[styles.sheetInput, noOutline]} />
+        <TextInput testID="add-spot-input" value={text} onChangeText={setText} placeholder="Name and neighborhood" placeholderTextColor={palette.inkMuted} multiline style={[styles.sheetInput, noOutline]} />
         <PrimaryButton testID="add-spot-save" label="Save note" disabled={!text.trim()} onPress={() => { momentsMoneyActions.addSpotNote({ id: `note-${Date.now().toString(36)}`, city, query, text: text.trim(), at: new Date().toISOString() }); onSaved(); }} />
         <Text style={styles.sheetFine}>Notes stay on this phone until accounts launch.</Text>
       </View>
@@ -371,61 +371,61 @@ function AddSpotSheet({ open, onClose, query, city, onSaved }: { open: boolean; 
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   head: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
   wordmark: { fontFamily: font.serif, fontSize: 30, color: color.brand, letterSpacing: -0.3 },
-  closeCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#E5E5E8", alignItems: "center", justifyContent: "center" },
+  closeCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
   kinds: { flexDirection: "row", marginTop: 8 },
   kind: { flex: 1, height: 46, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderBottomWidth: 2.5, borderBottomColor: "transparent" },
   kindOn: { borderBottomColor: color.brand },
-  kindText: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: "#3A3A3C" },
-  field: { marginHorizontal: 12, marginTop: 16, height: 49, borderRadius: 4, borderWidth: 1, borderColor: "#D2D2D6", flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 14 },
-  fieldInput: { flex: 1, fontFamily: font.sans, fontSize: 17, color: "#000", paddingVertical: 0 },
+  kindText: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: palette.inkSoft },
+  field: { marginHorizontal: 12, marginTop: 16, height: 49, borderRadius: 4, borderWidth: 1, borderColor: palette.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 14 },
+  fieldInput: { flex: 1, fontFamily: font.sans, fontSize: 17, color: palette.ink, paddingVertical: 0 },
   chips: { paddingHorizontal: 16, gap: 8, paddingTop: 14, paddingBottom: 4 },
   chip: { height: 32, borderRadius: 16, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 6 },
   chipText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "500" },
   sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingRight: 16, marginTop: 18 },
-  section: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: "#000", paddingHorizontal: 16, flexShrink: 1 },
+  section: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: palette.ink, paddingHorizontal: 16, flexShrink: 1 },
   clear: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: color.brand },
-  row: { minHeight: 61, flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#F1F1F3" },
-  rowIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#F2F4F5", alignItems: "center", justifyContent: "center", marginRight: -4 },
-  rowName: { fontFamily: font.sans, fontSize: 17, color: "#000" },
-  rowSub: { fontFamily: font.sans, fontSize: 14, color: "#8E8E93", marginTop: 3 },
-  rowMeta: { fontFamily: font.sans, fontSize: 14, color: "#8E8E93" },
-  hint: { fontFamily: font.sans, fontSize: 14, color: "#8E8E93", paddingHorizontal: 16, paddingTop: 14 },
+  row: { minHeight: 61, flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: palette.line },
+  rowIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center", marginRight: -4 },
+  rowName: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  rowSub: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted, marginTop: 3 },
+  rowMeta: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted },
+  hint: { fontFamily: font.sans, fontSize: 14, color: palette.inkMuted, paddingHorizontal: 16, paddingTop: 14 },
   noDays: { paddingHorizontal: 16, paddingTop: 22 },
-  noDaysTitle: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: "#000" },
-  noDaysBody: { fontFamily: font.sans, fontSize: 15, color: "#6B6B70", marginTop: 6 },
+  noDaysTitle: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: palette.ink },
+  noDaysBody: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, marginTop: 6 },
   resultsTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 12, paddingTop: 10 },
-  bubble: { flex: 1, marginLeft: 24, backgroundColor: "#fff", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
-  bubbleText: { fontFamily: font.sans, fontSize: 18, lineHeight: 24, color: "#000" },
-  answer: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: "#656565", paddingHorizontal: 16, marginTop: 18 },
+  bubble: { flex: 1, marginLeft: 24, backgroundColor: palette.paper, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
+  bubbleText: { fontFamily: font.sans, fontSize: 18, lineHeight: 24, color: palette.ink },
+  answer: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: palette.inkSoft, paddingHorizontal: 16, marginTop: 18 },
   cTabs: { paddingHorizontal: 16, gap: 22, marginTop: 14 },
   cTab: { paddingBottom: 8 },
-  cTabText: { fontFamily: font.sans, fontSize: 18, color: "#000" },
+  cTabText: { fontFamily: font.sans, fontSize: 18, color: palette.ink },
   cTabOn: { fontWeight: "800" },
   cTabLine: { position: "absolute", left: 0, right: 0, bottom: 0, height: 2.5, backgroundColor: "#000", borderRadius: 1 },
-  tabEmpty: { fontFamily: font.sans, fontSize: 15, color: "#656565", paddingVertical: 20 },
-  planPill: { alignSelf: "flex-start", height: 34, borderRadius: 17, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
+  tabEmpty: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft, paddingVertical: 20 },
+  planPill: { alignSelf: "flex-start", height: 34, borderRadius: 17, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
   planPillText: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: color.brand },
-  specific: { position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 14, ...(shadow.card as object) },
+  specific: { position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: palette.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 14, ...(shadow.card as object) },
   specificHead: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18, marginBottom: 10 },
-  specificText: { fontFamily: font.sans, fontSize: 18, color: "#8C8C8C" },
-  moreChip: { height: 34, borderRadius: 17, backgroundColor: "#fff", paddingHorizontal: 14, justifyContent: "center" },
-  moreChipText: { fontFamily: font.sans, fontSize: 16, color: "#000" },
+  specificText: { fontFamily: font.sans, fontSize: 18, color: palette.inkMuted },
+  moreChip: { height: 34, borderRadius: 17, backgroundColor: palette.card, paddingHorizontal: 14, justifyContent: "center" },
+  moreChipText: { fontFamily: font.sans, fontSize: 16, color: palette.ink },
   none: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 40 },
-  noneTitle: { fontFamily: font.sans, fontSize: 21, lineHeight: 27, fontWeight: "800", color: "#1F1F1F" },
-  noneHelp: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: "#7A7A7E", marginTop: 8 },
-  noneHead: { fontFamily: font.sans, fontSize: 19, fontWeight: "800", color: "#1F1F1F", marginTop: 28 },
+  noneTitle: { fontFamily: font.sans, fontSize: 21, lineHeight: 27, fontWeight: "800", color: palette.ink },
+  noneHelp: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: palette.inkMuted, marginTop: 8 },
+  noneHead: { fontFamily: font.sans, fontSize: 19, fontWeight: "800", color: palette.ink, marginTop: 28 },
   noneChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
-  noneChip: { height: 34, borderRadius: 17, borderWidth: 1, borderColor: "#DCDCDF", backgroundColor: "#fff", paddingHorizontal: 14, justifyContent: "center" },
-  noneChipText: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: "#2D2D2D" },
-  noneLine: { height: 1, backgroundColor: "#ECECEE", marginVertical: 24 },
-  missing: { fontFamily: font.sans, fontSize: 17, lineHeight: 22, fontWeight: "800", color: "#1F1F1F" },
-  addSpot: { alignSelf: "flex-start", marginTop: 14, height: 40, borderRadius: 4, borderWidth: 1, borderColor: "#D2D2D6", paddingHorizontal: 16, justifyContent: "center" },
-  addSpotText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#2D2D2D" },
-  addTile: { width: 110, height: 96, borderRadius: 4, backgroundColor: "#ECECEE", alignItems: "center", justifyContent: "center" },
-  sheetBody: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: "#444" },
-  sheetInput: { minHeight: 80, borderRadius: 8, borderWidth: 1, borderColor: "#D2D2D6", padding: 12, fontFamily: font.sans, fontSize: 16, color: "#000", textAlignVertical: "top" },
-  sheetFine: { fontFamily: font.sans, fontSize: 12, color: "#8E8E93", textAlign: "center" },
+  noneChip: { height: 34, borderRadius: 17, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.card, paddingHorizontal: 14, justifyContent: "center" },
+  noneChipText: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: palette.ink },
+  noneLine: { height: 1, backgroundColor: palette.paperDeep, marginVertical: 24 },
+  missing: { fontFamily: font.sans, fontSize: 17, lineHeight: 22, fontWeight: "800", color: palette.ink },
+  addSpot: { alignSelf: "flex-start", marginTop: 14, height: 40, borderRadius: 4, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 16, justifyContent: "center" },
+  addSpotText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: palette.ink },
+  addTile: { width: 110, height: 96, borderRadius: 4, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
+  sheetBody: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: palette.inkSoft },
+  sheetInput: { minHeight: 80, borderRadius: 8, borderWidth: 1, borderColor: palette.line, padding: 12, fontFamily: font.sans, fontSize: 16, color: palette.ink, textAlignVertical: "top" },
+  sheetFine: { fontFamily: font.sans, fontSize: 12, color: palette.inkMuted, textAlign: "center" },
 });

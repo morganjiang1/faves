@@ -9,7 +9,7 @@ import { statusAt } from "@/lib/hours";
 import { compact, costOf, gemLine, scoreOutOf10, signalCount, vibeLine } from "@/lib/score";
 import type { CommunityDay } from "@/lib/community";
 import { actions, useStore } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Icon, PlaceImage, ScoreBadge, T } from "./ui";
 
 export function metaLine(p: Place, clock: CityClock, from: LatLng | null, withPrice = true): string {
@@ -47,7 +47,7 @@ export function PlaceCard({ place, clock, from, width = 307, testID }: { place: 
       <T v="meta" numberOfLines={1} style={{ marginTop: 2 }}>{metaLine(place, clock, from)}</T>
       {gem ? (
         <View style={styles.gemRow}>
-          <Icon name="diamond-outline" size={14} tint="#000" />
+          <Icon name="diamond-outline" size={14} tint={palette.ink} />
           <Text style={styles.gemText} numberOfLines={1}>{gem}</Text>
         </View>
       ) : (
@@ -81,7 +81,7 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
           {place.hood ? <Text style={styles.rowLine} numberOfLines={1}>{place.hood}</Text> : null}
           {place.hiddenGem ? (
             <View style={[styles.gemRow, { marginTop: 4 }]}>
-              <Icon name="diamond-outline" size={13} tint="#000" />
+              <Icon name="diamond-outline" size={13} tint={palette.ink} />
               <Text style={[styles.gemText, { fontSize: 14 }]} numberOfLines={1}>{gemLine(place)}</Text>
             </View>
           ) : null}
@@ -97,7 +97,7 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
       <View style={styles.rowBottom}>
         <Text style={styles.rowMeta} numberOfLines={1}>{metaLine(place, clock, from, false)}</Text>
         <Pressable accessibilityLabel="Add to a day" hitSlop={8} onPress={onAdd ?? (() => router.push(`/builder?place=${encodeURIComponent(place.id)}`))}>
-          <Icon name="add-circle-outline" size={27} tint="#000" />
+          <Icon name="add-circle-outline" size={27} tint={palette.ink} />
         </Pressable>
         <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)}>
           <Icon name={saved ? "bookmark" : "bookmark-outline"} size={25} tint={saved ? color.brand : "#000"} />
@@ -136,15 +136,15 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
   rating: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
   ratingNum: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: color.score },
-  ratingLabel: { fontFamily: font.sans, fontSize: 14, color: "#000" },
+  ratingLabel: { fontFamily: font.sans, fontSize: 14, color: palette.ink },
   ratingMuted: { fontFamily: font.sans, fontSize: 14, color: color.textSub },
   gemRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
-  gemText: { fontFamily: font.sans, fontSize: 15, fontStyle: "italic", color: "#000", flexShrink: 1 },
-  row: { paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 6, borderBottomColor: "#F7F7FA", backgroundColor: "#fff" },
-  rowName: { fontFamily: font.sans, fontSize: 19, lineHeight: 24, fontWeight: "700", color: "#000" },
+  gemText: { fontFamily: font.sans, fontSize: 15, fontStyle: "italic", color: palette.ink, flexShrink: 1 },
+  row: { paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 6, borderBottomColor: palette.line, backgroundColor: palette.card },
+  rowName: { fontFamily: font.sans, fontSize: 19, lineHeight: 24, fontWeight: "700", color: palette.ink },
   rowLine: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: color.text },
   rowBottom: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10 },
-  rowMeta: { fontFamily: font.sans, fontSize: 15, color: "#989AA2", flex: 1 },
+  rowMeta: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, flex: 1 },
   slot: { marginTop: 10, width: 79, height: 35, borderRadius: 5, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },
   slotTop: { fontFamily: font.sans, color: "#fff", fontSize: 13, fontWeight: "600" },
   slotSub: { fontFamily: font.sans, color: "#fff", fontSize: 9, fontWeight: "700", letterSpacing: 0.4 },
@@ -172,7 +172,7 @@ export function CornerCard({ place, onPress, testID, savedCount }: { place: Plac
         </View>
         {gem ? (
           <View style={styles.gemRow}>
-            <Icon name="diamond-outline" size={14} tint="#000" />
+            <Icon name="diamond-outline" size={14} tint={palette.ink} />
             <Text style={styles.gemText} numberOfLines={1}>{gem}</Text>
           </View>
         ) : (
@@ -193,14 +193,14 @@ export function CornerCard({ place, onPress, testID, savedCount }: { place: Plac
 }
 
 const cornerStyles = StyleSheet.create({
-  corner: { flexDirection: "row", gap: 12, backgroundColor: "#fff", borderRadius: 17, padding: 12, shadowColor: "#4A5A7A", shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  corner: { flexDirection: "row", gap: 12, backgroundColor: palette.card, borderRadius: 17, padding: 12, shadowColor: "#4A5A7A", shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   cornerThumb: { width: 90, height: 131, borderRadius: 14 },
-  cornerName: { fontFamily: font.sans, fontSize: 18, lineHeight: 22, fontWeight: "800", color: "#000", letterSpacing: -0.3 },
-  cornerHood: { fontFamily: font.sans, fontSize: 16, color: "#868686" },
+  cornerName: { fontFamily: font.sans, fontSize: 18, lineHeight: 22, fontWeight: "800", color: palette.ink, letterSpacing: -0.3 },
+  cornerHood: { fontFamily: font.sans, fontSize: 16, color: palette.inkMuted },
   vibe: { flexDirection: "row", alignItems: "center", gap: 7 },
   vibeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: color.gem },
-  vibeText: { fontFamily: font.sans, fontSize: 15, color: "#868686", flexShrink: 1 },
-  savedPill: { height: 24, borderRadius: 12, backgroundColor: "#EFEFEF", paddingHorizontal: 10, justifyContent: "center" },
-  savedPillText: { fontFamily: font.sans, fontSize: 13, color: "#8C8C8C" },
-  cornerBookmark: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
+  vibeText: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, flexShrink: 1 },
+  savedPill: { height: 24, borderRadius: 12, backgroundColor: palette.paperDeep, paddingHorizontal: 10, justifyContent: "center" },
+  savedPillText: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted },
+  cornerBookmark: { width: 30, height: 30, borderRadius: 15, backgroundColor: palette.card, alignItems: "center", justifyContent: "center", shadowColor: palette.ink, shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
 });

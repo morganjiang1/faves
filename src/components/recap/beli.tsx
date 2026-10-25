@@ -14,7 +14,7 @@
 //   50 pt teal pill.
 import type { ReactNode } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Icon, type IconName } from "../ui";
 
 export const SCRIM = "rgba(0,0,0,0.81)"; // measured #302E31 over Beli's white list
@@ -32,7 +32,7 @@ export function HeaderCard({ title, sub, onClose, closeLabel = "Close", testID }
         {sub ? <Text style={s.headerSub} numberOfLines={1}>{sub}</Text> : null}
       </View>
       <Pressable testID={testID ? `${testID}-close` : undefined} accessibilityRole="button" accessibilityLabel={closeLabel} hitSlop={10} onPress={onClose} style={s.close}>
-        <Icon name="close" size={24} tint="#000" />
+        <Icon name="close" size={24} tint={palette.ink} />
       </Pressable>
     </BeliCard>
   );
@@ -56,7 +56,7 @@ export function HowWasIt({ value, onPick, testID = "how-was-it" }: { value: Sent
           return (
             <Pressable key={c.id} testID={`rate-${c.id}`} accessibilityRole="button" accessibilityLabel={c.label} accessibilityState={{ selected: on }} onPress={() => onPick(c.id)} style={s.circleCol}>
               <View style={[s.circle, { backgroundColor: c.fill }]}>{on ? <Icon name="checkmark" size={34} tint="#fff" /> : null}</View>
-              <Text style={[s.circleLabel, on && { color: "#000" }]}>{c.label}</Text>
+              <Text style={[s.circleLabel, on && { color: palette.ink }]}>{c.label}</Text>
             </Pressable>
           );
         })}
@@ -132,20 +132,20 @@ export function BeliModal({ open, icon, title, body, cta, onCta, secondary, onSe
 }
 
 const s = StyleSheet.create({
-  card: { backgroundColor: "#fff", borderRadius: 17, marginHorizontal: 10, marginBottom: 7, overflow: "hidden" },
+  card: { backgroundColor: palette.card, borderRadius: 17, marginHorizontal: 10, marginBottom: 7, overflow: "hidden" },
   header: { flexDirection: "row", alignItems: "center", paddingLeft: 20, paddingRight: 12, paddingVertical: 10, minHeight: 55 },
-  headerTitle: { fontFamily: font.serif, fontSize: 17, lineHeight: 21, color: "#000" },
+  headerTitle: { fontFamily: font.serif, fontSize: 17, lineHeight: 21, color: palette.ink },
   headerSub: { fontFamily: font.sans, fontSize: 13, lineHeight: 17, fontWeight: "600", color: color.textMuted, marginTop: 1 },
   close: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontFamily: font.sans, fontSize: 16, lineHeight: 20, fontWeight: "700", color: "#000", textAlign: "center" },
+  cardTitle: { fontFamily: font.sans, fontSize: 16, lineHeight: 20, fontWeight: "700", color: palette.ink, textAlign: "center" },
   circles: { flexDirection: "row", justifyContent: "center", marginTop: 10 },
   circleCol: { width: 117, alignItems: "center" },
   circle: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center" },
-  circleLabel: { fontFamily: font.sans, fontSize: 15, lineHeight: 19, color: "#8C8C8E", marginTop: 9 },
+  circleLabel: { fontFamily: font.sans, fontSize: 15, lineHeight: 19, color: palette.inkMuted, marginTop: 9 },
   pair: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 18, paddingHorizontal: 12 },
-  option: { flex: 1, maxWidth: 168, aspectRatio: 1, borderRadius: 7, borderWidth: 1, borderColor: color.orDisc, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
-  optionName: { fontFamily: font.serif, fontSize: 16, lineHeight: 20, color: "#000", textAlign: "center" },
-  optionSub: { fontFamily: font.sans, fontSize: 13, lineHeight: 17, color: "#000", textAlign: "center", marginTop: 4 },
+  option: { flex: 1, maxWidth: 168, aspectRatio: 1, borderRadius: 7, borderWidth: 1, borderColor: color.orDisc, backgroundColor: palette.paper, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
+  optionName: { fontFamily: font.serif, fontSize: 16, lineHeight: 20, color: palette.ink, textAlign: "center" },
+  optionSub: { fontFamily: font.sans, fontSize: 13, lineHeight: 17, color: palette.ink, textAlign: "center", marginTop: 4 },
   or: { position: "absolute", alignSelf: "center", top: "50%", marginTop: -14.5, width: 29, height: 29, borderRadius: 14.5, backgroundColor: color.orDisc, alignItems: "center", justifyContent: "center" },
   orText: { fontFamily: font.sans, color: "#fff", fontSize: 12, fontWeight: "700" },
   actions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 26, paddingHorizontal: 24 },
@@ -154,11 +154,11 @@ const s = StyleSheet.create({
   tough: { width: 109, height: 35, borderRadius: 8, borderWidth: 1, borderColor: color.orDisc, alignItems: "center", justifyContent: "center" },
   toughLabel: { fontFamily: font.sans, fontSize: 15, color: color.orDisc, letterSpacing: 0.5 },
   modalWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 26 },
-  modal: { width: "100%", maxWidth: 340, backgroundColor: "#FCFCFC", borderRadius: 7, alignItems: "center", paddingHorizontal: 24, paddingBottom: 32, overflow: "hidden" },
+  modal: { width: "100%", maxWidth: 340, backgroundColor: palette.card, borderRadius: 7, alignItems: "center", paddingHorizontal: 24, paddingBottom: 32, overflow: "hidden" },
   art: { width: "120%", height: 230, alignItems: "center", justifyContent: "center" },
   blob: { position: "absolute", width: "100%", height: 170, top: 30, borderRadius: 90, backgroundColor: color.sage, transform: [{ rotate: "-8deg" }] },
-  artIcon: { width: 112, height: 112, borderRadius: 56, borderWidth: 3, borderColor: color.brand, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  modalTitle: { fontFamily: font.serif, fontSize: 30, lineHeight: 38, color: "#1E1E1E", textAlign: "center" },
+  artIcon: { width: 112, height: 112, borderRadius: 56, borderWidth: 3, borderColor: color.brand, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
+  modalTitle: { fontFamily: font.serif, fontSize: 30, lineHeight: 38, color: palette.ink, textAlign: "center" },
   modalBody: { fontFamily: font.sans, fontSize: 17, lineHeight: 22, color: color.emptyBody, textAlign: "center", marginTop: 10 },
   modalCta: { alignSelf: "stretch", height: 50, borderRadius: 25, backgroundColor: color.brand, alignItems: "center", justifyContent: "center", marginTop: 26 },
   modalCtaLabel: { fontFamily: font.sans, color: "#fff", fontSize: 18, fontWeight: "600" },

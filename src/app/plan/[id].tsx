@@ -31,7 +31,7 @@ import { eventsNear, type LiveEvent } from "@/lib/adapters/ticketmaster";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 const FREE_REPLANS = 3;
 const QUICK = ["It's raining", "We're running 30 min late", "Make it cheaper", "Add dessert"];
@@ -163,7 +163,7 @@ export default function Itinerary() {
   const link = shareUrl(`/plan/${plan.id}?d=${encodePayload(sharePayload)}`);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }} testID="itinerary">
+    <View style={{ flex: 1, backgroundColor: palette.paper }} testID="itinerary">
       <View style={styles.mapBox}>
         <FavesMap testID="plan-map" creditBottom={26} style={StyleSheet.absoluteFill} center={places[0] ?? city.center} span={0.04} pins={pins} routes={routes} fitToPins showLabels={false} onPinPress={(pid) => router.push(`/place/${encodeURIComponent(pid)}`)} />
         <View style={[styles.mapButtons, { top: insets.top + 8 }]} pointerEvents="box-none">
@@ -256,7 +256,7 @@ export default function Itinerary() {
               <Text style={styles.changedTitle}>Happening nearby that day</Text>
               {events.map((e) => (
                 <Pressable key={e.id} onPress={() => openUrl(e.url)} style={styles.menuRow}>
-                  <Icon name="ticket-outline" size={20} tint="#1F1F1F" />
+                  <Icon name="ticket-outline" size={20} tint={palette.ink} />
                   <Text style={[styles.menuText, { flex: 1, fontSize: 15 }]} numberOfLines={2}>{e.name}{e.venue ? ` · ${e.venue}` : ""}{e.time ? ` · ${formatClock(Number(e.time.slice(0, 2)) * 60 + Number(e.time.slice(3, 5)), { compact: true })}` : ""}</Text>
                   <Text style={styles.link}>Tickets</Text>
                 </Pressable>
@@ -272,7 +272,7 @@ export default function Itinerary() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
             <LinearGradient colors={[color.askMapsStrokeA, color.askMapsStrokeB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.askStroke}>
               <View style={styles.askBox}>
-                <TextInput testID="replan-input" value={ask} onChangeText={setAsk} placeholder="What changed?" placeholderTextColor="#8A8A8A" style={styles.askInput} onSubmitEditing={() => runReplan(ask)} returnKeyType="send" />
+                <TextInput testID="replan-input" value={ask} onChangeText={setAsk} placeholder="What changed?" placeholderTextColor={palette.inkMuted} style={styles.askInput} onSubmitEditing={() => runReplan(ask)} returnKeyType="send" />
                 <Pressable testID="replan-send" accessibilityLabel="Re-plan" onPress={() => runReplan(ask)} style={styles.askSend}><Icon name="send" size={16} tint="#306CF0" /></Pressable>
               </View>
             </LinearGradient>
@@ -334,34 +334,34 @@ function MenuRow({ icon, label, onPress, danger, testID }: { icon: Parameters<ty
 const styles = StyleSheet.create({
   mapBox: { height: "38%", backgroundColor: color.cornerLand },
   mapButtons: { position: "absolute", left: 14, right: 14, flexDirection: "row", justifyContent: "space-between" },
-  sheet: { flex: 1, marginTop: -22, backgroundColor: "#fff", borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden" },
-  title: { fontFamily: font.sans, fontSize: 26, lineHeight: 31, fontWeight: "700", color: "#212529", marginTop: 4 },
-  meta: { fontFamily: font.sans, fontSize: 15, color: "#677079", marginTop: 4 },
+  sheet: { flex: 1, marginTop: -22, backgroundColor: palette.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden" },
+  title: { fontFamily: font.sans, fontSize: 26, lineHeight: 31, fontWeight: "700", color: palette.ink, marginTop: 4 },
+  meta: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, marginTop: 4 },
   links: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" },
   link: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: color.wanderBlue },
-  dot: { color: "#B8BEC4" },
+  dot: { color: palette.inkMuted },
   reqChip: { backgroundColor: color.chipOff, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  reqChipText: { fontFamily: font.sans, fontSize: 13, color: "#000", fontWeight: "500" },
+  reqChipText: { fontFamily: font.sans, fontSize: 13, color: palette.ink, fontWeight: "500" },
   info: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8, alignItems: "center" },
-  infoText: { fontFamily: font.sans, fontSize: 14, color: "#444" },
+  infoText: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft },
   agentNote: { flexDirection: "row", gap: 8, backgroundColor: "#F0F5FF", borderRadius: 12, padding: 12, marginTop: 12 },
-  agentText: { fontFamily: font.sans, fontSize: 14, color: "#1B1B1B", flex: 1, lineHeight: 19 },
+  agentText: { fontFamily: font.sans, fontSize: 14, color: palette.ink, flex: 1, lineHeight: 19 },
   note: { fontFamily: font.sans, fontSize: 14, color: color.closed, marginTop: 8 },
   timeline: { flexDirection: "row", gap: 10, marginTop: 18 },
   rail: { width: 44, alignItems: "center" },
   railLine: { flex: 1, width: 1, backgroundColor: color.airbnbRail, marginTop: 6 },
   railDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: color.airbnbDot },
   footnote: { fontFamily: font.sans, fontSize: 12, color: color.textMuted, marginTop: 16, lineHeight: 17 },
-  bottom: { borderTopWidth: 1, borderTopColor: "#EEE", paddingTop: 10, backgroundColor: "#fff" },
+  bottom: { borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 10, backgroundColor: palette.card },
   askStroke: { flex: 1, borderRadius: 24, padding: 2 },
-  askBox: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 22, paddingLeft: 14, paddingRight: 4, height: 44 },
-  askInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: "#000", height: 44 },
+  askBox: { flexDirection: "row", alignItems: "center", backgroundColor: palette.card, borderRadius: 22, paddingLeft: 14, paddingRight: 4, height: 44 },
+  askInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: palette.ink, height: 44 },
   askSend: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F0F0FC", alignItems: "center", justifyContent: "center" },
   replansLeft: { fontFamily: font.sans, fontSize: 12, color: color.textMuted, marginTop: 6 },
-  changedTitle: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: "#212529", marginTop: 14, marginBottom: 8 },
+  changedTitle: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.ink, marginTop: 14, marginBottom: 8 },
   startPill: { height: 46, borderRadius: 23, backgroundColor: color.brand, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16 },
   startText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600" },
-  menuRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, height: 54, borderBottomWidth: 1, borderBottomColor: "#F1F1F1" },
-  menuText: { fontFamily: font.sans, fontSize: 17, color: "#1F1F1F" },
+  menuRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, height: 54, borderBottomWidth: 1, borderBottomColor: palette.line },
+  menuText: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
 });
 

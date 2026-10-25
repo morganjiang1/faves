@@ -22,7 +22,7 @@ import { scoreOutOf10 } from "@/lib/score";
 import { formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { actions, useStore } from "@/state/store";
-import { font } from "@/theme/tokens";
+import { font, palette } from "@/theme/tokens";
 
 interface Page { place: Place; stop: PlanStop | null; index: number }
 
@@ -57,7 +57,7 @@ export default function Reel() {
 
   if (!pages.length) {
     return (
-      <View style={[styles.fill, { justifyContent: "center", backgroundColor: "#fff" }]} testID="reel-missing">
+      <View style={[styles.fill, { justifyContent: "center", backgroundColor: palette.card }]} testID="reel-missing">
         <EmptyState icon="film-outline" title="Nothing to play" body="This day or spot isn't on this device. Open it again from Home." cta="Back" onCta={close} />
       </View>
     );
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   creditRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   handle: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600", flexShrink: 1 },
   on: { fontFamily: font.sans, color: "rgba(255,255,255,0.85)", fontSize: 14 },
-  art: { width: 71, height: 71, borderRadius: 36, borderWidth: 2, borderColor: "#fff", alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  art: { width: 71, height: 71, borderRadius: 36, borderWidth: 2, borderColor: palette.line, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   track: { position: "absolute", left: 17.4, right: 17.4, height: 2, backgroundColor: "#2D2729", borderRadius: 1, overflow: "hidden" },
   played: { height: 2, backgroundColor: "#A5A5A5" },
 });

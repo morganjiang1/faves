@@ -15,7 +15,7 @@ import { CITY_INDEX } from "@/data/cities";
 import { useCity } from "@/state/city";
 import { useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 const STATE: Record<string, string> = {
   "new-york": "NY", "los-angeles": "CA", "san-francisco": "CA", chicago: "IL", seattle: "WA",
@@ -49,7 +49,7 @@ export default function CityPicker() {
     <SafeAreaView style={styles.screen} testID="city-picker">
       <View style={styles.nav}>
         <Pressable testID="city-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={close}>
-          <Icon name="chevron-back" size={30} tint="#000" />
+          <Icon name="chevron-back" size={30} tint={palette.ink} />
         </Pressable>
       </View>
       <Text style={styles.title} accessibilityRole="header">Where are you hanging out?</Text>
@@ -99,13 +99,13 @@ export default function CityPicker() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   nav: { height: 48, justifyContent: "center", paddingHorizontal: 14 },
-  title: { fontFamily: font.serif, fontSize: 31, lineHeight: 36, color: "#111", paddingHorizontal: 24, marginTop: 52 },
+  title: { fontFamily: font.serif, fontSize: 31, lineHeight: 36, color: palette.ink, paddingHorizontal: 24, marginTop: 52 },
   body: { fontFamily: font.sans, fontSize: 17, lineHeight: 22, color: color.emptyBody, paddingHorizontal: 24, marginTop: 10 },
-  row: { height: 49, flexDirection: "row", alignItems: "center", marginLeft: 24, marginRight: 22, paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: "#E3E3E6" },
+  row: { height: 49, flexDirection: "row", alignItems: "center", marginLeft: 24, marginRight: 22, paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: palette.line },
   rowFirst: {},
-  rowText: { flex: 1, fontFamily: font.sans, fontSize: 17, color: "#111" },
+  rowText: { flex: 1, fontFamily: font.sans, fontSize: 17, color: palette.ink },
   rowTextOn: { fontWeight: "700" },
   count: { fontFamily: font.sans, fontSize: 14, color: color.textMuted, marginLeft: 8 },
   fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 110 },

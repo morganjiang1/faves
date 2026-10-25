@@ -8,7 +8,7 @@ import * as Linking from "expo-linking";
 import { useState } from "react";
 import { Modal, Platform, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 import { Grabber, Icon, PlaceImage, type IconName } from "./ui";
 
 export function ShareSheet({ open, onClose, title = "Share Link", subtitle, url, cardTitle, image, category = "views", message }: { open: boolean; onClose: () => void; title?: string; subtitle: string; url: string; cardTitle: string; image?: string | null; category?: string; message?: string }) {
@@ -46,7 +46,7 @@ export function ShareSheet({ open, onClose, title = "Share Link", subtitle, url,
             <Target testID="share-copy" icon={copied ? "checkmark" : "link"} label={copied ? "Copied" : "Copy Link"} bg={color.copyLink} tint="#fff" onPress={copy} />
             <Target testID="share-messages" icon="chatbubble" label="Messages" bg={color.messages} tint="#fff" onPress={sms} />
             <Target testID="share-whatsapp" icon="logo-whatsapp" label="WhatsApp" bg={color.whatsapp} tint="#fff" onPress={whatsapp} />
-            <Target testID="share-more" icon="share-outline" label="More" bg="#fff" tint="#000" ring onPress={more} />
+            <Target testID="share-more" icon="share-outline" label="More" bg="#fff" tint={palette.ink} ring onPress={more} />
           </View>
         </View>
       </View>
@@ -57,7 +57,7 @@ export function ShareSheet({ open, onClose, title = "Share Link", subtitle, url,
 function Target({ icon, label, bg, tint, ring, onPress, testID }: { icon: IconName; label: string; bg: string; tint: string; ring?: boolean; onPress: () => void; testID: string }) {
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{ alignItems: "center", width: 80, gap: 8 }}>
-      <View style={[styles.circle, { backgroundColor: bg }, ring && { borderWidth: 1, borderColor: "#DDD" }]}><Icon name={icon} size={22} tint={tint} /></View>
+      <View style={[styles.circle, { backgroundColor: bg }, ring && { borderWidth: 1, borderColor: palette.line }]}><Icon name={icon} size={22} tint={tint} /></View>
       <Text style={styles.targetLabel}>{label}</Text>
     </Pressable>
   );
@@ -67,10 +67,10 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, justifyContent: "flex-end", alignItems: "center" },
   scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: color.scrim },
   sheet: { width: "100%", maxWidth: Platform.OS === "web" ? 520 : undefined, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden", alignItems: "center", paddingHorizontal: 20 },
-  title: { fontFamily: font.sans, fontSize: 22, fontWeight: "700", color: "#000", marginTop: 14 },
+  title: { fontFamily: font.sans, fontSize: 22, fontWeight: "700", color: palette.ink, marginTop: 14 },
   subtitle: { fontFamily: font.sans, fontSize: 15, color: color.shareSub, marginTop: 6, textAlign: "center" },
-  card: { width: 236, borderRadius: 9.5, backgroundColor: "#fff", overflow: "hidden", marginTop: 24, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  cardTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#000" },
+  card: { width: 236, borderRadius: 9.5, backgroundColor: palette.card, overflow: "hidden", marginTop: 24, shadowColor: palette.ink, shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  cardTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: palette.ink },
   cardDomain: { fontFamily: font.sans, fontSize: 14, color: color.shareLabel, marginTop: 2 },
   targets: { flexDirection: "row", justifyContent: "space-between", alignSelf: "stretch", marginTop: 28, paddingHorizontal: 4 },
   circle: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },

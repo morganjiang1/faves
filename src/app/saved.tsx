@@ -30,7 +30,7 @@ import { shareUrl } from "@/lib/links";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation } from "@/state/device";
 import { useStore } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 type Mode = "spots" | "days";
 const LIST_EMOJI = "🔖";
@@ -130,9 +130,9 @@ function Spots() {
       <View style={styles.countRow}>
         <Text style={styles.count}>{places.length} {places.length === 1 ? "place" : "places"}{elsewhere ? ` (+${elsewhere} in other cities)` : ""}</Text>
         <Pressable testID="saved-sort" accessibilityRole="button" accessibilityLabel={`Sort: ${sortLabel}`} onPress={() => setSortOpen(true)} style={styles.sortChip}>
-          <Icon name="checkmark" size={17} tint="#1D1D1D" />
+          <Icon name="checkmark" size={17} tint={palette.ink} />
           <Text style={styles.sortText}>{sortLabel}</Text>
-          <Icon name="caret-down" size={13} tint="#1D1D1D" />
+          <Icon name="caret-down" size={13} tint={palette.ink} />
         </Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
@@ -222,26 +222,26 @@ function Days() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   top: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 10 },
   emoji: { fontSize: 28 },
-  title: { flex: 1, fontFamily: font.sans, fontSize: 24, color: "#1D1D1D", marginLeft: 4 },
+  title: { flex: 1, fontFamily: font.sans, fontSize: 24, color: palette.ink, marginLeft: 4 },
   ownerRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18, marginTop: 14 },
-  owner: { fontFamily: font.sans, fontSize: 15, color: "#5D5D5D" },
-  desc: { fontFamily: font.sans, fontSize: 16, color: "#5D5D5D", paddingHorizontal: 18, marginTop: 12 },
+  owner: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft },
+  desc: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft, paddingHorizontal: 18, marginTop: 12 },
   chips: { paddingHorizontal: 18, gap: 8, paddingTop: 16, paddingBottom: 12 },
-  divider: { height: 1, backgroundColor: "#E3E3E3" },
+  divider: { height: 1, backgroundColor: palette.paperDeep },
   countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingTop: 12 },
-  count: { fontFamily: font.sans, fontSize: 16, color: "#5D5D5D", flexShrink: 1, marginRight: 8 },
-  sortChip: { height: 34, borderRadius: 8, backgroundColor: "#DEE4E4", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12 },
-  sortText: { fontFamily: font.sans, fontSize: 16, fontWeight: "500", color: "#1D1D1D" },
+  count: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft, flexShrink: 1, marginRight: 8 },
+  sortChip: { height: 34, borderRadius: 8, backgroundColor: palette.paperDeep, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12 },
+  sortText: { fontFamily: font.sans, fontSize: 16, fontWeight: "500", color: palette.ink },
   photoRow: { paddingHorizontal: 18, gap: 8, paddingTop: 14 },
   photo: { width: 148, height: 148, borderRadius: 8 },
   mapArea: { height: 360 },
-  overSheet: { flex: 1, marginTop: -24, backgroundColor: "#fff", borderTopLeftRadius: 30, borderTopRightRadius: 30 },
-  sortCard: { marginHorizontal: 16, backgroundColor: "#fff", borderRadius: 18, overflow: "hidden", marginBottom: 8 },
+  overSheet: { flex: 1, marginTop: -24, backgroundColor: palette.paper, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  sortCard: { marginHorizontal: 16, backgroundColor: palette.card, borderRadius: 18, overflow: "hidden", marginBottom: 8 },
   sortRow: { height: 45, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16 },
-  sortSep: { borderTopWidth: 1, borderTopColor: "#DFDFE1" },
-  sortRowText: { fontFamily: font.sans, fontSize: 17, color: "#000" },
+  sortSep: { borderTopWidth: 1, borderTopColor: palette.line },
+  sortRowText: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
 });

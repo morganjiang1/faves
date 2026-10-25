@@ -24,7 +24,7 @@ import { shareUrl } from "@/lib/links";
 import { cityClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useStore } from "@/state/store";
-import { CATEGORIES, color, font } from "@/theme/tokens";
+import { CATEGORIES, color, font, palette } from "@/theme/tokens";
 
 type Activity = { key: string; at: string; icon: "rank" | "post" | "plan"; verb: string; name: string; sub: string; score?: { value: string; tint: string }; onPress: () => void };
 
@@ -68,8 +68,8 @@ export default function Profile() {
       <View style={styles.nav}>
         <Text style={styles.navName} numberOfLines={1} accessibilityRole="header">{profile.name || "Your profile"}</Text>
         <View style={{ flexDirection: "row", gap: 20 }}>
-          <Pressable testID="profile-share-icon" accessibilityRole="button" accessibilityLabel="Share profile" hitSlop={8} onPress={() => setShare(true)}><Icon name="share-outline" size={25} tint="#000" /></Pressable>
-          <Pressable testID="profile-menu" accessibilityRole="button" accessibilityLabel="Settings" hitSlop={8} onPress={() => router.push("/settings")}><Icon name="menu-outline" size={28} tint="#000" /></Pressable>
+          <Pressable testID="profile-share-icon" accessibilityRole="button" accessibilityLabel="Share profile" hitSlop={8} onPress={() => setShare(true)}><Icon name="share-outline" size={25} tint={palette.ink} /></Pressable>
+          <Pressable testID="profile-menu" accessibilityRole="button" accessibilityLabel="Settings" hitSlop={8} onPress={() => router.push("/settings")}><Icon name="menu-outline" size={28} tint={palette.ink} /></Pressable>
         </View>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }} testID="profile-scroll">
@@ -152,7 +152,7 @@ export default function Profile() {
 // at the right, grey date.
 function ActivityRow({ a, name, testID }: { a: Activity; name: string; testID: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={`You ${a.verb} ${a.name}`} onPress={a.onPress} style={({ pressed }) => [styles.activity, pressed && { backgroundColor: "#FAFAFA" }]}>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={`You ${a.verb} ${a.name}`} onPress={a.onPress} style={({ pressed }) => [styles.activity, pressed && { backgroundColor: palette.paperDeep }]}>
       <Avatar name={name} size={44} />
       <View style={{ flex: 1 }}>
         <Text style={styles.actText}><Text style={{ fontWeight: "700" }}>You</Text> {a.verb} <Text style={{ fontWeight: "700" }}>{a.name}</Text></Text>
@@ -165,21 +165,21 @@ function ActivityRow({ a, name, testID }: { a: Activity; name: string; testID: s
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   nav: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
-  navName: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: "#000", flex: 1, marginRight: 12 },
+  navName: { fontFamily: font.sans, fontSize: 20, fontWeight: "700", color: palette.ink, flex: 1, marginRight: 12 },
   center: { alignItems: "center", paddingHorizontal: 20, paddingTop: 2 },
   handle: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: color.text, marginTop: 12 },
   since: { fontFamily: font.sans, fontSize: 16, color: color.textMuted, marginTop: 3 },
-  interests: { fontFamily: font.sans, fontSize: 15, color: "#000", marginTop: 6, textAlign: "center" },
+  interests: { fontFamily: font.sans, fontSize: 15, color: palette.ink, marginTop: 6, textAlign: "center" },
   buttons: { flexDirection: "row", gap: 5, marginTop: 12, width: 245 },
   stats: { flexDirection: "row", paddingHorizontal: 16, marginTop: 22, marginBottom: 18 },
-  rows: { borderTopWidth: 1, borderTopColor: "#D0CFD3", borderBottomWidth: 1, borderBottomColor: "#D0CFD3" },
+  rows: { borderTopWidth: 1, borderTopColor: palette.line, borderBottomWidth: 1, borderBottomColor: palette.line },
   cards: { flexDirection: "row", gap: 10, paddingHorizontal: 12, marginTop: 18 },
   activity: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: color.divider },
-  actText: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: "#000" },
+  actText: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.ink },
   actSub: { fontFamily: font.sans, fontSize: 14, color: color.textMuted, marginTop: 2 },
-  actDate: { fontFamily: font.sans, fontSize: 13, color: "#9B9DA6", marginTop: 6 },
+  actDate: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 6 },
   actIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: color.border, alignItems: "center", justifyContent: "center" },
   emptyActivity: { alignItems: "center", paddingHorizontal: 32, paddingVertical: 28 },
   emptyTitle: { fontFamily: font.serif, fontSize: 20, color: color.text },

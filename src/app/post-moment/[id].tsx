@@ -29,12 +29,12 @@ import { openDirections } from "@/lib/links";
 import { useCity } from "@/state/city";
 import { currentLocation, useCityClock, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { font } from "@/theme/tokens";
+import { font, palette } from "@/theme/tokens";
 
 type Shot = { uri: string; kind: "photo" | "video"; seconds: number };
 const MAX_SECONDS = 15;
-const YELLOW = "#DEE532"; // BeReal's selected mode label
-const RECORD_RED = "#FE2C55"; // TikTok's record button
+const YELLOW = palette.sunset; // the selected mode label
+const RECORD_RED = palette.rose; // the record button
 
 export default function PostMoment() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -285,7 +285,7 @@ function Capture({ place, demo, onClose, online }: { place: Place; demo: boolean
             onChangeText={setCaption}
             maxLength={120}
             placeholder="Add a caption..."
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={palette.inkMuted}
             style={[styles.caption, { width: w - 24 }, Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null]}
           />
           <View style={[styles.finder, { width: w, height: h }]} testID="post-preview">
@@ -421,29 +421,29 @@ const styles = StyleSheet.create({
   postHead: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12 },
   postAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#333" },
   postName: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#fff" },
-  postLate: { fontFamily: font.sans, fontSize: 13, color: "#BABABD", marginTop: 1 },
+  postLate: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 1 },
   card: { marginHorizontal: 18, aspectRatio: 3 / 4, borderRadius: 16.4, overflow: "hidden", backgroundColor: "#1C1C1E", justifyContent: "center" },
   cardInner: { alignItems: "center", paddingHorizontal: 26 },
   cardTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#fff", marginTop: 12 },
   cardLine: { fontFamily: font.sans, fontSize: 14, lineHeight: 19, color: "#fff", textAlign: "center", marginTop: 6 },
-  cardButton: { marginTop: 22, width: 117, height: 35, borderRadius: 11, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  cardButtonText: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: "#000" },
+  cardButton: { marginTop: 22, width: 117, height: 35, borderRadius: 11, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
+  cardButtonText: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.ink },
   notNow: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: "rgba(255,255,255,0.85)", textAlign: "center" },
   demoRow: { paddingHorizontal: 28, paddingTop: 18 },
-  demoText: { fontFamily: font.sans, fontSize: 13, lineHeight: 18, color: "#8E8E93", textAlign: "center" },
+  demoText: { fontFamily: font.sans, fontSize: 13, lineHeight: 18, color: palette.inkMuted, textAlign: "center" },
   demoLink: { color: "#fff", fontWeight: "700", textDecorationLine: "underline" },
   promptWrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 34, paddingBottom: 60 },
-  prompt: { width: "100%", maxWidth: 300, backgroundColor: "#fff", borderRadius: 14, paddingTop: 20, overflow: "hidden" },
-  promptTitle: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "700", color: "#000", textAlign: "center", paddingHorizontal: 18 },
-  promptBody: { fontFamily: font.sans, fontSize: 14, lineHeight: 19, color: "#222", textAlign: "center", paddingHorizontal: 18, marginTop: 8 },
-  mini: { marginTop: 16, marginHorizontal: 18, borderRadius: 12, backgroundColor: "#F2F2F7", padding: 10, gap: 8 },
-  miniTitle: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: "#000", textAlign: "center" },
-  miniRow: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#fff", borderRadius: 8, paddingHorizontal: 8, height: 34 },
-  miniIcon: { width: 20, height: 20, borderRadius: 5, backgroundColor: "#007AFF", alignItems: "center", justifyContent: "center" },
-  miniLabel: { flex: 1, fontFamily: font.sans, fontSize: 13, color: "#000" },
+  prompt: { width: "100%", maxWidth: 300, backgroundColor: palette.card, borderRadius: 14, paddingTop: 20, overflow: "hidden" },
+  promptTitle: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "700", color: palette.ink, textAlign: "center", paddingHorizontal: 18 },
+  promptBody: { fontFamily: font.sans, fontSize: 14, lineHeight: 19, color: palette.ink, textAlign: "center", paddingHorizontal: 18, marginTop: 8 },
+  mini: { marginTop: 16, marginHorizontal: 18, borderRadius: 12, backgroundColor: palette.paperDeep, padding: 10, gap: 8 },
+  miniTitle: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.ink, textAlign: "center" },
+  miniRow: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: palette.card, borderRadius: 8, paddingHorizontal: 8, height: 34 },
+  miniIcon: { width: 20, height: 20, borderRadius: 5, backgroundColor: palette.roseInk, alignItems: "center", justifyContent: "center" },
+  miniLabel: { flex: 1, fontFamily: font.sans, fontSize: 13, color: palette.ink },
   miniValue: { borderWidth: 1, borderStyle: "dashed", borderColor: "#3A8FB7", borderRadius: 12, paddingHorizontal: 8, height: 24, justifyContent: "center" },
-  miniValueText: { fontFamily: font.sans, fontSize: 12, color: "#8E8E93" },
-  promptButtons: { flexDirection: "row", marginTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#D1D1D6" },
+  miniValueText: { fontFamily: font.sans, fontSize: 12, color: palette.inkMuted },
+  promptButtons: { flexDirection: "row", marginTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line },
   promptButton: { flex: 1, height: 48, alignItems: "center", justifyContent: "center" },
   promptButtonText: { fontFamily: font.sans, fontSize: 16, color: "#3A8FB7" },
   finder: { borderRadius: 18, overflow: "hidden", backgroundColor: "#111", alignSelf: "center" },
@@ -455,10 +455,10 @@ const styles = StyleSheet.create({
   timerText: { fontFamily: font.sans, color: "#fff", fontSize: 13, fontWeight: "700" },
   modes: { flexDirection: "row", justifyContent: "center", gap: 32, marginTop: 18 },
   mode: { fontFamily: font.sans, fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: 0.3 },
-  webNote: { fontFamily: font.sans, fontSize: 12, color: "#8E8E93", textAlign: "center", marginTop: 6 },
+  webNote: { fontFamily: font.sans, fontSize: 12, color: palette.inkMuted, textAlign: "center", marginTop: 6 },
   shutterArea: { position: "absolute", left: 0, right: 0, alignItems: "center" },
-  shutter: { width: 77.6, height: 77.6, borderRadius: 38.8, borderWidth: 4, borderColor: "#fff", alignItems: "center", justifyContent: "center" },
-  shutterDisc: { width: 61.6, height: 61.6, borderRadius: 30.8, backgroundColor: "#fff" },
+  shutter: { width: 77.6, height: 77.6, borderRadius: 38.8, borderWidth: 4, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
+  shutterDisc: { width: 61.6, height: 61.6, borderRadius: 30.8, backgroundColor: palette.card },
   demoBadge: { position: "absolute", top: 8, left: 0, right: 0, alignItems: "center" },
   caption: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: "#fff", paddingVertical: 10 },
   chips: { position: "absolute", left: 12, right: 12, bottom: 14, flexDirection: "row", alignItems: "center", gap: 8 },
@@ -467,5 +467,5 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" },
   send: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 28, paddingHorizontal: 20, paddingVertical: 6 },
   sendText: { fontFamily: font.sans, fontSize: 38, fontWeight: "900", color: "#fff", letterSpacing: 0.5 },
-  sendNote: { fontFamily: font.sans, fontSize: 13, color: "#8E8E93", marginTop: 8, textAlign: "center", paddingHorizontal: 24 },
+  sendNote: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 8, textAlign: "center", paddingHorizontal: 24 },
 });

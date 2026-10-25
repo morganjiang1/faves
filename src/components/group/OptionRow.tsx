@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, typ
 import { Icon } from "@/components/ui";
 import { tally, tallyLine } from "@/lib/group";
 import type { Group } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 const FW = 220, FH = 117, SW = 163, SH = 98, GAP = 10, SLOT = FW + GAP;
 
@@ -71,10 +71,10 @@ export function OptionRow({ group, stop, label, options, info, onOpen, testID }:
 
 const s = StyleSheet.create({
   rowLabel: { fontFamily: font.sans, color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700", letterSpacing: 0.8, textAlign: "center", marginTop: 16, marginBottom: 8 },
-  focused: { width: FW, height: FH, borderRadius: 6, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
+  focused: { width: FW, height: FH, borderRadius: 6, backgroundColor: palette.card, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
   side: { width: SW, height: SH, borderRadius: 6, backgroundColor: color.partifulSide, alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
-  title: { fontFamily: font.sans, fontSize: 19, lineHeight: 24, fontWeight: "600", color: "#000", textAlign: "center" },
-  sideTitle: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, fontWeight: "600", color: "#000", textAlign: "center" },
+  title: { fontFamily: font.sans, fontSize: 19, lineHeight: 24, fontWeight: "600", color: palette.ink, textAlign: "center" },
+  sideTitle: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, fontWeight: "600", color: palette.ink, textAlign: "center" },
   tallyRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
   tally: { fontFamily: font.sans, fontSize: 16, color: color.pollText },
   sideTally: { fontFamily: font.sans, fontSize: 13, color: color.pollText },

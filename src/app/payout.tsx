@@ -17,7 +17,7 @@ import { EmptyState, Icon, OfflineBanner, PrimaryButton, SampleTag } from "@/com
 import { balance, money, RATES } from "@/lib/rewards";
 import { useOnline } from "@/state/device";
 import { actions, getState, useStore } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 const noOutline = Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null;
 
@@ -107,7 +107,7 @@ export default function Payout() {
             style={[styles.amount, noOutline, { width: Math.ceil(width) + 6 }]}
           />
           <Pressable testID="payout-clear" accessibilityRole="button" accessibilityLabel="Clear amount" hitSlop={10} onPress={() => setText("")} style={styles.clear}>
-            <Icon name="close-circle" size={20} tint="#9B9B9F" />
+            <Icon name="close-circle" size={20} tint={palette.inkMuted} />
           </Pressable>
         </View>
         <Text testID="payout-helper" style={[styles.helper, problem && text ? { color: color.closed } : null]}>{problem && text ? problem : `${money(ready)} ready to cash out`}</Text>
@@ -126,9 +126,9 @@ export default function Payout() {
       <Pressable testID="payout-transfer-to" accessibilityRole="button" accessibilityLabel={`Transfer to ${method.label}. Change`} onPress={() => setSheet(true)} style={styles.rowLine}>
         <Text style={styles.rowLabel}>Transfer to</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Icon name={method.icon} size={18} tint="#22202D" />
+          <Icon name={method.icon} size={18} tint={palette.ink} />
           <Text style={styles.rowValue}>{method.label}</Text>
-          <Icon name="chevron-forward" size={18} tint="#8A8A8E" />
+          <Icon name="chevron-forward" size={18} tint={palette.inkMuted} />
         </View>
       </Pressable>
       <View style={styles.hair} />
@@ -162,31 +162,31 @@ export default function Payout() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
-  nav: { height: 48, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#D6D6D8", paddingHorizontal: 12 },
+  screen: { flex: 1, backgroundColor: palette.paper },
+  nav: { height: 48, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line, paddingHorizontal: 12 },
   navSide: { width: 40, height: 40, justifyContent: "center" },
-  navTitle: { flex: 1, textAlign: "center", fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: "#000" },
+  navTitle: { flex: 1, textAlign: "center", fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: palette.ink },
   amountWrap: { alignItems: "center", marginTop: 96, marginBottom: 56 },
   amountRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "center" },
-  dollar: { fontFamily: font.sans, fontSize: 24, fontWeight: "400", color: "#000", marginTop: 8, marginRight: 2 },
-  amount: { fontFamily: font.sans, fontSize: 56, lineHeight: 66, fontWeight: "400", color: "#000", padding: 0, textAlign: "center", letterSpacing: -1 },
+  dollar: { fontFamily: font.sans, fontSize: 24, fontWeight: "400", color: palette.ink, marginTop: 8, marginRight: 2 },
+  amount: { fontFamily: font.sans, fontSize: 56, lineHeight: 66, fontWeight: "400", color: palette.ink, padding: 0, textAlign: "center", letterSpacing: -1 },
   measure: { position: "absolute", opacity: 0, left: 0, top: 0 },
   clear: { marginTop: 14, marginLeft: 6 },
-  helper: { fontFamily: font.sans, fontSize: 15, color: "#6B6B6F", marginTop: 8 },
+  helper: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, marginTop: 8 },
   cards: { flexDirection: "row", gap: 16, paddingHorizontal: 10 },
   rowLine: { minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 12 },
-  rowLabel: { fontFamily: font.sans, fontSize: 17, color: "#000" },
-  rowValue: { fontFamily: font.sans, fontSize: 17, color: "#2B2B2E" },
-  hair: { height: 1, backgroundColor: "#ECECEE", marginHorizontal: 12 },
+  rowLabel: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  rowValue: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  hair: { height: 1, backgroundColor: palette.paperDeep, marginHorizontal: 12 },
   footer: { paddingHorizontal: 8, paddingBottom: 12, gap: 10 },
-  note: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: "#000", textAlign: "center", paddingHorizontal: 20 },
+  note: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: palette.ink, textAlign: "center", paddingHorizontal: 20 },
   testRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   testText: { fontFamily: font.sans, fontSize: 13, color: color.textSub },
   doneBody: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, paddingBottom: 80 },
   doneAmount: { fontFamily: font.sans, fontSize: 40, fontWeight: "800", color: color.score, marginTop: 64, letterSpacing: -0.5 },
-  doneLine: { fontFamily: font.sans, fontSize: 18, color: "#2B2B2E", marginTop: 6 },
+  doneLine: { fontFamily: font.sans, fontSize: 18, color: palette.ink, marginTop: 6 },
   doneSub: { fontFamily: font.sans, fontSize: 15, color: color.textSub, marginTop: 6 },
   sheetHead: { paddingHorizontal: 20.6, paddingTop: 10, paddingBottom: 22 },
-  sheetTitle: { fontFamily: font.sans, fontSize: 23, fontWeight: "700", color: "#252525" },
-  sheetSub: { fontFamily: font.sans, fontSize: 15, color: "#464356", marginTop: 6 },
+  sheetTitle: { fontFamily: font.sans, fontSize: 23, fontWeight: "700", color: palette.ink },
+  sheetSub: { fontFamily: font.sans, fontSize: 15, color: palette.inkSoft, marginTop: 6 },
 });

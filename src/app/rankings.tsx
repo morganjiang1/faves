@@ -25,7 +25,7 @@ import { costOf } from "@/lib/score";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { useStore, type Ranked } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 type Tab = "mine" | "board";
 type Metric = "days" | "influence" | "loves";
@@ -43,13 +43,13 @@ export default function Rankings() {
     <SafeAreaView style={styles.screen} edges={["top"]} testID="rankings-screen">
       <View style={styles.nav}>
         <Pressable testID="rankings-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={back} style={{ width: 40 }}>
-          <Icon name="chevron-back" size={28} tint="#000" />
+          <Icon name="chevron-back" size={28} tint={palette.ink} />
         </Pressable>
         <Text style={styles.navTitle} accessibilityRole="header">RANKINGS</Text>
         <View style={{ width: 40, alignItems: "flex-end" }}>
           {rankings.length ? (
             <Pressable testID="rankings-share" accessibilityRole="button" accessibilityLabel="Share your rankings" hitSlop={8} onPress={() => setShare(true)}>
-              <Icon name="share-outline" size={24} tint="#000" />
+              <Icon name="share-outline" size={24} tint={palette.ink} />
             </Pressable>
           ) : null}
         </View>
@@ -125,7 +125,7 @@ function RankRow({ r, rank, score, meta, testID }: { r: Ranked; rank: number; sc
   const place = city && city.slug === r.city ? city.byId.get(r.placeId) : undefined;
   const dollars = place ? costOf(place).dollars : null;
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={`${rank}. ${r.name}`} onPress={() => router.push(`/place/${encodeURIComponent(r.placeId)}`)} style={({ pressed }) => [styles.row, pressed && { backgroundColor: "#FAFAFA" }]}>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={`${rank}. ${r.name}`} onPress={() => router.push(`/place/${encodeURIComponent(r.placeId)}`)} style={({ pressed }) => [styles.row, pressed && { backgroundColor: palette.paperDeep }]}>
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1, gap: 1 }}>
           <Text style={styles.rowName} numberOfLines={2}>{rank}. {r.name}</Text>
@@ -180,7 +180,7 @@ function Board() {
           <View key={r.handle} style={styles.boardRow} testID={`board-row-${i}`} accessibilityLabel={`${i + 1}. @${r.handle}, ${r[metric]}`}>
             <Text style={styles.boardRank}>{i + 1}</Text>
             <Avatar name={r.name} size={30} />
-            <Text style={[styles.boardHandle, !r.sample && { color: "#000", fontWeight: "600" }]} numberOfLines={1}>@{r.handle}{r.sample ? "" : " (you)"}</Text>
+            <Text style={[styles.boardHandle, !r.sample && { color: palette.ink, fontWeight: "600" }]} numberOfLines={1}>@{r.handle}{r.sample ? "" : " (you)"}</Text>
             {r.sample ? <View><SampleTag /></View> : null}
             <Text style={styles.boardCount}>{r[metric]}</Text>
           </View>
@@ -190,30 +190,30 @@ function Board() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   nav: { height: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12 },
-  navTitle: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: "#222428", letterSpacing: 0.8 },
+  navTitle: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: palette.ink, letterSpacing: 0.8 },
   sortRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingTop: 14 },
   sortText: { fontFamily: font.sans, fontSize: 16, fontWeight: "500", color: color.brandDeep, letterSpacing: 0.4 },
-  progress: { marginHorizontal: 12, marginTop: 12, borderWidth: 1, borderColor: "#E9E9E9", borderRadius: 8, paddingHorizontal: 32, paddingTop: 18, paddingBottom: 14 },
-  progressPre: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: "#8D8C8C" },
+  progress: { marginHorizontal: 12, marginTop: 12, borderWidth: 1, borderColor: palette.line, borderRadius: 8, paddingHorizontal: 32, paddingTop: 18, paddingBottom: 14 },
+  progressPre: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.inkMuted },
   progressTitle: { fontFamily: font.sans, fontSize: 17, fontWeight: "700", color: "#1F4F55", marginTop: 2 },
-  track: { height: 19, borderRadius: 10, backgroundColor: "#EBE8EF", marginTop: 16, justifyContent: "center" },
+  track: { height: 19, borderRadius: 10, backgroundColor: palette.paperDeep, marginTop: 16, justifyContent: "center" },
   fill: { position: "absolute", left: 0, top: 0, bottom: 0, borderRadius: 10, backgroundColor: "#487078" },
   milestone: { position: "absolute", width: 12, height: 12, borderRadius: 6, marginLeft: -6, backgroundColor: "#807F85" },
   milestoneLabels: { height: 18, marginTop: 6 },
-  milestoneText: { position: "absolute", fontFamily: font.sans, fontSize: 12, color: "#8A8A8E" },
+  milestoneText: { position: "absolute", fontFamily: font.sans, fontSize: 12, color: palette.inkMuted },
   progressCount: { fontFamily: font.sans, fontSize: 13, lineHeight: 18, color: color.textMuted, marginTop: 4 },
-  row: { paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#F7F7FA" },
-  rowName: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "700", color: "#000" },
-  rowLine: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: "#222428" },
-  rowMeta: { fontFamily: font.sans, fontSize: 15, color: "#989AA2", marginTop: 18 },
-  boardTitle: { fontFamily: font.serif, fontSize: 30, lineHeight: 38, color: "#000", paddingHorizontal: 22, marginTop: 26, marginBottom: 16 },
+  row: { paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: palette.line },
+  rowName: { fontFamily: font.sans, fontSize: 18, lineHeight: 23, fontWeight: "700", color: palette.ink },
+  rowLine: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.ink },
+  rowMeta: { fontFamily: font.sans, fontSize: 15, color: palette.inkMuted, marginTop: 18 },
+  boardTitle: { fontFamily: font.serif, fontSize: 30, lineHeight: 38, color: palette.ink, paddingHorizontal: 22, marginTop: 26, marginBottom: 16 },
   caption: { fontFamily: font.sans, fontSize: 16, color: color.textMuted, marginTop: 14 },
   sampleNote: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, marginBottom: 6 },
   sampleText: { fontFamily: font.sans, fontSize: 13, color: color.textMuted, flex: 1 },
   boardRow: { height: 54, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 16, gap: 12 },
-  boardRank: { width: 30, fontFamily: font.sans, fontSize: 16, color: "#848486" },
-  boardHandle: { flexShrink: 1, fontFamily: font.sans, fontSize: 16, color: "#7E7E7E", marginLeft: 1 },
-  boardCount: { marginLeft: "auto", fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000" },
+  boardRank: { width: 30, fontFamily: font.sans, fontSize: 16, color: palette.inkMuted },
+  boardHandle: { flexShrink: 1, fontFamily: font.sans, fontSize: 16, color: palette.inkMuted, marginLeft: 1 },
+  boardCount: { marginLeft: "auto", fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: palette.ink },
 });

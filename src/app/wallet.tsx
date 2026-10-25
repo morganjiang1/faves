@@ -14,7 +14,7 @@ import { EmptyState, ErrorState, Icon, OfflineBanner, SampleTag, SkeletonRows, T
 import { balance, money, RATES, seedWallet } from "@/lib/rewards";
 import { useOnline } from "@/state/device";
 import { actions, useStore, type Wallet, type WalletEntry } from "@/state/store";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 // Test data is seeded once per session when the wallet is empty, so "Clear test data" can
 // show the real empty state until the app restarts.
@@ -59,7 +59,7 @@ export default function WalletScreen() {
   const nav = (
     <View style={styles.nav}>
       <Pressable testID="wallet-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={back}>
-        <Icon name="chevron-back" size={28} tint="#282F37" />
+        <Icon name="chevron-back" size={28} tint={palette.ink} />
       </Pressable>
       <Pressable testID="wallet-help" accessibilityRole="button" accessibilityLabel="How you earn" hitSlop={10} onPress={() => scroll.current?.scrollTo({ y: earnY, animated: true })}>
         <Text style={styles.help}>Help</Text>
@@ -157,15 +157,15 @@ const FAIR = [
 const FAIR_ICONS = ["heart-dislike-outline", "location-outline", "person-outline", "time-outline", "eye-outline", "shield-checkmark-outline"] as const;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
+  screen: { flex: 1, backgroundColor: palette.paper },
   nav: { height: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14 },
   help: { fontFamily: font.sans, fontSize: 18, color: color.brand },
-  title: { fontFamily: font.sans, fontSize: 32, lineHeight: 38, fontWeight: "700", color: "#282F37", textAlign: "center", marginTop: 4, marginBottom: 24 },
+  title: { fontFamily: font.sans, fontSize: 32, lineHeight: 38, fontWeight: "700", color: palette.ink, textAlign: "center", marginTop: 4, marginBottom: 24 },
   cash: { marginTop: 30, marginHorizontal: 25, height: 40, borderRadius: 20, backgroundColor: color.brand, alignItems: "center", justifyContent: "center" },
   cashLabel: { fontFamily: font.sans, color: "#fff", fontSize: 18, fontWeight: "600" },
   testNote: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 25, marginTop: 14 },
   testText: { flex: 1, fontFamily: font.sans, fontSize: 13, lineHeight: 17, color: color.textSub },
-  plusOn: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 25, marginBottom: 4, backgroundColor: "#EEF3F4", borderRadius: 8, padding: 10 },
+  plusOn: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 25, marginBottom: 4, backgroundColor: palette.paperDeep, borderRadius: 8, padding: 10 },
   plusOnText: { flex: 1, fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: color.brand },
   footer: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: 24 },
 });

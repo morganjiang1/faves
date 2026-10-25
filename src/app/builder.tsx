@@ -23,7 +23,7 @@ import { formatClock } from "@/lib/time";
 import { useCity } from "@/state/city";
 import { useKnownLocation, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
-import { categoryInfo, color, font } from "@/theme/tokens";
+import { categoryInfo, color, font, palette } from "@/theme/tokens";
 
 const SUGGESTIONS = [
   "First date in the Mission: something fun, dinner and a view",
@@ -158,12 +158,12 @@ export default function Builder() {
     const order: Step[] = ["who", "when", "vibe", "move", "musts"];
     const title = { who: "Who's coming?", when: "When are you going?", vibe: "What's the vibe?", move: "How are you getting around?", musts: "Anything you have to do?" }[step as "who"];
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} testID={`builder-${step}`}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} testID={`builder-${step}`}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
           <View style={styles.qNav}>
-            <Pressable testID="builder-back" accessibilityLabel="Back" hitSlop={10} onPress={() => { const i = order.indexOf(step); setStep(i > 0 ? order[i - 1] : "ask"); }}><Icon name="chevron-back" size={24} tint="#222" /></Pressable>
+            <Pressable testID="builder-back" accessibilityLabel="Back" hitSlop={10} onPress={() => { const i = order.indexOf(step); setStep(i > 0 ? order[i - 1] : "ask"); }}><Icon name="chevron-back" size={24} tint={palette.ink} /></Pressable>
             <Text style={styles.qProgress}>{order.indexOf(step) + 1} of {order.length}</Text>
-            <Pressable testID="builder-close" accessibilityLabel="Close" hitSlop={10} onPress={close}><Icon name="close" size={24} tint="#222" /></Pressable>
+            <Pressable testID="builder-close" accessibilityLabel="Close" hitSlop={10} onPress={close}><Icon name="close" size={24} tint={palette.ink} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 23, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
             <Text style={styles.qTitle}>{title}</Text>
@@ -198,20 +198,20 @@ export default function Builder() {
 
   // Ask Maps: greeting, suggestions, the glowing prompt card.
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} testID="builder-ask">
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} testID="builder-ask">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <View style={styles.askHeader}>
           <Icon name="sparkles" size={24} tint={color.askMapsBlue} />
           <Text style={styles.askTitle}>Plan a day</Text>
           <View style={{ flex: 1 }} />
-          <Pressable testID="builder-history" accessibilityLabel="Your past days" onPress={() => setHistory(true)} style={styles.askRound}><Icon name="time-outline" size={20} tint="#1F1F1F" /></Pressable>
-          <Pressable testID="builder-new" accessibilityLabel="Start over" onPress={() => setText("")} style={styles.askRound}><Icon name="create-outline" size={19} tint="#1F1F1F" /></Pressable>
-          <Pressable testID="builder-close" accessibilityLabel="Close" onPress={close} style={styles.askRound}><Icon name="close" size={20} tint="#1F1F1F" /></Pressable>
+          <Pressable testID="builder-history" accessibilityLabel="Your past days" onPress={() => setHistory(true)} style={styles.askRound}><Icon name="time-outline" size={20} tint={palette.ink} /></Pressable>
+          <Pressable testID="builder-new" accessibilityLabel="Start over" onPress={() => setText("")} style={styles.askRound}><Icon name="create-outline" size={19} tint={palette.ink} /></Pressable>
+          <Pressable testID="builder-close" accessibilityLabel="Close" onPress={close} style={styles.askRound}><Icon name="close" size={20} tint={palette.ink} /></Pressable>
         </View>
         <Sheet open={history} onClose={() => setHistory(false)} title="Your days" testID="history-sheet">
           {planOrder.length ? planOrder.slice(0, 20).map((id) => plans[id]).filter(Boolean).map((p) => (
             <Pressable key={p.id} testID={`history-${p.id}`} onPress={() => { setHistory(false); router.replace(`/plan/${p.id}`); }} style={styles.historyRow}>
-              <Icon name="calendar-outline" size={20} tint="#1F1F1F" />
+              <Icon name="calendar-outline" size={20} tint={palette.ink} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.historyTitle} numberOfLines={1}>{p.title}</Text>
                 <Text style={styles.historySub} numberOfLines={1}>{p.dayLabel} · {p.cityName} · "{p.request.raw}"</Text>
@@ -247,7 +247,7 @@ export default function Builder() {
                 value={text}
                 onChangeText={setText}
                 placeholder="pickleball then hot pot with 3 friends, cheap"
-                placeholderTextColor="#8A8A8A"
+                placeholderTextColor={palette.inkMuted}
                 multiline
                 style={styles.promptInput}
                 onSubmitEditing={() => build(text)}
@@ -272,7 +272,7 @@ function Field({ label, value, onChange, placeholder, testID }: { label: string;
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput testID={testID} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor="#9A9A9A" style={styles.fieldInput} />
+      <TextInput testID={testID} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={palette.inkMuted} style={styles.fieldInput} />
     </View>
   );
 }
@@ -308,12 +308,12 @@ function Building({ req, plan, failed, raw, cityName, spots, onEdit, onOpen }: {
   let left = shown;
   const chips = req && city ? requestChips(req, (m) => formatClock(m, { compact: true })) : [];
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} testID="builder-building">
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} testID="builder-building">
       <View style={styles.askHeader}>
         <Icon name="sparkles" size={24} tint={color.askMapsBlue} />
         <Text style={styles.askTitle}>Plan a day</Text>
         <View style={{ flex: 1 }} />
-        <Pressable testID="building-edit" accessibilityLabel="Edit request" onPress={onEdit} style={styles.askRound}><Icon name="create-outline" size={19} tint="#1F1F1F" /></Pressable>
+        <Pressable testID="building-edit" accessibilityLabel="Edit request" onPress={onEdit} style={styles.askRound}><Icon name="create-outline" size={19} tint={palette.ink} /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 6 }}>
         <View style={styles.userBubble}><Text style={styles.userText}>{raw}</Text></View>
@@ -358,17 +358,17 @@ function Building({ req, plan, failed, raw, cityName, spots, onEdit, onOpen }: {
 
 const styles = StyleSheet.create({
   askHeader: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6 },
-  askTitle: { fontFamily: font.sans, fontSize: 22, color: "#1F1F1F" },
-  askRound: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F2F2F2", alignItems: "center", justifyContent: "center", marginLeft: 8 },
-  historyRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F1F1F1" },
-  historyTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#1F1F1F" },
+  askTitle: { fontFamily: font.sans, fontSize: 22, color: palette.ink },
+  askRound: { width: 36, height: 36, borderRadius: 18, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center", marginLeft: 8 },
+  historyRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: palette.line },
+  historyTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: palette.ink },
   historySub: { fontFamily: font.sans, fontSize: 13, color: color.textSub, marginTop: 2 },
-  greeting: { fontFamily: font.sans, fontSize: 26, lineHeight: 32, color: "#1B1B1B", marginTop: 14, fontWeight: "500" },
+  greeting: { fontFamily: font.sans, fontSize: 26, lineHeight: 32, color: palette.ink, marginTop: 14, fontWeight: "500" },
   includedChip: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", backgroundColor: color.tonal, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginTop: 14, maxWidth: "100%" },
   includedText: { fontFamily: font.sans, fontSize: 15, color: color.tonalText, fontWeight: "600", flexShrink: 1 },
   suggestion: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
-  suggestionMark: { width: 14, height: 22, borderRadius: 7, backgroundColor: "#E3ECEB", marginTop: 1 },
-  suggestionText: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: "#1F1F1F", flex: 1 },
+  suggestionMark: { width: 14, height: 22, borderRadius: 7, backgroundColor: palette.paperDeep, marginTop: 1 },
+  suggestionText: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: palette.ink, flex: 1 },
   questionsLink: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 28 },
   questionsText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: color.brand },
   engine: { fontFamily: font.sans, fontSize: 13, color: color.textMuted, marginTop: 14 },
@@ -376,8 +376,8 @@ const styles = StyleSheet.create({
   glow: { position: "absolute", left: 4, right: 4, top: -8, bottom: 2, borderRadius: 34, backgroundColor: color.askMapsGlow, opacity: 0.7 },
   glowSmall: { position: "absolute", left: -6, right: -6, top: -6, bottom: -6, borderRadius: 30, backgroundColor: "#E8F0FF" },
   stroke: { borderRadius: 26, padding: 2.5 },
-  prompt: { backgroundColor: "#fff", borderRadius: 24, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 10 },
-  promptInput: { fontFamily: font.sans, fontSize: 19, color: "#000", minHeight: 56, maxHeight: 140, textAlignVertical: "top" },
+  prompt: { backgroundColor: palette.card, borderRadius: 24, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 10 },
+  promptInput: { fontFamily: font.sans, fontSize: 19, color: palette.ink, minHeight: 56, maxHeight: 140, textAlignVertical: "top" },
   promptRow: { flexDirection: "row", alignItems: "center" },
   send: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#F0F0FC", alignItems: "center", justifyContent: "center" },
   qNav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingVertical: 10 },
@@ -386,17 +386,17 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, borderWidth: 1, borderColor: color.airbnbBorder, paddingHorizontal: 25, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardOn: { borderWidth: 1.5, borderColor: color.airbnbText },
   cardLabel: { fontFamily: font.sans, fontSize: 19, fontWeight: "500", color: color.airbnbText },
-  qFooter: { flexDirection: "row", alignItems: "center", paddingHorizontal: 23, paddingVertical: 12, borderTopWidth: 1, borderTopColor: "#EBEBEB" },
+  qFooter: { flexDirection: "row", alignItems: "center", paddingHorizontal: 23, paddingVertical: 12, borderTopWidth: 1, borderTopColor: palette.line },
   qSummary: { fontFamily: font.sans, fontSize: 15, color: color.airbnbSub, marginTop: 8, lineHeight: 21 },
-  field: { borderWidth: 1, borderColor: "#C8CACC", borderRadius: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
-  fieldLabel: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: "#141719" },
-  fieldInput: { fontFamily: font.sans, fontSize: 17, color: "#141719", paddingVertical: 6 },
-  userBubble: { alignSelf: "flex-end", maxWidth: "88%", backgroundColor: "#F0F2F5", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 11, marginTop: 8 },
-  userText: { fontFamily: font.sans, fontSize: 17, color: "#1B1B1B", lineHeight: 23 },
+  field: { borderWidth: 1, borderColor: palette.line, borderRadius: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
+  fieldLabel: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.ink },
+  fieldInput: { fontFamily: font.sans, fontSize: 17, color: palette.ink, paddingVertical: 6 },
+  userBubble: { alignSelf: "flex-end", maxWidth: "88%", backgroundColor: palette.paperDeep, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 11, marginTop: 8 },
+  userText: { fontFamily: font.sans, fontSize: 17, color: palette.ink, lineHeight: 23 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
   reqChip: { backgroundColor: color.chipOff, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
-  reqChipText: { fontFamily: font.sans, fontSize: 13, color: "#000", fontWeight: "500" },
-  answer: { fontFamily: font.sans, fontSize: 17, lineHeight: 25, color: "#1B1B1B" },
+  reqChipText: { fontFamily: font.sans, fontSize: 13, color: palette.ink, fontWeight: "500" },
+  answer: { fontFamily: font.sans, fontSize: 17, lineHeight: 25, color: palette.ink },
   answerStop: { fontWeight: "600" },
   waiting: { fontFamily: font.sans, fontSize: 15, color: color.loadingRow, marginTop: 6 },
 });

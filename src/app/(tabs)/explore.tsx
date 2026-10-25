@@ -19,7 +19,7 @@ import { vibeLine } from "@/lib/score";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { useStore } from "@/state/store";
-import { CATEGORIES, categoryInfo, color, font, shadow, type CategoryId } from "@/theme/tokens";
+import { CATEGORIES, categoryInfo, color, font, palette, shadow, type CategoryId } from "@/theme/tokens";
 
 const SPORTS = ["pickleball", "tennis", "basketball"] as const;
 
@@ -104,7 +104,7 @@ export default function Explore() {
 
   const searchBar = (
     <View style={[styles.search, shadow.soft]}>
-      <TextInput testID="explore-search" value={query} onChangeText={setQuery} placeholder="hot pot, lit courts, rooftop" placeholderTextColor="#9A9A9A" style={styles.searchInput} returnKeyType="search" />
+      <TextInput testID="explore-search" value={query} onChangeText={setQuery} placeholder="hot pot, lit courts, rooftop" placeholderTextColor={palette.inkMuted} style={styles.searchInput} returnKeyType="search" />
       <Pressable accessibilityLabel="Ask the planner" onPress={() => router.push(query.trim() ? `/builder?q=${encodeURIComponent(query)}` : "/builder")} style={styles.searchGo}>
         <Icon name="sparkles" size={20} tint="#fff" />
       </Pressable>
@@ -126,7 +126,7 @@ export default function Explore() {
 
   if (mode === "list") {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]} testID="explore-list">
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} edges={["top"]} testID="explore-list">
         <View style={styles.listHeader}>
           <Pressable accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={10}><Icon name="chevron-back" size={26} /></Pressable>
           <View style={{ flex: 1, alignItems: "center" }}>{toggle}</View>
@@ -165,11 +165,11 @@ export default function Explore() {
       <SafeAreaView edges={["top"]} pointerEvents="box-none" style={styles.top}>
         <View style={styles.topRow} pointerEvents="box-none">
           <Pressable testID="explore-back" accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={[styles.round, shadow.soft]}>
-            <Icon name="chevron-back" size={22} tint="#000" />
+            <Icon name="chevron-back" size={22} tint={palette.ink} />
           </Pressable>
           {toggle}
           <Pressable testID="explore-locate" accessibilityLabel="Back to start" onPress={() => setSearchCenter(null)} style={[styles.round, shadow.soft]}>
-            <Icon name="navigate" size={20} tint="#000" />
+            <Icon name="navigate" size={20} tint={palette.ink} />
           </Pressable>
         </View>
         {moved ? (
@@ -223,30 +223,30 @@ function CatItem({ emoji, label, on, onPress, testID }: { emoji: string; label: 
 const styles = StyleSheet.create({
   top: { position: "absolute", top: 0, left: 0, right: 0 },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingTop: 6 },
-  round: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  round: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
   searchHere: { alignSelf: "center", marginTop: 12, height: 32, borderRadius: 16, backgroundColor: color.cornerSearchHere, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14 },
   searchHereText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600" },
   bottom: { position: "absolute", left: 0, right: 0, bottom: 0 },
   pills: { paddingHorizontal: 14, gap: 8, paddingVertical: 6 },
-  pill: { height: 30, borderRadius: 15, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12 },
-  pillText: { fontFamily: font.sans, fontSize: 16, color: "#000" },
-  beliChip: { height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#424242", backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
-  beliChipOn: { backgroundColor: "#EAEDEF", borderColor: "#A2ABC8" },
-  beliChipText: { fontFamily: font.sans, fontSize: 16, color: "#424242" },
+  pill: { height: 30, borderRadius: 15, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12 },
+  pillText: { fontFamily: font.sans, fontSize: 16, color: palette.ink },
+  beliChip: { height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#424242", backgroundColor: palette.card, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
+  beliChipOn: { backgroundColor: palette.paperDeep, borderColor: "#A2ABC8" },
+  beliChipText: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft },
   cats: { paddingHorizontal: 8, gap: 2, paddingVertical: 6 },
   cat: { width: 70, alignItems: "center", gap: 2 },
   catIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   catIconOn: { backgroundColor: "rgba(255,255,255,0.95)", borderWidth: 2, borderColor: "#000" },
-  catLabel: { fontFamily: font.sans, fontSize: 13, color: "#000", textShadowColor: "#fff", textShadowRadius: 4 },
+  catLabel: { fontFamily: font.sans, fontSize: 13, color: palette.ink, textShadowColor: "#fff", textShadowRadius: 4 },
   search: { height: 47, borderRadius: 24, backgroundColor: color.cornerSearch, flexDirection: "row", alignItems: "center", paddingLeft: 18, paddingRight: 3, marginTop: 4 },
   searchInput: { flex: 1, color: "#fff", fontSize: 17, fontFamily: font.sans, height: 47 },
   searchGo: { width: 41, height: 41, borderRadius: 21, backgroundColor: color.cornerBlue, alignItems: "center", justifyContent: "center" },
-  noResults: { marginHorizontal: 14, marginBottom: 6, backgroundColor: "#fff", borderRadius: 12, padding: 12 },
-  noResultsText: { fontFamily: font.sans, fontSize: 15, color: "#333" },
+  noResults: { marginHorizontal: 14, marginBottom: 6, backgroundColor: palette.card, borderRadius: 12, padding: 12 },
+  noResultsText: { fontFamily: font.sans, fontSize: 15, color: palette.ink },
   toggle: { flexDirection: "row", width: 200, height: 32 },
   toggleHalf: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   toggleOn: { backgroundColor: color.brand, borderRadius: 8.5 },
-  toggleOff: { backgroundColor: "#fff", borderWidth: 2, borderColor: color.brand, borderRadius: 8.5 },
+  toggleOff: { backgroundColor: palette.card, borderWidth: 2, borderColor: color.brand, borderRadius: 8.5 },
   toggleText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600" },
   listHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8 },
   viewMap: { position: "absolute", right: 16, height: 41, borderRadius: 21, backgroundColor: color.brand, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16 },

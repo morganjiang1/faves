@@ -19,7 +19,7 @@ import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View, useWindo
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, Line, Path, Stop, LinearGradient as SvgGradient } from "react-native-svg";
 import { Avatar, Icon, PlaceImage, SampleTag, type IconName } from "@/components/ui";
-import { color, font } from "@/theme/tokens";
+import { color, font, palette } from "@/theme/tokens";
 
 export const YELLOW = "#FDD300";
 export const LINE = "#FF3100";
@@ -159,7 +159,7 @@ export function Podium({ fans }: { fans: { name: string; going: number; test?: b
   const spot = (f: { name: string; going: number; test?: boolean } | undefined, size: number, lift: number) => f ? (
     <View style={{ alignItems: "center", width: w / 3, marginBottom: lift }}>
       <View style={{ borderWidth: 3, borderColor: color.strava, borderRadius: size }}>
-        <Avatar name={f.name} size={size} tint="#3A3A3A" />
+        <Avatar name={f.name} size={size} tint={palette.inkSoft} />
       </View>
       <Text style={[s.fanName, size > 80 && { fontSize: 22 }]} numberOfLines={1}>{f.name}</Text>
       <Text style={s.fanCount}>{f.going} Going</Text>
@@ -252,7 +252,7 @@ const s = StyleSheet.create({
   barLabel: { fontFamily: font.sans, color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: "700", width: 78, letterSpacing: 0.4 },
   track: { flex: 1, height: 22, borderRadius: 11, backgroundColor: "rgba(253,211,0,0.16)", overflow: "hidden" },
   fill: { height: 22, borderRadius: 11, alignItems: "flex-end", justifyContent: "center", paddingHorizontal: 7 },
-  fillText: { fontFamily: font.sans, color: "#000", fontSize: 12, fontWeight: "800" },
+  fillText: { fontFamily: font.sans, color: palette.ink, fontSize: 12, fontWeight: "800" },
   peak: { position: "absolute", fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" },
   xLabel: { fontFamily: font.sans, color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700", textAlign: "center", letterSpacing: 0.4 },
   standout: { borderRadius: 12, overflow: "hidden", backgroundColor: "#222" },
@@ -267,5 +267,5 @@ const s = StyleSheet.create({
   frame: { padding: 3, borderWidth: 2, borderColor: color.strava, borderRadius: 8, backgroundColor: "#2A1A12" },
   frameName: { fontFamily: font.sans, color: color.strava, fontSize: 10, fontWeight: "800", marginTop: 5, letterSpacing: 0.3, textTransform: "uppercase" },
   band: { backgroundColor: color.stravaBand, overflow: "hidden", justifyContent: "center" },
-  bandText: { fontFamily: font.sans, color: "#000", fontWeight: "900", letterSpacing: 0.5 },
+  bandText: { fontFamily: font.sans, color: palette.ink, fontWeight: "900", letterSpacing: 0.5 },
 });

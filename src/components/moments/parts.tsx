@@ -9,7 +9,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Moment } from "@/data/types";
-import { font } from "@/theme/tokens";
+import { font, palette } from "@/theme/tokens";
 import { Icon } from "../ui";
 import { resolveClip } from "./clipFile";
 
@@ -18,7 +18,7 @@ export function TakenHerePill({ place, demo, light, testID }: { place: string; d
   return (
     <View testID={testID ?? (demo ? "demo-pill" : "taken-here-pill")} style={[styles.pill, light && styles.pillLight]}>
       <Icon name={demo ? "flask" : "navigate"} size={13} tint={light ? "#222427" : "#fff"} />
-      <Text style={[styles.pillText, light && { color: "#222427" }]} numberOfLines={1}>{demo ? "Demo, not verified" : `Taken here · ${place}`}</Text>
+      <Text style={[styles.pillText, light && { color: palette.ink }]} numberOfLines={1}>{demo ? "Demo, not verified" : `Taken here · ${place}`}</Text>
     </View>
   );
 }
@@ -74,11 +74,11 @@ function OwnVideo({ uri, paused, onReady, onError }: { uri: string; paused: bool
 
 const styles = StyleSheet.create({
   pill: { alignSelf: "center", height: 30, borderRadius: 15, backgroundColor: "#18181C", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13, maxWidth: "92%" },
-  pillLight: { backgroundColor: "#EBE8EC" },
+  pillLight: { backgroundColor: palette.paperDeep },
   pillText: { fontFamily: font.sans, color: "#fff", fontSize: 15, fontWeight: "700", flexShrink: 1 },
   message: { alignItems: "center", paddingHorizontal: 32, gap: 6 },
   messageTitle: { fontFamily: font.sans, fontSize: 19, fontWeight: "700", color: "#fff", textAlign: "center" },
-  messageBody: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: "#8E8E93", textAlign: "center" },
-  messageButton: { marginTop: 18, height: 40, borderRadius: 11, backgroundColor: "#fff", paddingHorizontal: 22, alignItems: "center", justifyContent: "center" },
-  messageButtonText: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: "#000" },
+  messageBody: { fontFamily: font.sans, fontSize: 15, lineHeight: 20, color: palette.inkMuted, textAlign: "center" },
+  messageButton: { marginTop: 18, height: 40, borderRadius: 11, backgroundColor: palette.card, paddingHorizontal: 22, alignItems: "center", justifyContent: "center" },
+  messageButtonText: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.ink },
 });
