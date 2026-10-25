@@ -20,10 +20,10 @@ export const ONBOARDED = {
   profile: { name: "Morgan", handle: "morgan", city: "san-francisco", interests: ["courts", "food", "views", "games"], crew: "friends", transport: "transit", onboarded: true, memberSince: "2026-10-24T09:00:00.000Z" },
 };
 
-// Start with a saved, onboarded San Francisco profile.
-export async function startOnboarded(page: Page, path = "/") {
+// Start with a saved, onboarded San Francisco profile (optionally someone else's).
+export async function startOnboarded(page: Page, path = "/", profile: Partial<typeof ONBOARDED.profile> = {}) {
   await page.goto("/__blank");
-  await page.evaluate((state) => { localStorage.clear(); localStorage.setItem("faves:v1", JSON.stringify(state)); }, ONBOARDED);
+  await page.evaluate((state) => { localStorage.clear(); localStorage.setItem("faves:v1", JSON.stringify(state)); }, { profile: { ...ONBOARDED.profile, ...profile } });
   await page.goto(path);
 }
 

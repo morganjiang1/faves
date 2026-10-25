@@ -17,10 +17,9 @@ export default defineConfig({
     viewport: { width: 390, height: 844 },
     trace: "retain-on-failure",
   },
-  webServer: {
-    command: "node scripts/serve-web.mjs 8090",
-    url: "http://localhost:8090",
-    reuseExistingServer: true,
-    timeout: 30_000,
-  },
+  webServer: [
+    { command: "node scripts/serve-web.mjs 8090", url: "http://localhost:8090", reuseExistingServer: true, timeout: 30_000 },
+    // The chat relay (npm run chat-server) for the group chat tests.
+    { command: "node server/chat-server.mjs", url: "http://localhost:8787/health", reuseExistingServer: true, timeout: 30_000 },
+  ],
 });

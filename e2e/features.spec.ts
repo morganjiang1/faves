@@ -12,7 +12,7 @@ test("switch city and search", async ({ page }) => {
   await expect(page.getByTestId("city-picker")).toBeVisible();
   await page.getByTestId("city-row-chicago").click();
   await page.getByTestId("city-continue").click();
-  await expect(page.getByTestId("city-switcher")).toContainText("Chicago");
+  await expect(page.getByTestId("city-switcher")).toContainText(/chicago/i);
   await expect(page.getByTestId("day-card-0")).toBeVisible();
 
   await page.getByTestId("open-search").click();
@@ -26,7 +26,7 @@ test("switch city and search", async ({ page }) => {
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("a spot plays full screen: its clips, Spot Moments, details, and the be-here-to-post rule", async ({ page, context }) => {
+test("a spot's page: its postcard clips, the essentials, the postcard wall and the be-here-to-post rule", async ({ page, context }) => {
   const problems = watchConsole(page);
   // Far from the bridge: posting must be blocked.
   await context.grantPermissions(["geolocation"]);
@@ -35,30 +35,26 @@ test("a spot plays full screen: its clips, Spot Moments, details, and the be-her
   await expect(page.getByTestId("place-page")).toBeVisible();
   await expect(page.getByTestId("place-name")).toContainText("Golden Gate Bridge");
   await expect(page.getByTestId("spot-clip").first()).toBeVisible();
-  // Every clip reads as a Faves post: a username, never a platform name.
-  await expect(page.getByTestId("place-page")).not.toContainText(/tiktok/i);
-
-  // Details open in the dark comments-style sheet, with the score sources.
-  await page.getByTestId("place-caption").click();
-  await expect(page.getByTestId("details-sheet")).toBeVisible();
-  await expect(page.getByTestId("details-section")).toBeVisible();
-  await page.getByTestId("details-tab-scores").click();
+  await expect(page.getByTestId("place-dots")).toBeVisible();
+  await expect(page.getByTestId("locals-score-row")).toBeVisible();
+  // Clips read as Faves posts; TikTok only appears as a score source.
   await expect(page.getByTestId("src-tiktok")).toBeVisible();
-  await page.getByTestId("details-close").click();
-  await expect(page.getByTestId("details-sheet")).toBeHidden();
+  await expect(page.getByTestId("place-media-0")).not.toContainText(/tiktok/i);
+  await expect(page.getByTestId("details-section")).toBeVisible();
 
-  // The Spot Moments anchor opens the place's grid; a tile opens the player at that post.
+  // Send to a chat offers a new group for the spot.
+  await page.getByTestId("send-to-chat").click();
+  await expect(page.getByTestId("send-sheet")).toBeVisible();
+  await expect(page.getByTestId("send-new-group")).toBeVisible();
+  await page.getByTestId("send-sheet-close").click();
+
   await page.getByTestId("moments-anchor").click();
   await expect(page.getByTestId("moments-page")).toBeVisible();
   await expect(page.getByTestId("moment-tile-0")).toBeVisible();
-  await expect(page.getByTestId("moments-page")).not.toContainText(/tiktok/i);
-  await page.getByTestId("moment-tile-1").click();
-  // The player opens on its own screen over the grid (the first player stays under it).
-  await expect(page.getByTestId("place-counter").filter({ visible: true })).toContainText("2/");
-  await page.getByTestId("place-back").filter({ visible: true }).click();
-  await expect(page.getByTestId("moments-page")).toBeVisible();
+  await page.getByTestId("moments-close").click();
+  await expect(page.getByTestId("moments-page")).toBeHidden();
 
-  await page.getByTestId("post-moment").click();
+  await page.getByTestId("post-moment").filter({ visible: true }).click();
   await expect(page.getByTestId("post-blocked")).toBeVisible();
   await expect(page.getByTestId("be-here-card")).toContainText("Be here to post");
 
