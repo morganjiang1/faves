@@ -272,6 +272,15 @@ test("a long chat keeps the butler's quick-ask chips full height", async ({ page
   await expect(page.getByTestId("chat-messages")).toContainText("message 24:");
   await expect(page.getByTestId("butler-tldr")).toBeVisible();
   expect((await chips.boundingBox())!.height).toBeGreaterThanOrEqual(full - 1);
+  // The tl;dr sums up what people said, not the asks to the butler.
+  await typeInto(page, "composer-input", "@fave remind us");
+  await page.getByTestId("composer-send").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("There's no plan yet", { timeout: 30_000 });
+  await page.getByTestId("butler-tldr").click();
+  const tldr = page.getByTestId("chat-messages").getByText(/^tl;dr:/);
+  await expect(tldr).toBeVisible({ timeout: 30_000 });
+  await expect(tldr).toContainText("message 24:");
+  await expect(tldr).not.toContainText("@fave");
   expect(problems, problems.join("\n")).toEqual([]);
 });
 

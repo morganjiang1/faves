@@ -93,3 +93,5 @@ export function applyEvent(state: ChatState, e: ChatEvent): ChatState;
 export function snapshotFor(state: ChatState, memberId: string, limit?: number): Snapshot;
 export function audienceFor(state: ChatState, e: ChatEvent): Set<string>;
 export function inviteCode(rand?: () => number): string;
+export function mentionsButler(text: string, butlerName?: string): boolean;
+export function chatterFor<M extends { text?: string | null; kind: string; authorId: string }>(messages: M[], butlerName?: string): M[];

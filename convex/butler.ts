@@ -7,7 +7,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { Agent, createThread, createTool, stepCountIs } from "@convex-dev/agent";
 import { v } from "convex/values";
 import { z } from "zod/v3";
-import { FAVES_ID } from "../src/chat/reduce.mjs";
+import { chatterFor, FAVES_ID } from "../src/chat/reduce.mjs";
 import { formatClock } from "../src/lib/time";
 import { api, components, internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery, type ActionCtx } from "./_generated/server";
@@ -55,7 +55,8 @@ export const view = internalQuery({
       members: members.map((m) => ({ id: m.userId, name: m.name })),
       starts: locs.map((l) => ({ id: l.userId, name: members.find((m) => m.userId === l.userId)?.name ?? "Someone", hood: l.hood, lat: l.lat, lng: l.lng, mode: l.mode })),
       ticket: t ? { ticketId: t.ticketId, plan: t.plan, status: t.status, going } : null,
-      recent: recent.filter((m) => m.text && m.kind === "text" && m.authorId !== FAVES_ID && !/^@\w+\s+(tl;?dr|summary|sum up|recap)\b/i.test(m.text)).map((m) => ({ author: m.authorName, text: m.text! })),
+      // tl;dr's "Lately": what people said to each other, not the asks to the butler.
+      recent: chatterFor(recent, g.butlerName ?? "Fave").map((m) => ({ author: m.authorName, text: m.text! })),
     };
   },
 });

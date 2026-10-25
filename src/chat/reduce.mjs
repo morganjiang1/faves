@@ -203,3 +203,16 @@ export function inviteCode(rand = Math.random) {
   for (let i = 0; i < 6; i++) s += abc[Math.floor(rand() * abc.length)];
   return s;
 }
+
+// Is a message addressed to the group's butler? "@fave", "@faves", "@butler", or the butler's
+// own name when the group renamed it ("@jarvis plan something").
+export function mentionsButler(text, butlerName) {
+  const own = butlerName ? String(butlerName).split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
+  return new RegExp(`(^|\\s)@(faves?|butler${own ? `|${own}` : ""})\\b`, "i").test(text || "");
+}
+
+// What people said lately, for the butler's tl;dr: only what members said to each other, never
+// the asks addressed to the butler ("@fave book it") or the butler's own messages.
+export function chatterFor(messages, butlerName) {
+  return messages.filter((m) => m.text && m.kind === "text" && m.authorId !== FAVES_ID && !mentionsButler(m.text, butlerName));
+}

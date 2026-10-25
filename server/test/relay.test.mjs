@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import WebSocket from "ws";
+import { chatterFor, FAVES_ID, mentionsButler } from "../../src/chat/reduce.mjs";
 
 const PORT = 8790 + Math.floor(Math.random() * 100);
 const dir = mkdtempSync(join(tmpdir(), "faves-relay-"));
@@ -59,4 +60,24 @@ test("a group made on one phone shows up live on the other, messages and RSVPs t
   assert.equal(joined.result.members.length, 3);
   await until(() => a.events.some((e) => e.type === "message" && /Ren joined/.test(e.message.text ?? "")));
   a.close(); b.close(); ren.close();
+});
+
+// The butler's tl;dr ("Lately, ...") sums up what people said to each other: never the asks
+// addressed to the butler, by any of its names, and never its own messages.
+test("tl;dr chatter leaves out @fave commands and the butler's own messages", () => {
+  assert.equal(mentionsButler("@fave book it", "Fave"), true);
+  assert.equal(mentionsButler("ok @faves plan saturday", "Fave"), true);
+  assert.equal(mentionsButler("@Jarvis running 15 min late", "Jarvis"), true);
+  assert.equal(mentionsButler("email me at maya@fave.com", "Fave"), false);
+  assert.equal(mentionsButler("who's bringing paddles?", "Jarvis"), false);
+  const msg = (authorId, text, kind = "text") => ({ id: text, groupId: "g", authorId, authorName: authorId, kind, text, createdAt: 0 });
+  const list = [
+    msg("maya", "who's bringing paddles?"),
+    msg("morgan", "@fave plan pickleball then hot pot on saturday"),
+    msg(FAVES_ID, "Here's a plan (Morgan asked): Pickleball and hot pot.", "agent"),
+    msg("ben", "I can, see you at 1"),
+    msg("morgan", "@jarvis book it"),
+    msg("morgan", "@fave tl;dr"),
+  ];
+  assert.deepEqual(chatterFor(list, "Jarvis").map((m) => m.text), ["who's bringing paddles?", "I can, see you at 1"]);
 });
