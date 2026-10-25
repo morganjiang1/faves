@@ -74,32 +74,42 @@ export const book = internalAction({
   },
 });
 
+async function schedule(ctx: MutationCtx, ticketId: string, moved: boolean) {
+  const t = await ctx.db.query("plans").withIndex("by_ticketId", (q) => q.eq("ticketId", ticketId)).unique();
+  if (!t) return;
+  const plan = t.plan as PlanJson;
+  const start = planTime(plan, plan.start);
+  const first = await ctx.db.query("places").withIndex("by_placeId", (q) => q.eq("placeId", plan.stops[0]?.placeId ?? "")).unique();
+  const firstName = first?.name ?? "the first stop";
+  const firstAt = plan.stops[0]?.start ?? plan.start;
+  const now = Date.now();
+  const wanted: { at: number; text: string }[] = [];
+  // The day before, at 7 PM in the city.
+  wanted.push({ at: planTime(plan, -5 * 60), text: `Tomorrow: ${plan.title}. First stop ${firstName} at ${formatClock(firstAt)}. Tap In on the ticket if you haven't.` });
+  // Leave now, for each person, from their own starting point.
+  const firstTime = planTime(plan, firstAt);
+  for (const l of plan.fairness?.toFirst ?? []) wanted.push({ at: firstTime - (l.minutes + 10) * 60_000, text: `${l.name.split(/\s+/)[0]}, leave in 10: it's ${l.minutes} min by ${l.mode} to ${firstName}.` });
+  if (!plan.fairness?.toFirst?.length) wanted.push({ at: start - 45 * 60_000, text: `Heads up: ${firstName} in 45 minutes.` });
+  for (const w of wanted) {
+    if (w.at < now - 60_000) continue; // already past
+    const id = await ctx.db.insert("reminders", { groupId: t.groupId, ticketId, at: w.at, text: w.text, sent: false });
+    await ctx.scheduler.runAt(Math.max(w.at, now + 1000), internal.flow.sendReminder, { reminderId: id });
+  }
+  await butlerSays(ctx, t.groupId, moved ? `Moved the reminders to the new times: first stop ${firstName} at ${formatClock(firstAt)}.` : `I'll remind everyone the evening before and send each of you a leave-now nudge with your own travel time.`, { ticketId });
+}
+
 export const scheduleReminders = internalMutation({
   args: { ticketId: v.string() },
+  handler: async (ctx, { ticketId }) => schedule(ctx, ticketId, false),
+});
+
+// The plan changed after it was locked in (running late, rain): drop the reminders that haven't
+// gone out and set new ones for the new times. A dropped reminder's scheduled send finds nothing.
+export const rescheduleReminders = internalMutation({
+  args: { ticketId: v.string() },
   handler: async (ctx, { ticketId }) => {
-    const t = await ctx.db.query("plans").withIndex("by_ticketId", (q) => q.eq("ticketId", ticketId)).unique();
-    if (!t) return;
-    const plan = t.plan as PlanJson;
-    const start = planTime(plan, plan.start);
-    const first = await ctx.db.query("places").withIndex("by_placeId", (q) => q.eq("placeId", plan.stops[0]?.placeId ?? "")).unique();
-    const firstName = first?.name ?? "the first stop";
-    const now = Date.now();
-    const wanted: { at: number; text: string }[] = [];
-    // The day before, at 7 PM in the city.
-    const eve = planTime(plan, -5 * 60);
-    wanted.push({ at: eve, text: `Tomorrow: ${plan.title}. First stop ${firstName} at ${formatClock(plan.start)}. Tap In on the ticket if you haven't.` });
-    // Leave now, for each person, from their own starting point.
-    for (const l of plan.fairness?.toFirst ?? []) {
-      const leave = start - (l.minutes + 10) * 60_000;
-      wanted.push({ at: leave, text: `${l.name.split(/\s+/)[0]}, leave in 10: it's ${l.minutes} min by ${l.mode} to ${firstName}.` });
-    }
-    if (!plan.fairness?.toFirst?.length) wanted.push({ at: start - 45 * 60_000, text: `Heads up: ${firstName} in 45 minutes.` });
-    for (const w of wanted) {
-      if (w.at < now - 60_000) continue; // already past
-      const id = await ctx.db.insert("reminders", { groupId: t.groupId, ticketId, at: w.at, text: w.text, sent: false });
-      await ctx.scheduler.runAt(Math.max(w.at, now + 1000), internal.flow.sendReminder, { reminderId: id });
-    }
-    await butlerSays(ctx, t.groupId, `I'll remind everyone the evening before and send each of you a leave-now nudge with your own travel time.`, { ticketId });
+    for (const r of await ctx.db.query("reminders").withIndex("by_ticket", (q) => q.eq("ticketId", ticketId)).collect()) if (!r.sent) await ctx.db.delete(r._id);
+    await schedule(ctx, ticketId, true);
   },
 });
 

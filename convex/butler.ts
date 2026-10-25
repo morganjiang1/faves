@@ -113,6 +113,7 @@ async function changePlan(ctx: ActionCtx, g: GroupView, text: string, askedBy: s
   const res = await call<{ raw: unknown; message: string; changed: number[] }>("replan", { plan: g.ticket.plan, text });
   if (!res.changed.length && !/late/i.test(text)) return res.message;
   await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: `${askedBy} asked: ${res.message}` } });
+  if (g.ticket.status === "locked") await ctx.runMutation(internal.flow.rescheduleReminders, { ticketId: g.ticket.ticketId });
   return res.message;
 }
 

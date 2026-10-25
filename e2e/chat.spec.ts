@@ -219,3 +219,24 @@ test("the butler posts two options, the group votes with thumbs, and the butler 
   await expect(page.getByTestId("chat-messages")).toContainText("Locked in!", { timeout: 30_000 });
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("running late after the plan is locked: the butler moves the times and the reminders", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganl${run}` });
+  await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
+  await page.getByTestId("chats-new").click();
+  await typeInto(page, "group-name", "Late test");
+  await page.getByTestId("add-samples").click();
+  await page.getByTestId("create-group").click();
+  await typeInto(page, "composer-input", "@fave plan pickleball then hot pot on saturday afternoon");
+  await page.getByTestId("composer-send").click();
+  const lock = page.locator('[data-testid^="ticket-"][data-testid$="-lock"]').first();
+  await expect(lock).toBeVisible({ timeout: 30_000 });
+  await lock.click();
+  await expect(page.getByTestId("chat-messages")).toContainText("remind everyone", { timeout: 30_000 });
+  await page.getByTestId("butler-late").click();
+  await page.getByTestId("composer-send").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Moved the reminders", { timeout: 30_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText(/Morgan asked/);
+  expect(problems, problems.join("\n")).toEqual([]);
+});
