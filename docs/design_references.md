@@ -1,5 +1,11 @@
 # Faves design references
 
+> **Research record.** This is the catalog of real-app screens we studied while building
+> Faves, with measured values. It is not the design: the Faves identity is in
+> `docs/design_system.md`, and `docs/screen_audit.md` lists which idea each screen took from
+> which app ("inspired by X for <idea>"). Reference images stay local in `references/`.
+
+
 Every screen and component in Faves follows a real screen from a popular app. This file is the catalog: where each reference came from, what it shows, and the values measured from it. The screenshots themselves stay on our machines in `references/` (not committed); file names below point into it.
 
 Captured 2026-10-24 from App Store screenshots, official websites and frames of real walkthrough videos. pt = px divided by the scale stated for each file.

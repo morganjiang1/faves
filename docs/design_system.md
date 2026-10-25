@@ -1,125 +1,101 @@
-# Faves design system
+# Faves design system: the warm postcard
 
-Every value here comes from a measured reference in `docs/design_references.md`. Where references disagree, Beli wins: it is the closest product to Faves and the reference the social catalog picked for color ("it reads as taste rather than delivery").
+Faves has one idea for how it looks: **every spot is a postcard, every plan is a ticket, and the
+group chat is where friends turn them into a day out.** Cream paper, plum ink, a rose heart, a
+sunset orange and a gem lavender. Nothing is borrowed screen for screen; where another app gave
+us an idea, the last section says which and for what.
+
+Tokens live in `src/theme/tokens.ts`. The shared pieces live in `src/components/ui.tsx`,
+`src/components/postcard/`, `src/components/ticket/` and `src/components/chat/`.
 
 ## Color
 
-From Beli (`social/beli/appstore_06_profile_stats.png`, `appstore_03_feed_post_ranked_share.png`) unless noted.
-
-| Token | Value | Use | Source |
+| Token | Value | Use | Contrast |
 |---|---|---|---|
-| `bg` | `#FFFFFF` | screens | Beli |
-| `brand` | `#134452` | primary buttons, tab "+", selected toggles | Beli teal |
-| `brandDeep` | `#004F5E` | stat values, links on light | Beli |
-| `score` | `#009C61` | Locals Score number | Beli score circle |
-| `text` | `#222427` | body text | Beli |
-| `textMuted` | `#989AA3` | meta lines, labels | Beli |
-| `border` | `#D3D3D3` | score ring, avatar ring | Beli |
-| `hairline` | `#E5E5E5` | card borders, dividers | Beli |
-| `field` | `#EBE8EC` | text field fill | Beli |
-| `chipOff` | `#F3F3F3` | unselected occasion chip | Uber Eats (`social/ubereats/appstore_07`) |
-| `chipOn` | `#000000` | selected occasion chip | Uber Eats |
-| `like` | `#F90B0C` | heart / like | Beli |
-| `gem` | `#A571ED` | hidden-gem vibe dot | Corner (`discovery/corner/corner_ai_search_results_hidden_gem_cards.png`) |
-| `open` | `#188438` | "Open" status | Google Maps |
-| `closed` | `#CE4E07` | "Closed" status | Corner |
-| `rateGreat` / `rateOk` / `rateBad` | `#8CC3A7` / `#F6CB68` / `#EFABAD` | "How was it?" circles | Beli |
-| `sectionBand` | `#F7F7F7` | 6 pt band between home sections | DoorDash |
-| `SPOT_DARK.bg` | `#110F15` | place page details sheet, Spot Moments page | Netflix iPhone (same as Home) |
-| `SPOT_DARK.text` / `.sub` | `#F8F8F8` / `#959595` | text on the dark spot screens | TikTok dark mode (`video/tiktok/yt_a3cZ5jYXnnc_t058_dark_mode_tokens.png`) |
-| `SPOT_DARK.raised` | `#2A282C` | chips, grey buttons, input pills on dark | TikTok "Add comment" pill (`#363336` on black), a step darker |
-| `SPOT_DARK.green` | `#7FE0B0` | Locals Score pill and "Open" on dark | Home's score green on dark |
-| `SPOT_DARK.red` | `#FE2C55` | add plus, record button, Save button, "Taken here" label | TikTok red |
+| `paper` | `#FFF8F1` | every page | |
+| `card` | `#FFFFFF` | postcard stock, tickets, sheets | |
+| `paperDeep` | `#F5E6D6` | sunken areas, chips, inputs, disabled buttons | |
+| `line` | `#E9DCCD` | hairlines, card borders | |
+| `ink` | `#1E1530` | text, dark buttons | 16.9:1 on paper |
+| `inkSoft` | `#55486A` | secondary text | 7.9:1 on paper |
+| `inkMuted` | `#6E6280` | meta text | 5.4:1 on paper |
+| `rose` | `#FF4F6D` | the Heart Pin: fills, stamps, hearts, the + tab | ink on rose 5.5:1 |
+| `roseInk` | `#C92A4F` | rose as text and as the primary button fill | cream on it 5.1:1 |
+| `roseTint` | `#FFE3E8` | the butler's bubbles, selected fills | |
+| `sunset` | `#FF9A4D` | the ticket stub, highlights | ink on it 8.3:1 |
+| `sunsetInk` | `#B4501C` | "closed", warnings as text | 4.9:1 |
+| `sunsetTint` | `#FFE7D4` | warm bands | |
+| `lavender` / `lavInk` / `lavTint` | `#8E6BE8` / `#5A3FB0` / `#EFE8FB` | hidden gems, change notes in the chat | lavInk on tint 6.4:1 |
+| `open` | `#2B7A4B` | "open now", live | 5.0:1 |
+
+**Dark mode is deep plum, never black:** `plum #1A1226` page, `plumRaised #271B35`, `plumLine
+#3A2C4A`, `cream #FFF3E8` text (16.6:1), `creamSoft #CBBBD6`, `creamMuted #A898B8`, with
+`roseOnPlum #FF6F88`, `openOnPlum #6FD69B`, `sunsetOnPlum #FFAA6B`.
+
+Every text color passes 4.5:1 on the surface it sits on. Source marks (Google, Yelp, Reddit,
+TikTok in the Scores section) keep their own colors because they identify the source.
 
 ## Type
 
-- **Headings:** Playfair Display (read from Beli's site CSS; Beli's comparison cards and empty states use a serif bold).
-- **Body:** the iOS system font (Beli's in-app body text), Inter-style system stack on the web.
-- **Scale** (DoorDash type tokens): 10, 12, 14, 16, 18, 20, 22, 24, 28, 32.
-- Home section titles 24 bold; place names 16 bold; meta 14 regular `textMuted`; chips 16 medium; tab labels 11.
+- **Display:** Bricolage Grotesque 600 / 700 / 800 (`font.displaySemi`, `font.display`,
+  `font.displayHeavy`). Titles, place names on postcards, ticket times, the wordmark.
+- **Body:** the system face (SF Pro on iPhone, the system stack on the web).
+- **Scale:** 11, 13, 15, 17, 20, 24, 28, 34, 60 (the wordmark). Display titles run tight
+  (letter-spacing -0.5 to -1.5); meta labels are 11 to 13, sometimes caps with 0.6 tracking.
+
+## Shape and texture
+
+- **Postcard** (`Postcard`): white card stock, a 6 to 8 pt frame around the photo or clip, a
+  cream caption strip, a slight tilt (-3 to 4 degrees) when it sits in a pile, a plum shadow at
+  8 to 16 percent. Sizes: `deck` (4:5, Home), `row`, `mini`.
+- **Stamp** (`Stamp`): a round sticker with a dashed rose ring and the Locals Score, tilted -8
+  degrees, in the postcard's top corner. Muted (line ring) when a spot isn't rated yet.
+- **Postmark** (`Postmark`): wavy lines with the neighborhood and how long ago it was posted.
+- **Ticket** (`Ticket`): a perforated edge between the stops and a sunset stub with the day, the
+  date, the start time and "admit N". Stops with times, travel legs, a route sketch, the fairness
+  row ("everyone's within 25 min" with each person's trip), who's in.
+- **Buttons:** primary = roseInk with a darker lip (`#8F1C38`, 3 pt) and cream label; secondary =
+  card with a line border; chips = paperDeep pills, ink when selected.
+- **Corners:** cards 18, sheets 24, buttons 16, chips full round, postcard frames 10.
 
 ## Components
 
-| Component | Follows | Key values |
+| Component | Where | What makes it Faves |
 |---|---|---|
-| Primary button | Beli empty-state CTA (`discovery/beli/beli_empty_been_list_modal_vid.jpg`) | full-width pill, 50 pt, `brand` fill, white label |
-| Secondary button | Beli list/map toggle, unselected half (`discovery/beli/beli_appstore_ipad_list_map_toggle.png`) | white, 2 pt `brand` outline |
-| Tertiary action | Airbnb "Clear all" (`plans/airbnb/android_video_2025_filters_chips_sheet.png`) | underlined `text` |
-| Search / prompt | DoorDash search pill (`social/doordash/appstore2025_02_...`) | white pill ~45 pt, soft shadow, cycling example placeholder |
-| Occasion chips | Uber Eats rating chips | 38 pt pills, 8 pt gap |
-| Place card | DoorDash deals card (`social/doordash/appstore2025_04_...`) | 2.06:1 photo, 16 bold name, meta line, Locals Score in the rating line |
-| Locals Score badge | Beli score circle (`discovery/beli/beli_appstore_05_recs_list_reserve.png`) | 39–40 pt white circle, 1 pt `border`, score ~15 pt semibold `score` |
-| Score breakdown | Apple Maps stat strip (`discovery/apple_maps/apple_maps_place_card_waterbar_web.jpg`) | 4 columns: Google / Yelp / Reddit / TikTok |
-| Hidden-gem line | Corner (`discovery/corner/...hidden_gem_cards.png`) | gem icon + a number ("only 22 reviews on Google") |
-| Place page | Google Maps place sheet (`discovery/google_maps/google_maps_place_page_troys_cafe.png`) | sheet radius ~30, 42 pt action pills, photo collage |
-| Bottom sheet | Apple Maps (`plans/apple-maps/appstore_03_nearby_transit_sheet_chips.png`) | native iOS sheet, grabber, inset white cells |
-| Plan builder | Airbnb question flow (`plans/airbnb/appstore_07_host_question_flow_cards.png`) | one question per screen, 345×148 option cards, radius 16 |
-| Itinerary timeline | Airbnb Trips (`plans/airbnb/appstore_06_trips_day_by_day_timeline.png`) | left time rail, white stop cards radius ~18, 65 pt thumbnail |
-| Travel legs | Wanderlog (`plans/wanderlog/appstore_05_itinerary_day_travel_legs.png`) | "5 min walk • 0.4 mi" rows between stops |
-| Route map | Wanderlog numbered pins (`plans/wanderlog/appstore_04_...`) | 26×37 teardrop pins, route line ~6 pt at 60% |
-| Swap stop | Apple Maps "Change Stop" + Wanderlog recommended rail | search sheet with alternatives on top |
-| Group vote | Partiful poll (`plans/partiful/appstore_10_find_a_time_poll_responses.png`) | option cards, Going / Maybe / Can't |
-| Share | Partiful share sheet (`plans/partiful/appstore_04_share_link_sheet.png`) | link preview + 4 circles |
-| Onboarding | Partiful (`plans/partiful/ios_video_onboarding_*`) | one question per screen |
-| Plan loading | Google "Ask Maps" streaming (`plans/google-maps/promo_video_ask_maps_*`) | stops stream in, newest words blue, gradient stroke |
-| Feed post | Beli feed post (`social/beli/appstore_03_feed_post_ranked_share.png`) | 60 pt avatar, bold-name headline, photo row, score bubble |
-| Likes | Strava kudos (`social/strava/appstore_02_...`) | faces + count |
-| "Do this day" | DoorDash "Reorder" pill (`social/doordash/appstore2026_05_order_it_again_reorder.png`) | 25 pt `#F1F1F1` pill |
-| Day recap | Strava Year in Sport, one day (`social/strava/yt_e1DDHqJURk4_t026_...`) | one stat per slide, summary card |
-| Thumbs up / down | Uber Eats rating (`social/ubereats/appstore_07_...`) | 62 pt circles |
-| Share card | Spotify Wrapped 2025 (`social/spotify/wrapped2025_newsroom_summary_share_cards.png`) | 9:16, 4 color versions |
-| Profile | Beli profile (`social/beli/appstore_06_profile_stats.png`) | 96 pt avatar, 3-column stats, Rank / Streak cards |
-| "Which did you like more?" | Beli rank flow (`discovery/beli/beli_rank_3_which_do_you_prefer_vid.jpg`) | two 167×166 cards with an "OR" disc |
-| Tab bar | Beli (`social/beli/yt_GlMma4eXe18_t174`) | 5 tabs, filled "+" center: Home, Feed, Plan, Saved, Profile |
-| Empty states | Beli (`discovery/beli/beli_empty_been_list_modal_vid.jpg`) | line art on a soft blob, serif title, pill CTA |
-| Spot Moments (place page) | Instagram location page (`moments/instagram/yt_q2ASzVtL0YE_t080_location_page_top_recent_grid.png`) | tabs Highlights / Right now, 2.4 dp × 78 dp underline under the active label; 3-column 1:1 grid, 1.6 dp gutters, reel glyph top-right |
-| Moment viewer | Instagram story viewer (`moments/instagram/appstore_07_story_viewer_close_friends.png`) | 9:16 media, 2 pt progress bar, avatar + name + "2h", 18 pt ✕; 280×45 pt outlined reply pill |
-| "Taken here" stamp | BeReal location pill (`moments/bereal/yt_KXVIqgEsm64_t012_post_location_pill_3h_late.png`) | full-radius pill ~30 pt, arrow glyph + bold place name, under the caption; grey "3h late" style time under the name |
-| Post a moment | BeReal camera (`moments/bereal/yt_FMZgxjwSkfo_t030_camera_photo_video_shutter.png`) | 3:4 viewfinder, "1x" chip, VIDEO / PHOTO labels, 77.6 pt ring shutter with a 61.6 pt disc |
-| Be here to post | BeReal "Share to view" (`moments/bereal/appstore_05_share_to_view_post_a_bereal.png`) | blurred content, eye-slash icon, bold title + one line, white 117×35 pt button radius 11 |
-| Wallet summary | Ibotta Earnings (`wallet/ibotta/appstore_05_earnings_withdraw_transactions.png`) | bordered box: 41 pt `brand` "Lifetime" band, ~47 pt bold balance; 343×40 pt `brand` pill 30 pt below |
-| Earnings row | Ibotta transaction row (same file) | 70.5 pt pitch, 33 pt circle, bold name + bold amount right, 1 pt `#E8E8E8` inset divider |
-| Payout screen | Venmo Transfer Balance (`wallet/venmo/yt_wHGzOIg7ayA_t043_instant_selected_fee.png`) | huge amount, two 172×160 pt method cards (58 pt icon circle), Fee row, "Transfer to" row |
-| Payout method rows | Rakuten (`wallet/rakuten/appstore_05_choose_how_you_get_paid.png`) | 333×93 pt cards, 1 pt `#DDDDDD`, radius 7, 17 pt gap; `brand` "Select" link, green "✓ Selected" |
-| Payout confirm | Venmo pill + DoorDash Fast Pay label (`wallet/doordash-dasher/yt_QtNGm8n4OdE_t023_fast_pay_confirm.png`) | 47 pt full-width `brand` pill, amount in the label ("Cash out $12.40"), arrival note above |
-| Plus paywall | Meetup+ (`paywall/meetup/paywallscreens_02_weekly_yearly_rows_free_trial.png`) | check list (18.7 pt circles), 355×75 pt trial card, two 355×65 pt plan rows radius 16, MOST POPULAR badge, 62 pt CTA |
-| Paywall legal line | Timeleft (`paywall/timeleft/paywallscreens_01_unlimited_dinners_plan_cards.png`) | ~11 pt, 13 pt line pitch, centered above the CTA, "Terms" underlined, "Restore" under the CTA |
-| Offline banner | Spotify (`states/spotify/yt_6wqjRrRBzTQ_t013_offline_bar_above_tab_bar.png`) | full-width dark bar on top of the tab bar, one bold centered line |
-| Error + retry | TikTok (`states/tiktok/yt_spo0PbcgeOo_t004_no_internet_tap_to_retry.png`) | centered retry icon, bold line with the fix, grey helper line; whole block is the tap target |
-| Loading skeleton | Instagram (`states/instagram/yt_q2ASzVtL0YE_t089_loading_pill_skeleton_rows.png`) | `#F8F8F8` on white: 58 dp circle, ~10 dp round-end bars, 378×121 dp block; no spinner |
-| No results | Yelp (`discovery/yelp/yelp_empty_no_results_android_vid.png`) | headline, one helper line, suggestion chips, "Add a spot" prompt |
-| App icon and splash | Heart Pin logo (`assets/brand/heart_pin.svg`), after Airbnb's one-line Bélo (`brand/airbnb_app_icon_belo_mark.jpg`) and the Google Maps pin hole (`brand/google_maps_app_icon_pin.jpg`) | field `#FF4F6D`, glyph `#FFFFFF`, full-bleed square for iOS; colors in `assets/brand/brand.json` |
-| Onboarding (as built) | Partiful first run for the frame (`plans/partiful/ios_video_onboarding_*`), Beli's city list rows (`discovery/beli/beli_onboarding_city_pick_vid.jpg`), Corner's "pick at least 3" photo tiles (`discovery/corner/corner_onboarding_personalize_map_vid.jpg`), Airbnb question cards for crew and transport | `#0B0B0F` with the purple aurora, 45 pt inputs, 47 pt white Next; tiles 2-up radius 16 with real city photos |
-| Plan builder prompt | Google Maps Ask Maps (`plans/google-maps/promo_video_ask_maps_sheet_suggestions.png`, `promo_video_ask_maps_prompt_glow.png`) | greeting ~26 pt, suggestion rows with pale markers, prompt card with a 2.5 pt `#94A7B3` to `#005FCB` stroke and a `#D5E5FE` glow, send arrow `#306CF0` in a `#F0F0FC` circle |
-| Search home and live rows | Beli search (`discovery/beli/beli_search_restaurants_members_vid.jpg`, `social/beli/yt_GlMma4eXe18_t176_search_tabs_chips.png`) | serif wordmark + 30 pt grey ✕ circle; two half-width icon tabs (Spots / Days) with a 2.5 pt `brand` underline; two outlined 49 pt fields (radius 4, 1 pt `#D2D2D6`, 12 pt margins); 32 pt filled chips `#9DB3B7` off, `brand` on; 61 pt rows: name 17 pt + grey line, ⊕ / bookmark / ✕ |
-| Search results | Corner AI search (`discovery/corner/corner_ai_search_results_hidden_gem_cards.png`) | white query bubble radius 20 with soft shadow; grey `#656565` 17 pt answer line; text tabs 18 pt (active heavy + 2.5 pt black underline); CornerCard list; white "get more specific" bar (radius 24 top) with 34 pt "+ ..." chips |
-| City switcher | Beli "Where are you eating most?" (`discovery/beli/beli_onboarding_city_pick_vid.jpg`) | Playfair 31 pt title 24 pt in; 49 pt rows, text 40 pt in, 1 pt `#E3E3E6` dividers inset 24 / 22; bottom fade; 300 × 49 pt Continue pill, `#A2B8BB` until the city changes |
-| Location / camera permission prompt | TikTok settings prompt (`moments/tiktok/press_01_poi_page_favorite_write_review.png`) | white card radius 14, 18 pt bold centered title, 14 pt how-to line, mini Settings row with a dashed "While Using" oval, two text buttons split by a hairline (`#3A8FB7`) |
-| Moment menu | Instagram story viewer sheet card (`moments/instagram/appstore_07_story_viewer_close_friends.png`) | centered white card radius 16 over a dim scrim; 52 pt rows split by hairlines: Report (red bold), Hide, Open in TikTok, Cancel |
-| TikTok credit row | Snapchat Spotlight creator row and tag pills (`moments/snapchat/appstore_05_spotlight_viewer.png`) | "Video by @creator on TikTok" 13 pt + a 24 pt translucent white pill "Open in TikTok ↗" on an 84 pt header band above TikTok's own player |
-| Moments empty | BeReal empty feed (`moments/bereal/yt_FMZgxjwSkfo_t020_empty_feed_take_your_bereal.png`) | bold white line, grey line, white 40 pt button radius 11 "Post the first moment", centered on the dark viewer |
-| "Also on Faves" rows | Meetup+ feature rows (`paywall/meetup/paywallscreens_01_join_meetup_plus_toggle_features.png`) | black 24 pt icon, 17 pt title, 14 pt grey line, 20 pt between rows |
-| Cash out success | DoorDash Fast Pay in progress (`wallet/doordash-dasher/yt_QtNGm8n4OdE_t038_fast_pay_in_progress.png`) | 94 pt thin ring with the method icon and a check at its open right side; 40 pt heavy amount in `score`; "Cash out in progress!" 18 pt |
-| Community feed header | Beli feed top (`social/beli/yt_GlMma4eXe18_t160_feed_home_chips_featured_lists.png`, `t174`) | Faves mark 28 pt + serif "faves" 31 pt `#163E44` at 22 pt in, three 27 pt icons right; `#EBEBED` search field 37 pt, radius 10; 32 pt filled chips (`#134456` on, `#9DB3B7` off); caps section headers 14 pt bold |
-| Post your first day card | Beli invite card (same `t160` frame) | white, 1 pt `#CDCDCD`, radius 8, 22 pt margins; bold teal `#153A3F` title, grey `#89898B` line, full-width `#144554` button 43 pt radius 5 |
-| Day stops list ("What you'll do") | Airbnb experience page (`plans/airbnb/android_video_2025_experience_what_youll_do.png`, measured at 0.797 px/pt) | 76 pt square photo radius 8, 20 pt gap, title 18 pt semibold `#222222`, 2-line `#6A6A6A` description, 1.5 pt `#EBEBEB` line joining the photos, 18 pt between rows |
-| Day footer | Airbnb listing footer (`plans/airbnb/android_video_2025_experience_detail_show_dates.png`) | floating white pill card 15 pt from the edges, radius 31, soft shadow; bold price + "/ person" left, 12 pt grey line; 162×49 pt `brand` pill button right |
-| Saved list | Google Maps saved list sheet (`discovery/google_maps/google_maps_saved_list_sheet_nyc_restaurants.png`) | emoji + 24 pt title with 34 pt grey circles; 22 pt avatar + "You • Private list" 15 pt `#5D5D5D`; tonal 42 pt chips; `#E3E3E3` divider; "N places" + 34 pt `#DEE4E4` sort chip radius 8; 148 pt photo row radius 8; map mode = white emoji markers, sheet radius 30 over the map |
-| Spots / Days switch | Beli List / Map toggle (`discovery/beli/beli_appstore_ipad_list_map_toggle.png`) | 32 pt, radius 8.5, 2 pt `brand` outline, selected half filled with white icon + 16 pt label |
-| Days diary | Letterboxd Diary (`social/letterboxd/appstore_03_diary.png`, 2.6 px/pt) | 30 pt month band (light: `#F4F5F8`, label `#6E7F90` 12 pt letter-spaced); 55 pt rows: 34×37 pt outlined date square 18 pt in, 26×37 pt photo, 16 pt semibold title + grey weekday, glyph meta line |
-| Ranked list scores | Beli ranked list (`discovery/beli/beli_ranked_list_numbered_vid.jpg`) + score colors sampled from Beli map pins (`beli_appstore_ipad_list_map_toggle.png`) | buckets great 6.7 to 10 / ok 3.4 to 6.6 / bad 0 to 3.3 spread by position; numbers `#329966` / `#B8901F` (pin yellow `#F2C34A` darkened for contrast) / `#D2605E`; progress card radius 8, 1 pt `#E9E9E9`, 19 pt `#EBE8EF` track, `#487078` fill, 12 pt `#807F85` milestone dots |
-| Leaderboard | Beli leaderboard (`discovery/beli/beli_leaderboard_vid.jpg`) | Playfair 30 pt title 22 pt in; 33 pt `#F0F0F5` segmented control with a white selected segment; 16 pt grey caption; outlined dropdown chip; 54 pt rows: rank `#848486`, 30 pt avatar, grey handle, bold count; every sample row tagged |
-| Settings | Apple Maps grouped sheet (`plans/apple-maps/appstore_03_nearby_transit_sheet_chips.png`) | `#F2F2F6` background, 17 pt semibold centered title, 43 pt round close; 20 pt bold section headers; white cells 16 pt in, radius 18, 45 pt rows, 17 pt text, `#7C7C81` secondary, 1 px `#DFDFE1` separators, live green `#34C458` |
-| Profile (as built) | Beli own profile (`social/beli/yt_GlMma4eXe18_t192_profile_new_user.png`) + measures from `appstore_06_profile_stats.png`; activity from `discovery/beli/beli_appstore_ipad_profile_activity.png` | 96 pt avatar, two 120×33 pt outlined buttons radius 5, stats trio, 43 pt rows (icon 17 pt in, label at 66 pt, `#D0CFD3` dividers), 2-up cards 85 pt radius 12 `#E5E5E5`; "Recent activity / Your days" underline tabs, rows with a 44 pt avatar and a 40 pt score circle |
-| Top 10 row (video Home) | Netflix Top 10 (`video/netflix/yt_PXo3QCmgWB4_t037_top10_tv_row_1_2_3.png`, `t042` for 10) | 100 × 178 pt 9:16 card (Netflix 100 pt width), radius 2.5, 32 pt gap; numeral 75 pt tall, fill `#1A1A1A`, 2 pt `#D0D0D0` stroke, system font heavy, bottom-aligned, drawn over the card's left edge (8.5 to 16 pt, about 58 for "10"); row title white bold 19 pt |
-| Video card row ("Tonight", "This weekend", "Hidden gems") | Netflix iPhone row rhythm (`video/netflix/appstore_06_home_hero_only_on_netflix_row.jpg`) + YouTube Shorts card overlay (`video/youtube/yt_Y6V9qRAan6U_t100_home_shorts_shelf.png`) | 110 × 196 pt 9:16 cards, 8 pt gap, 12 pt margin, radius 6; white 12 pt 2-line title on a bottom-25% gradient, 7 / 10 pt inset; "⋮" top-right; Home background `#110F15` |
-| Most-done day card | Netflix "Only on Netflix" tall card (`video/netflix/yt_PXo3QCmgWB4_t051_only_on_netflix_tall_cards_trending_row.png`) | 154 × 274 pt 9:16, first stop's clip; 22.5 × 30.6 pt `brand` "MOST DONE" flag top-right; 15 pt `brand` pill centered on the bottom edge ("Done 214 times") |
-| Plan prompt between rows | Google Maps Ask Maps (unchanged, see Plan builder prompt) | same prompt card, placed between two video rows |
-| Itinerary stop clip tile | YouTube playlist row (`video/youtube/appstore_05_playlist_rows_thumb_duration.jpg`) | 50 × 75 pt thumbnail (YouTube's 75 pt height, Shorts 2:3 crop), radius 7, text 16 pt right; length badge 17.5 pt black 80% with 11 pt white digits, 4 pt in; 3.4 pt `brand` watched bar |
-| Day viewer (swipe through stops) | Netflix Clips (`video/netflix/appstore_04_clips_vertical_viewer_mute.jpg`) | full-screen clip, swipe up for next stop; rail of three 48 pt glass circles (mute, save, share), 64 pt pitch, 28 pt from the right; title 19 pt bold, meta 11.5 pt semibold, description 13 pt + "…more", 17.4 pt in; 71 pt place-photo circle; 2 pt progress bar `#A5A5A5` on `#2D2729` above the tab bar |
-| Place page (full-screen player) | TikTok video opened from a place (`video/tiktok/yt_l4HrrhqS7NY_t045_video_location_anchor_caption_rail.png`) | clips fill the screen above a black bar with a 37 pt "Been here? Rank it" pill; caption 12 pt in: 26 pt Spot Moments anchor (18 pt `#40B49A` pin square), 17 pt bold name + green score pill, 15 pt lines, a Reddit quote, the poster line; rail centered 29 pt from the right (44 pt avatar + 20 pt red plus, 30 pt glyphs, 13 pt labels); 2 pt progress line with a 6 pt dot; "1/3" counter top right |
-| Details sheet | TikTok comments sheet (`video/tiktok/yt_XDmV5t6Y-0Y_t061_comments_sheet_tabs_add_comment.png`) in TikTok dark colors | top at 278/844 of the screen, 10 pt radius, no scrim; 44 pt tab row (14 pt semibold, 2 pt underline), 18 pt close; 32 pt discs, 13 pt grey names with a teal tag, 15 pt text; 36 pt "Been here? Rank it" pill at the bottom |
-| Spot Moments page | TikTok location page (`video/tiktok/yt_l4HrrhqS7NY_t055_location_page_reviews_posts_favorite.png`) + grid (`t029`) | 26 pt heavy name, score line, 3 pt radius chip with "More ›", 36 pt round directions, 8 pt bands, 17 pt section titles, 38 pt "View all"; 3-column 3:4 tiles with 1 pt gutters, 13 pt play counts, "Taken here" in the 12 pt "Pinned" label; bottom bar: 44 pt record ring with a 34 pt red disc, grey Share and red Save (40 pt, 4 pt radius) |
-| No-clip fallback | Netflix still poster in the same frame (`t051` Trending Now) + Instagram reel-glyph rule (`moments/instagram/yt_q2ASzVtL0YE_t080_...`) | best photo in the identical card frame and overlay; reel glyph (24 pt white, top-right) only on clip cards; no badge or play button on photos |
-| Poster line on a video | TikTok username line (`video/tiktok/appstore_14_for_you_rail_handle_sound.png`) + initial disc (`t061`) | card: 13 pt disc + "@handle" white 11 pt under the title; viewer: 20 pt disc, "@handle" 16 pt semibold, "· 2w ago" 14 pt; never a platform name |
-| Initial disc (`UserDisc`) | TikTok comments sheet (`t061`) | first letter on teal `#0299A8`, green `#2E6716` or the Faves pink, picked by the username |
+| Postcard deck | Home, "this week in <city>" | a pile of tilted postcards you flick through; the top one plays its clip |
+| Postcard rows | Home (tonight, this weekend, hidden gems) | small postcards with stamps; gems get a lavender gem badge |
+| Place page | `place/[id]` | one big 4:5 postcard (clips and photos, swipe with dots), the facts written on paper below, a postcard wall of Spot Moments, sticky "Add to a plan" and "Send to a chat" |
+| Plan ticket | itinerary, chats, Home "your plans" | the ticket above; in a chat it carries In / Maybe / Out, a thumbs up, Swap a stop, Lock it in, Call to book |
+| Pinned hangout | top of a chat | the next locked plan as a stub with a countdown, tap for directions |
+| The butler | every group chat | "Fave" (renamable), rose-tint bubbles with a heart; change notes in lavender pills say who changed what |
+| Quick asks | above the chat composer | Plan something, Find a spot, Book it, Remind us, Running late, tl;dr |
+| Call to book | a ticket stop that only books by phone | a confirm sheet that says who it calls, what it asks and that the voice says it's an AI, then Call now |
+| Voice | chat header and composer | a speaker that reads the butler's replies aloud, a mic for voice notes |
+| Map | Explore, itinerary, day page, saved | OpenStreetMap tiles under a paper wash, emoji spot pins with names, numbered plum teardrops on the route |
+| Onboarding | first run | three of the city's postcards fanned on paper, the rose wordmark, one question per screen with postcard-framed photo tiles |
+| Empty states | everywhere | a blank tilted postcard with a dashed stamp holding the icon, a display title, one line, one button |
+
+## Words
+
+Plain and short. No em dashes. Say what happens ("Calling M Pot now"), not what the system is.
+Sample people are tagged **Sample**; rewards and payouts in this build are tagged **Test data**.
+The butler always says it's an AI when it phones anyone.
+
+## Where ideas came from
+
+Faves screens are our own. These apps gave us an idea each:
+
+| Idea | Inspired by |
+|---|---|
+| Ranking the places you've been against each other | Beli, for comparing two spots to build a ranked list |
+| One question per screen in onboarding | Partiful, for the first-run flow |
+| Picking at least three interests from photo tiles | Corner, for the personalize step |
+| A plan that streams in as it's being made | Google Maps "Ask Maps", for showing the answer as it forms |
+| Travel legs between stops ("5 min walk, 0.3 mi") | Wanderlog, for the itinerary legs |
+| In / Maybe / Out on a plan | Partiful, for RSVPs |
+| Doing a day someone else did | DoorDash, for "order it again" |
+| A short recap of the day with one stat at a time | Strava, for the year-in-sport story |
+| Hidden-gem flag with the reason ("only 22 reviews on Google") | Corner, for calling out hidden gems |
+| Short vertical clips of a spot | TikTok and Instagram, for location posts |
+| Earnings and cash out | Ibotta and Venmo, for the wallet and transfer flow |
+| The paywall's plan rows | Meetup, for monthly and yearly rows |

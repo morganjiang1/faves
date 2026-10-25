@@ -1,92 +1,165 @@
 # Faves
 
-Never know what to do? Tell Faves who's coming and what you're into. It finds the spots locals actually love (courts, food, views, hidden gems) and plans the whole day, routes included.
+Never know what to do? Tell Faves who's coming and what you're into. It finds the spots locals
+actually love (courts, food, views, hidden gems), plans the whole day so it's fair for everyone's
+starting point, and lets your group chat plan it together with a butler that books and reminds.
 
-- **Video first.** Home opens on the Top 10 spots this week in your city, each playing a short clip, then what's open tonight, this weekend, the most-done days and hidden gems. Every day and itinerary shows each stop's clip, and you can swipe through a whole day full screen. Each clip shows its poster's username.
-- **Every spot plays full screen.** A spot's page is a vertical player: its clips, then its photos, with the name, Locals Score, what it is, whether it's open and a real local quote over the video, and a rail to add it to a day, save, share or get directions. Details (hours, cost, phone, booking, where the score comes from) open in a sheet.
-- **Locals Score** for every spot, built from Google, Yelp, TripAdvisor, Reddit and TikTok, with a hidden-gem flag for places locals rate highly that tourists haven't found.
-- **A planner agent** that turns "me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus" into a full day: stops picked by Locals Score, kind and opening hours, ordered by time and travel, a view timed to sunset, a Plan B for every stop and a reason for every pick. It re-plans live: "it's raining", "we're running 30 min late", "swap the sushi spot".
-- **Spot Moments**: a spot's posts in a grid with play counts, and the clips you post, which carry "Taken here" only when your phone is at the spot while it's open.
-- **Community**: the most-done days in your city, Do this day, likes, posts, a Beli-style ranking of the spots you've been to, group voting by link, an end-of-day recap and share card.
-- **Spot rewards and Faves Plus**: the wallet and the Plus paywall run on test data in this build.
-- 10 cities: New York, Los Angeles, San Francisco, Chicago, Seattle, Boston, Austin, Miami, Washington DC and San Diego.
+- **Spots are postcards.** Home opens on "this week in <city>", a deck of the spots locals love,
+  each with a short clip and a Locals Score stamp. A spot's page is one big postcard with the
+  facts on paper, a real local quote and a wall of posts from people who went.
+- **Locals Score** for every spot, built from Google, Yelp, TripAdvisor, Reddit and TikTok, with a
+  hidden-gem flag for places locals rate highly that tourists haven't found.
+- **A planner agent** turns "me and 3 friends, pickleball then hot pot, 2pm to 9pm, by bus" into a
+  day: stops picked by Locals Score, kind and opening hours, a route that keeps moving forward, a
+  view timed to sunset, a Plan B and a reason for every pick. It re-plans live: "it's raining",
+  "we're running 30 min late", "swap the sushi spot".
+- **Fair for everyone.** Each friend has a starting point (live and approximate, only if they turn
+  it on, or a home neighborhood) and a way of getting around. The first stop keeps the longest
+  trip short, the ticket shows each person's travel time, and everyone gets their trip home.
+- **Plans are tickets in group chats.** Make a group, add friends by username, contacts, link or
+  QR. Plans arrive as tickets with In / Maybe / Out, swaps post a note saying who changed what,
+  and the next locked plan is pinned with a countdown and an add-to-calendar.
+- **Every group has a butler** ("Fave", rename it): ask it to plan, find a spot by vibe, book, set
+  reminders (the evening before, and a leave-now nudge with each person's own travel time),
+  handle running late, or sum up the chat. It can phone a place to book, only after someone in
+  the group confirms, and it always says it's an AI. It can read its replies aloud.
+- **Spot Moments, Community, rankings, recaps**, plus Spot rewards and Faves Plus on test data.
+- 10 cities: New York, Los Angeles, San Francisco, Chicago, Seattle, Boston, Austin, Miami,
+  Washington DC and San Diego.
 
-iPhone app (Expo Go) and website from one codebase.
+iPhone app (Expo Go) and website from one codebase. Built with Convex, Fetch.ai, Cartesia and
+Apify (see `docs/sponsors.md`).
 
 ## Run it
 
-You need Node 22.13 or newer (Expo SDK 58 does not run on Node 20; `nvm use` picks the version in `.nvmrc`).
+You need Node 22.13 or newer (`nvm use` picks the version in `.nvmrc`), and Python 3.11+ for the
+Fetch.ai agents.
 
 ```sh
 npm install
 ```
 
+Three things run side by side. Each works without the others, with less:
+
+```sh
+npm run convex          # 1. Convex: live group chats, the butler, reminders (local, no account needed)
+npm run chat-server     # 2. the Faves server: planner API for the agents, voice, calls (port 8787)
+npx expo start          # 3. the app
+```
+
+- `npm run convex` runs a local Convex backend (`CONVEX_AGENT_MODE=anonymous`) and writes
+  `EXPO_PUBLIC_CONVEX_URL` to `.env.local`. The first time, load the spots for vibe search:
+  `npm run convex:seed`.
+- Without Convex, chats go through the Faves server's relay; without either, chats work on the
+  phone only and say so.
+- The server finds your computer's address on the Wi-Fi by itself; phones on the same network
+  reach it. `EXPO_PUBLIC_CHAT_URL` overrides it.
+
 ### On your iPhone with Expo Go
 
-1. Install **Expo Go** from the App Store (it must support SDK 58).
-2. Start the dev server from this folder:
-   ```sh
-   npx expo start
-   ```
-3. Scan the QR code in the terminal with the iPhone camera (same Wi-Fi as your computer). If the phone can't reach your computer (other network, campus Wi-Fi), use a tunnel instead:
-   ```sh
-   npx expo start --tunnel
-   ```
-4. Faves opens in Expo Go. Maps use Apple Maps; location is used for distances and for posting moments.
+1. Install **Expo Go** from the App Store (SDK 58).
+2. `npx expo start`, then scan the QR code with the camera (same Wi-Fi). On another network use
+   `npx expo start --tunnel` (chats then need `EXPO_PUBLIC_CHAT_URL` and a public Convex URL).
+3. Invite links open as `faves://join/<code>`, or in Expo Go as `exp://<your-ip>:8081/--/join/<code>`.
 
-On a Mac with Xcode you can also run it in the iPhone simulator: `npx expo start --ios`.
+On a Mac with Xcode: `npx expo start --ios` runs it in the simulator.
 
 ### On the web
 
-Development (hot reload):
-
 ```sh
-npx expo start --web            # http://localhost:8081
-```
-
-Production build:
-
-```sh
-npx expo export --platform web  # writes dist/
+npx expo start --web            # development, http://localhost:8081
+npx expo export --platform web  # production build in dist/
 node scripts/serve-web.mjs 8090 # http://localhost:8090
 ```
 
-`dist/` is a static single-page app; any static host works if it serves `index.html` for unknown paths. The web map is Leaflet on OpenStreetMap tiles, so it needs no key. `/?city=san-francisco` opens Home in a given city.
+Invite links on the web are `http://<host>:8090/join/<code>`.
+
+### The Fetch.ai agents (Butler, Planner, Scout, Booker)
+
+```sh
+cd agents && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python run.py          # all four agents (needs npm run chat-server)
+.venv/bin/python test_flow.py    # the whole ASI:One conversation, locally
+.venv/bin/python register.py     # Agentverse mailboxes (needs AGENTVERSE_API_KEY)
+```
+
+Names, addresses and badges are in `agents/README.md`. In ASI:One the Butler plans a fair day
+with everyone's travel times, swaps stops, books (links, or a phone call after you confirm),
+charges a booking fee through the Payment Protocol and makes the group chat with an invite link.
+
+### Voice and the booking call (Cartesia)
+
+1. Put `CARTESIA_API_KEY` in `.env` and restart `npm run chat-server`. The butler's replies can
+   then be read in Cartesia's voice, and the mic in the chat types out voice notes.
+2. For calls: get a phone number in the Cartesia dashboard, run `npm run cartesia:setup` (it
+   makes the "Faves Booker" agent and prints `CARTESIA_AGENT_ID` and `CARTESIA_FROM_NUMBER_ID`),
+   and set `FAVES_CALL_NUMBER` to the phone that plays the restaurant in a demo.
+3. In a chat, a stop that only books by phone shows **Call to book**. Nothing dials until someone
+   taps **Call now**; the voice says it's an AI and never gives card details; the outcome is
+   posted in the chat. `FAVES_CALL_REAL=1` rings the place itself instead of the demo phone.
+
+Without Cartesia the speaker uses the phone's own voice and calls say they aren't set up yet.
+
+### Live local scouting (Apify)
+
+`actors/faves-local-spots` is our Apify Actor: plain words ("cozy bookstore") to OpenStreetMap
+places, ranked by what locals say on the city's subreddit, with a Locals Score and hidden-gem
+flags. `cd actors/faves-local-spots && npm install && npm test`, then `apify push` and set
+`APIFY_ACTOR` and `APIFY_TOKEN`. The Scout agent and the butler use it for asks Faves' own data
+doesn't cover yet.
 
 ### Spot clips
 
-Clips live in `assets/videos/<city>/` (480 x 854 H.264, muted, 2 to 5 seconds, with a poster JPG) and are listed in that folder's `manifest.json`: `{ "<placeId>": { "video", "poster", "creator", "views", "postedAt", "sourceUrl", "more": [extra clips] } }`. `sourceUrl` is kept for our records and is never bundled or shown. After adding or replacing clips, run `node scripts/make-video-index.mjs` to regenerate `src/data/videos.ts` (the app bundles every clip listed there). Spots without a clip show their photos, zooming slowly.
+Clips live in `assets/videos/<city>/` (480 x 854 H.264, muted, 2 to 5 seconds, with a poster) and
+are listed in that folder's `manifest.json`. After adding clips, run
+`python3 scripts/clip_quality.py` (it picks each clip's best frame and the best clip first), then
+`node scripts/make-video-index.mjs`.
 
 ## Environment variables
 
-Nothing is required. With no keys the app runs on the bundled city data and keeps your plans, saves, rankings, posts and votes on the device. Copy `.env.example` to `.env` to turn on any of these:
+Nothing is required. Copy `.env.example` to `.env` to turn things on. Secrets stay on the server
+(`.env`) or in Convex (`npx convex env set`), never in the app.
 
-| Variable | What it turns on |
-|---|---|
-| `EXPO_PUBLIC_LLM_BASE_URL`, `EXPO_PUBLIC_LLM_API_KEY`, `EXPO_PUBLIC_LLM_MODEL` | Any OpenAI-compatible chat model reads requests and writes the reasons. Any error falls back to the built-in parser. |
-| `EXPO_PUBLIC_GOOGLE_MAPS_KEY` | Google Routes API travel times and route lines (and Places API (New)). |
-| `EXPO_PUBLIC_YELP_KEY` | Live Yelp ratings. |
-| `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Synced group votes. |
-| `EXPO_PUBLIC_TICKETMASTER_KEY` | Events and tickets. |
-| `EXPO_PUBLIC_WEB_URL` | The public website address used in share links. |
-
-`EXPO_PUBLIC_` values are built into the app. For a public build, put paid keys behind your own proxy.
+| Variable | What it turns on | Where |
+|---|---|---|
+| `EXPO_PUBLIC_CONVEX_URL` | live chats on Convex (written by `npm run convex`) | app |
+| `EXPO_PUBLIC_CHAT_URL` | the Faves server's address, if not found by itself | app |
+| `ASI_ONE_API_KEY` | ASI:One as the butler's model (Convex) and the Fetch.ai Butler's reader; keyless rules otherwise | Convex, agents |
+| `AGENTVERSE_API_KEY` | Agentverse mailboxes for the four agents | agents |
+| `CARTESIA_API_KEY`, `CARTESIA_AGENT_ID`, `CARTESIA_FROM_NUMBER_ID`, `CARTESIA_VOICE_ID` | voice and the booking call | server |
+| `FAVES_CALL_NUMBER`, `FAVES_CALL_REAL` | who the booking call rings | server |
+| `APIFY_TOKEN`, `APIFY_ACTOR` | live scouting with our Actor | server, agents |
+| `FAVES_API_URL`, `FAVES_WEB_URL` | where the agents and Convex reach the server, and the public web address for invite links | server, agents, Convex |
+| `EXPO_PUBLIC_GOOGLE_MAPS_KEY`, `EXPO_PUBLIC_YELP_KEY`, `EXPO_PUBLIC_LLM_*`, `EXPO_PUBLIC_TICKETMASTER_KEY` | optional live data adapters from the first build; these are built into the app, so use restricted keys or leave them empty | app |
 
 ## Tests
 
 ```sh
-npm test                              # unit tests (Jest): parser, planner, re-plan, hours, sunset, travel legs, community days, links
-npx expo export --platform web && npx playwright test   # web journeys at iPhone size
-maestro test maestro/                 # iPhone flows in Expo Go (see maestro/README.md)
+npm test                                        # unit tests (Jest): planner, fairness, routes, chat rules, hours, links
+npm run test:relay                              # the chat relay, two phones
+npx expo export --platform web && npx playwright test   # web journeys at iPhone size, chats and the butler on Convex
+cd actors/faves-local-spots && npm test         # the Actor's ranking
+cd agents && .venv/bin/python test_flow.py      # the Fetch.ai Butler end to end
 ```
+
+Playwright starts the web build and `npm run chat-server`; run `npm run convex` first for the
+chat and butler flows.
 
 ## How it's built
 
-- `src/app/`: screens (expo-router). `src/components/`: shared UI. `src/lib/`: the planner agent (`parser.ts`, `planner.ts`), scores, hours, sunset, travel legs, community days, rewards, optional adapters. `src/state/`: on-device storage and the current city.
-- `src/data/cities/`: one slim JSON file per city, loaded only when you pick that city (a separate chunk on the web). `src/data/videos.ts`: the bundled spot clips.
-- `data/scripts/`: the data pipeline. `scrape.mjs` and `osm.mjs` collect Google Maps, Yelp, TripAdvisor, Reddit, TikTok and OpenStreetMap data; `locals.mjs` looks up the spots locals name; `build.mjs` merges and scores them (including spots found through TikTok location tags in `data/raw/<city>/tiktok_spots.json`); `export.mjs` writes the app's city files. Raw and built data stay out of git.
-- Every screen copies a named screen from a popular app. The catalog with measured values is `docs/design_references.md`, the token and component map is `docs/design_system.md`, and `docs/screen_audit.md` records each screen next to its reference.
-- The full product plan is in `docs/plan.md`.
+- `src/app/`: screens (expo-router). `src/components/`: postcards, tickets, chat, map and shared UI.
+- `src/lib/`: the planner (`parser.ts`, `planner.ts`), fairness (`fair.ts`), scores, hours,
+  sunset, travel legs, vibe vectors.
+- `src/chat/`: one set of chat rules (`reduce.mjs`) shared by the phone, the relay and Convex;
+  transports (`convex.ts`, `relay.ts`, `local.ts`) behind one interface; the on-phone butler;
+  voice.
+- `convex/`: tables, the live chat query and mutation, the butler (Convex Agent with tools), the
+  plan workflow (lock, book, remind), crons, presence, vector search, clip storage.
+- `server/`: the Faves server (planner API for the agents, relay, Cartesia).
+- `agents/`: the Fetch.ai uAgents. `actors/`: the Apify Actor. `data/scripts/`: the city data
+  pipeline.
+- Design: the warm postcard identity is in `docs/design_system.md`; `docs/screen_audit.md` lists
+  every screen and which idea came from which app.
 
 ## Team
 
