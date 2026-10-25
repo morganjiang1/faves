@@ -192,3 +192,30 @@ test("a moment posted at a spot is stored in Convex and shows on that spot for e
   await expect(page.getByLabel(`Post by tester${run}`).first()).toBeVisible({ timeout: 20_000 });
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("the butler posts two options, the group votes with thumbs, and the butler locks in the winner", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganv${run}` });
+  await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
+  await page.getByTestId("chats-new").click();
+  await typeInto(page, "group-name", "Vote test");
+  await page.getByTestId("add-samples").click();
+  await page.getByTestId("create-group").click();
+  await expect(page.getByTestId("chat-screen")).toBeVisible();
+  await page.getByTestId("butler-options").click();
+  await page.getByTestId("composer-input").pressSequentially("saturday afternoon, pickleball then dinner", { delay: 2 });
+  await page.getByTestId("composer-send").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Option A", { timeout: 40_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText("Option B", { timeout: 40_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText("no stop in common");
+  // Thumbs up on Option A (the first ticket posted is the older, higher one in the list).
+  const thumbs = page.locator('[data-testid^="ticket-"][data-testid$="-thumb"]');
+  await expect(thumbs).toHaveCount(2);
+  await thumbs.last().click();
+  await page.waitForTimeout(800);
+  await typeInto(page, "composer-input", "@fave which one?");
+  await page.getByTestId("composer-send").click();
+  await expect(page.getByTestId("chat-messages")).toContainText(/Option [AB] wins with 1 vote/, { timeout: 30_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText("Locked in!", { timeout: 30_000 });
+  expect(problems, problems.join("\n")).toEqual([]);
+});

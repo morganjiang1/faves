@@ -164,6 +164,7 @@ export default function ChatThread() {
           <View style={styles.asksLabel}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
           <Chip testID="butler-plan" label="Plan something" onPress={() => { setText(`${at} plan `); inputRef.current?.focus(); }} />
           <Chip testID="butler-find" label="Find a spot" onPress={() => { setText(`${at} find `); inputRef.current?.focus(); }} />
+          <Chip testID="butler-options" label="Two options to vote on" onPress={() => { setText(`${at} give us options for `); inputRef.current?.focus(); }} />
           {current ? <Chip testID="butler-book" label="Book it" onPress={() => send(`${at} book it`)} /> : null}
           {current?.status === "locked" ? <Chip testID="butler-remind" label="Remind us" onPress={() => send(`${at} remind us`)} /> : null}
           {current?.status === "locked" ? <Chip testID="butler-late" label="Running late" onPress={() => { setText(`${at} running 15 min late`); inputRef.current?.focus(); }} /> : null}

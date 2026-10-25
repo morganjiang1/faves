@@ -129,14 +129,16 @@ function summarize(id: string, st: Stored) {
   };
 }
 
-async function plan(body: { city?: string; text?: string; friends?: Friend[] }) {
+async function plan(body: { city?: string; text?: string; friends?: Friend[]; exclude?: string[]; title?: string }) {
   const city = await loadCity(citySlug(body.city));
   const friends = (body.friends ?? []).slice(0, 12);
   const starts = friends.map((f, i) => startFor(city, f, i)).filter(Boolean) as Start[];
   const req = parseRequest(body.text || "something fun and food", { hoods: city.hoods });
   if (friends.length && (!req.groupSize || req.groupSize < friends.length)) req.groupSize = friends.length;
   if (!req.who && friends.length > 1) req.who = "friends";
-  const made = makePlan(req, { city, starts, idSeed: "agent" });
+  // exclude: places another option already uses, so a second option is really different.
+  const made = makePlan(req, { city, starts, idSeed: "agent", exclude: new Set(body.exclude ?? []) });
+  if (body.title) made.title = body.title;
   const stored: Stored = { plan: made, city, friends, starts, text: body.text ?? "" };
   plans.set(made.id, stored);
   return { ...summarize(made.id, stored), raw: made };

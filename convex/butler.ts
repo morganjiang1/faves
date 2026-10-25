@@ -30,6 +30,15 @@ type GroupView = {
   recent: { author: string; text: string }[];
 };
 
+// Proposed option tickets in a group, with their thumbs.
+export const openOptions = internalQuery({
+  args: { groupId: v.string() },
+  handler: async (ctx, { groupId }) => {
+    const plans = (await ctx.db.query("plans").withIndex("by_group", (q) => q.eq("groupId", groupId)).collect()).filter((p) => p.status === "proposed" && /^Option [A-Z]:/.test((p.plan as { title?: string })?.title ?? ""));
+    return Promise.all(plans.map(async (p) => ({ ticketId: p.ticketId, title: (p.plan as { title: string }).title, createdAt: p.createdAt, thumbs: (await ctx.db.query("votes").withIndex("by_ticket", (q) => q.eq("ticketId", p.ticketId)).collect()).filter((x) => x.up).length })));
+  },
+});
+
 export const view = internalQuery({
   args: { groupId: v.string() },
   handler: async (ctx, { groupId }): Promise<GroupView | null> => {
@@ -66,14 +75,37 @@ export const setThread = internalMutation({
 
 // ---- What the butler can do (shared by the model's tools and the rules) --------------------
 
-async function planDay(ctx: ActionCtx, g: GroupView, text: string, askedBy: string) {
+async function planDay(ctx: ActionCtx, g: GroupView, text: string, askedBy: string, opts: { exclude?: string[]; label?: string; quiet?: boolean } = {}) {
   const friends = g.starts.map((s) => ({ id: s.id, name: s.name, from: s.hood ?? undefined, lat: s.lat, lng: s.lng, mode: s.mode }));
-  const res = await call<{ raw: unknown; title: string; fairLine: string | null; travel: { name: string; minutes: number; mode: string }[] }>("plan", { city: g.city, text: `${text}${/\b(friends|of us|people)\b/.test(text) ? "" : `, ${g.members.length} of us`}`, friends });
-  if (!res.raw || !(res.raw as { stops?: unknown[] }).stops?.length) return "I couldn't fit a day into that. Try a longer stretch of time, or other activities.";
+  const res = await call<{ raw: { title: string; stops: { placeId: string }[] }; title: string; fairLine: string | null; travel: { name: string; minutes: number; mode: string }[] }>("plan", { city: g.city, text: `${text}${/\b(friends|of us|people)\b/.test(text) ? "" : `, ${g.members.length} of us`}`, friends, exclude: opts.exclude ?? [] });
+  if (!res.raw || !res.raw.stops?.length) return "I couldn't fit a day into that. Try a longer stretch of time, or other activities.";
+  if (opts.label) res.raw.title = `${opts.label}: ${res.raw.title}`;
   const ticketId = `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "postTicket", ticket: { id: ticketId, groupId: g.groupId, plan: res.raw, status: "proposed", createdBy: FAVES_ID, rsvps: {} }, message: { id: `m-${ticketId}`, groupId: g.groupId, authorId: FAVES_ID, authorName: g.butlerName, kind: "ticket", ticketId } } });
+  if (opts.quiet) return res.raw.stops.map((s) => s.placeId).join(",");
   const trips = res.travel.map((t) => `${t.name.split(" ")[0]} ${t.minutes} min ${t.mode}`).join(" · ");
   return `Here's a plan${askedBy ? ` (${askedBy} asked)` : ""}: ${res.title}.${res.fairLine ? ` Getting there, ${res.fairLine}${trips ? `: ${trips}` : ""}.` : " Set where you're starting from in group info and I'll make the first stop fair for everyone."} Tap In, Maybe or Out.`;
+}
+
+// Two different plans to choose from: Option A and Option B, then everyone votes with a thumbs up.
+async function planOptions(ctx: ActionCtx, g: GroupView, text: string, askedBy: string) {
+  const ask = text.replace(/\b(give us|some|a few|two|2|three|3|options?|choices|ideas|to vote on|vote)\b/gi, " ").replace(/\s+/g, " ").trim() || "something fun and food";
+  const a = await planDay(ctx, g, ask, askedBy, { label: "Option A", quiet: true });
+  if (!a.includes(",") && a.startsWith("I couldn't")) return a;
+  const b = await planDay(ctx, g, ask, askedBy, { label: "Option B", quiet: true, exclude: a.split(",") });
+  if (b.startsWith("I couldn't")) return "Here's one plan; I couldn't find a different second one for that. Tap In, Maybe or Out.";
+  return `Two ways to do it${askedBy ? ` (${askedBy} asked)` : ""}: Option A and Option B, with no stop in common. Give a thumbs up to the one you want, and ask "@${g.butlerName.toLowerCase()} which one?" when you're ready; I'll lock in the winner.`;
+}
+
+// Count the thumbs on the open options and lock in the one with the most.
+async function pickWinner(ctx: ActionCtx, g: GroupView): Promise<string> {
+  const open = await ctx.runQuery(internal.butler.openOptions, { groupId: g.groupId });
+  if (open.length < 2) return "There's no vote going. Ask me for options and I'll post two plans to vote on.";
+  const best = [...open].sort((x, y) => y.thumbs - x.thumbs || x.createdAt - y.createdAt);
+  if (best[0].thumbs === 0) return "Nobody has voted yet. Give a thumbs up to the option you want.";
+  if (best[0].thumbs === best[1].thumbs) return `It's a tie at ${best[0].thumbs} each. One more thumbs up decides it.`;
+  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: best[0].ticketId, patch: { status: "locked" }, note: `${g.butlerName} locked in ${best[0].title.split(":")[0]} (${best[0].thumbs} votes)` } });
+  return `${best[0].title.split(":")[0]} wins with ${best[0].thumbs} ${best[0].thumbs === 1 ? "vote" : "votes"}. It's locked in; I'll book it and remind everyone.`;
 }
 
 async function changePlan(ctx: ActionCtx, g: GroupView, text: string, askedBy: string) {
@@ -158,6 +190,8 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
       changePlan: createTool({ description: "Change the current plan: rain, running late, cheaper, remove or add something.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => changePlan(ctx, g, request, askedBy) }),
       swapStop: createTool({ description: "Swap one stop of the current plan for another kind of spot.", inputSchema: z.object({ stop: z.string().describe("stop number or name"), want: z.string().describe("what instead, e.g. ramen") }), execute: async (ctx, { stop, want }): Promise<string> => swap(ctx, g, stop, want, askedBy) }),
       findSpot: createTool({ description: "Find spots in the city that match a vibe or a niche ask and drop them in the chat.", inputSchema: z.object({ vibe: z.string() }), execute: async (ctx, { vibe }): Promise<string> => findByVibe(ctx, g, vibe) }),
+      planOptions: createTool({ description: "Post two different plans (Option A and Option B) for the group to vote on with thumbs up.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => planOptions(ctx, g, request, askedBy) }),
+      pickWinner: createTool({ description: "Count the thumbs on Option A and Option B and lock in the winner.", inputSchema: z.object({}), execute: async (ctx): Promise<string> => pickWinner(ctx, g) }),
       summarize: createTool({ description: "Sum up the chat (tl;dr).", inputSchema: z.object({}), execute: async (): Promise<string> => summary(g) }),
       book: createTool({ description: "Book the current plan: post how to book each stop (reservation links, phone, walk-in).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => (await bookIt(ctx, g)) || "Posted the booking details." }),
       callToBook: createTool({ description: "When someone asks you to phone a place to book: explain how to confirm the call (you never dial without a confirm tap).", inputSchema: z.object({}), execute: async (): Promise<string> => callFirst(g) }),
@@ -173,6 +207,8 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
 async function rules(ctx: ActionCtx, g: GroupView, text: string, askedBy: string): Promise<string> {
   const t = text.replace(/@\w+/g, "").trim();
   if (/\b(tl;?dr|summary|sum up|recap)\b/i.test(t)) return summary(g);
+  if (/\b(which one|who won|winner|count the votes|tally)\b/i.test(t)) return pickWinner(ctx, g);
+  if (/\b(options?|choices|to vote on)\b/i.test(t)) return planOptions(ctx, g, t, askedBy);
   if (/\b(call|phone|ring)\b/i.test(t)) return callFirst(g);
   if (/\bbook\b/i.test(t) && !/\b(book ?store|books)\b/i.test(t)) return bookIt(ctx, g);
   if (/\bremind\b/i.test(t)) return remindUs(ctx, g);
