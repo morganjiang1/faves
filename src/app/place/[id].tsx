@@ -1,8 +1,9 @@
 // A spot's page, on cream paper: a big postcard at the top playing the spot's clips (swipe
 // sideways for its other clips and photos), the Locals Score stamp on its corner, then the
-// name, a one-line vibe, open now and cost, the best thing a local said, the logistics, the
-// spot's postcard wall, where the score comes from, and a sticky bar: Add to a plan, Send to
-// a chat.
+// name and a one-line vibe, one line of facts (open, cost, distance; tap for the details
+// sheet: hours, address, phone, website, booking), one line for the score (tap for where it
+// comes from), the best thing a local said, a small strip of moments, and a sticky bar:
+// Add to a plan, and send it to a chat.
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
@@ -14,8 +15,10 @@ import { useSharedMoments } from "@/chat/moments";
 import { SendToChat, type SendItem } from "@/components/chat/SendToChat";
 import { Postmark } from "@/components/postcard/Postcard";
 import { ShareSheet } from "@/components/ShareSheet";
+import { Sheet } from "@/components/Sheet";
 import { PageMedia, PageThumb } from "@/components/spot/media";
-import { EmptyState, ErrorState, Icon, OfflineBanner, PrimaryButton, SecondaryButton, Skeleton, Stamp, Toast, UserDisc, type IconName } from "@/components/ui";
+import { EmptyState, ErrorState, Icon, OfflineBanner, PrimaryButton, Skeleton, Stamp, Toast, UserDisc, type IconName } from "@/components/ui";
+import { distanceLabel } from "@/lib/geo";
 import { services } from "@/lib/adapters";
 import { livePlace, type LivePlace } from "@/lib/adapters/places";
 import { dayHoursText, statusAt, weekLines } from "@/lib/hours";
@@ -24,12 +27,12 @@ import { compact, costOf, gemLine, rankedBy, scoreOutOf10, vibeLine, bestQuote }
 import { communitySignals } from "@/lib/signals";
 import { DAY_NAMES } from "@/lib/time";
 import { useCity } from "@/state/city";
-import { useCityClock, useOnline } from "@/state/device";
+import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
 import { font, palette, shadow } from "@/theme/tokens";
 
 export default function PlacePage() {
-  const { id, reserve, i } = useLocalSearchParams<{ id: string; reserve?: string; i?: string }>();
+  const { id, reserve, i, details: openAt } = useLocalSearchParams<{ id: string; reserve?: string; i?: string; details?: string }>();
   const placeId = decodeURIComponent(String(id));
   const { city, status, error, retry } = useCity();
   const clock = useCityClock(city?.utcOffset);
@@ -46,6 +49,10 @@ export default function PlacePage() {
   const [share, setShare] = useState(false);
   const [send, setSend] = useState<SendItem | null>(null);
   const [week, setWeek] = useState(false);
+  const [details, setDetails] = useState(false);
+  const [scoreOpen, setScoreOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const here = useKnownLocation();
   const [toast, setToast] = useState<string | null>(null);
   const [live, setLive] = useState<LivePlace | null>(null);
   // Once the page scrolls, the floating buttons get a paper backdrop so text never shows between them.
@@ -53,6 +60,8 @@ export default function PlacePage() {
 
   const place = city?.byId.get(placeId) ?? null;
   useEffect(() => { if (reserve === "1" && place?.reserveUrl) openUrl(place.reserveUrl); }, [reserve, place]);
+  // Links can open a sheet: ?details=details (hours, address, phone) or ?details=scores.
+  useEffect(() => { if (openAt === "scores") setScoreOpen(true); else if (openAt) setDetails(true); }, [openAt]);
   useEffect(() => {
     if (!place || !online || !services.googlePlaces) return;
     let on = true;
@@ -87,6 +96,14 @@ export default function PlacePage() {
   const current = pages[Math.min(page, pages.length - 1)];
   const poster = current?.kind === "clip" ? current.moment : null;
   const directions = () => openDirections({ ...place }, transport);
+  // The facts on one line: open now, cost, how far.
+  const openWord = st.state === "unknown" ? (place.court ? (place.court.lit ? "Lit at night" : "Daylight only") : "Hours not listed")
+    : st.detail === "Temporarily closed" ? st.detail
+    : st.state === "open" ? `Open ${st.detail.replace(/^Closes /, "till ")}`.trim()
+    : `Closed${st.detail ? `, ${st.detail.replace(/^Opens/, "opens")}` : ""}`;
+  const costWord = cost.dollars ?? (cost.perPerson === 0 && !cost.estimated ? "Free" : cost.estimated ? `~$${cost.perPerson}` : cost.label);
+  const far = distanceLabel(here, place);
+  const factsTail = [costWord, far].filter(Boolean).join(" · ");
   const toggleSave = () => { actions.toggleSave(place.id); setToast(saved ? "Removed from Saved" : `${place.name} saved`); };
 
   return (
@@ -138,29 +155,88 @@ export default function PlacePage() {
           )}
         </View>
 
-        {/* The name and the essentials */}
+        {/* The name, a one-line vibe, then the facts and the score as one tappable line each */}
         <View style={styles.head}>
           <Text testID="place-name" style={styles.name}>{place.name}</Text>
           <Text style={styles.vibe}>{vibeLine(place)}{gem ? ` · ${gem}` : ""}</Text>
-          <View style={styles.facts}>
-            <Fact icon="time-outline" testID="open-status" tint={st.state === "open" ? palette.open : st.state === "closed" ? palette.sunsetInk : palette.inkSoft}
-              text={st.state === "unknown" ? (place.court ? (place.court.lit ? "Lit at night" : "Daylight only") : "Hours not listed") : `${st.word}${st.detail ? ` · ${st.detail}` : ""}`} />
-            <Fact icon="cash-outline" text={cost.dollars ?? (cost.perPerson === 0 && !cost.estimated ? "Free" : cost.estimated ? `About $${cost.perPerson} each` : cost.label)} />
-            {clipPages.length ? <Fact icon="film-outline" text={`${clipPages.length} ${clipPages.length === 1 ? "clip" : "clips"}`} /> : null}
-          </View>
+        </View>
+
+        <View style={styles.lines}>
+          <Pressable testID="details-section" accessibilityRole="button" accessibilityLabel="Details: hours, address, phone" onPress={() => setDetails(true)} style={styles.line}>
+            <Icon name="time-outline" size={18} tint={st.state === "open" ? palette.open : st.state === "closed" ? palette.sunsetInk : palette.inkSoft} />
+            <Text style={styles.lineText} numberOfLines={1}>
+              <Text testID="open-status" style={{ color: st.state === "open" ? palette.open : st.state === "closed" ? palette.sunsetInk : palette.ink, fontWeight: "700" }}>{openWord}</Text>
+              {factsTail ? ` · ${factsTail}` : ""}
+            </Text>
+            <Text style={styles.lineAction}>Details</Text>
+          </Pressable>
+          {place.unrated ? null : (
+            <Pressable testID="score-line" accessibilityRole="button" accessibilityLabel={`Locals Score ${scoreOutOf10(place.locals)}. Where it comes from`} onPress={() => setScoreOpen(true)} style={styles.line}>
+              <Icon name="star" size={18} tint={palette.roseInk} />
+              <Text style={styles.lineText} numberOfLines={1}><Text style={{ fontWeight: "800" }}>{scoreOutOf10(place.locals)}</Text> from {signals.ranked ? `${signals.ranked.toLocaleString("en-US")} ${signals.ranked === 1 ? "local" : "locals"}` : "locals"}</Text>
+              <Icon name="chevron-forward" size={16} tint={palette.inkMuted} />
+            </Pressable>
+          )}
         </View>
 
         {quote ? (
-          <View style={styles.quote} testID="quotes-section">
+          <Pressable style={styles.quote} testID="quotes-section" accessibilityRole="button" onPress={() => setQuoteOpen((v) => !v)}>
             <Text style={styles.quoteMark}>“</Text>
-            <Text style={styles.quoteText} testID="quote-0">{quote.text}</Text>
+            <Text style={styles.quoteText} testID="quote-0" numberOfLines={quoteOpen ? undefined : 3}>{quote.text}</Text>
             <Text style={styles.quoteSource} testID="quote-who">{place.hood ? `a local · ${place.hood}` : "a local"}</Text>
-          </View>
+          </Pressable>
         ) : null}
 
-        {/* Logistics */}
-        <View style={styles.block} testID="details-section">
-          <Text style={styles.blockTitle}>getting there</Text>
+        {/* Moments: a small strip of the spot's postcard wall */}
+        <View style={styles.wallBlock}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={[styles.blockTitle, { flex: 1 }]}>moments</Text>
+            <Pressable testID="moments-anchor" accessibilityRole="button" onPress={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} hitSlop={8} style={styles.seeAll}>
+              <Text style={styles.seeAllText}>see all</Text>
+              <Icon name="arrow-forward" size={15} tint={palette.roseInk} />
+            </Pressable>
+          </View>
+          <View style={styles.wall}>
+            {pages.slice(0, 3).map((p, k) => (
+              <Pressable key={p.key} testID={`wall-${k}`} accessibilityRole="button" onPress={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} style={[styles.wallCard, { transform: [{ rotate: `${[-4, 3, -2][k]}deg` }] }]}>
+                <View style={{ flex: 1, borderRadius: 7, overflow: "hidden" }}><PageThumb page={p} place={place} /></View>
+              </Pressable>
+            ))}
+            <Pressable testID="post-moment" accessibilityRole="button" accessibilityLabel="Post a moment here" onPress={() => router.push(`/post-moment/${encodeURIComponent(place.id)}`)} style={[styles.wallCard, styles.wallPost]}>
+              <View style={styles.record}><View style={styles.recordDot} /></View>
+              <Text style={styles.wallPostText}>post one</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <Pressable testID="action-rank" accessibilityRole="button" onPress={() => router.push(`/rank?place=${encodeURIComponent(place.id)}`)} style={styles.rank}>
+          <Icon name="ribbon-outline" size={20} tint={palette.lavInk} />
+          <Text style={styles.rankText}>Been here? Rank it</Text>
+          <Icon name="chevron-forward" size={16} tint={palette.lavInk} />
+        </Pressable>
+      </ScrollView>
+
+      {/* Top buttons over the paper */}
+      <View testID="place-top" style={[styles.top, scrolled && styles.topScrolled, { paddingTop: insets.top + 6 }]}>
+        <Round testID="place-back" icon="chevron-back" label="Back" onPress={back} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Round testID="action-save" icon={saved ? "bookmark" : "bookmark-outline"} label={saved ? "Remove from Saved" : "Save"} onPress={toggleSave} tint={saved ? palette.roseInk : palette.ink} />
+          <Round testID="action-share" icon="share-outline" label="Share" onPress={() => setShare(true)} />
+        </View>
+        {/* A soft fade under the paper, so the page slides away under the buttons. */}
+        {scrolled ? <LinearGradient pointerEvents="none" colors={["rgba(255,248,241,0.98)", "rgba(255,248,241,0)"]} style={styles.topFade} /> : null}
+      </View>
+
+      {/* The sticky bar */}
+      <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <PrimaryButton testID="add-to-day" label="Add to a plan" icon="ticket" onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)} style={{ flex: 1 }} />
+        <Pressable testID="send-to-chat" accessibilityRole="button" accessibilityLabel="Send to a chat" onPress={() => setSend({ kind: "place", placeId: place.id, name: place.name })} style={styles.sendButton}>
+          <Icon name="paper-plane-outline" size={22} tint={palette.ink} />
+        </Pressable>
+      </View>
+
+      <Sheet open={details} onClose={() => setDetails(false)} title={place.name} testID="place-details" background={palette.paper}>
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
           <Pressable testID="hours-row" onPress={() => setWeek((w) => !w)} style={styles.row}>
             <Icon name="time-outline" size={20} tint={palette.inkSoft} />
             <View style={{ flex: 1 }}>
@@ -188,69 +264,24 @@ export default function PlacePage() {
           {place.phone ? <Row icon="call-outline" text={place.phone} action="Call" onPress={() => callNumber(place.phone)} testID="phone-row" /> : null}
           {place.website ? <Row icon="globe-outline" text={place.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")} action="Open" onPress={() => openUrl(place.website)} testID="website-row" /> : null}
           {place.reserveUrl ? <Row icon="calendar-outline" text="Book a table" action="Reserve" onPress={() => openUrl(place.reserveUrl)} testID="reserve-row" /> : null}
+          {clipPages.length ? <Row icon="film-outline" text={`${clipPages.length} ${clipPages.length === 1 ? "clip" : "clips"} from locals`} /> : null}
           {place.description ? <Text style={styles.description}>{place.description}</Text> : null}
         </View>
+      </Sheet>
 
-        {/* The postcard wall */}
-        <View style={styles.block}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={[styles.blockTitle, { flex: 1 }]}>postcard wall</Text>
-            <Pressable testID="moments-anchor" accessibilityRole="button" onPress={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} hitSlop={8} style={styles.seeAll}>
-              <Text style={styles.seeAllText}>see all</Text>
-              <Icon name="arrow-forward" size={15} tint={palette.roseInk} />
-            </Pressable>
-          </View>
-          <View style={styles.wall}>
-            {pages.slice(0, 3).map((p, k) => (
-              <Pressable key={p.key} testID={`wall-${k}`} accessibilityRole="button" onPress={() => router.push(`/moments/${encodeURIComponent(place.id)}`)} style={[styles.wallCard, { transform: [{ rotate: `${[-4, 3, -2][k]}deg` }] }]}>
-                <View style={{ flex: 1, borderRadius: 7, overflow: "hidden" }}><PageThumb page={p} place={place} /></View>
-              </Pressable>
-            ))}
-            <Pressable testID="post-moment" accessibilityRole="button" onPress={() => router.push(`/post-moment/${encodeURIComponent(place.id)}`)} style={[styles.wallCard, styles.wallPost]}>
-              <View style={styles.record}><View style={styles.recordDot} /></View>
-              <Text style={styles.wallPostText}>post one</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.rowSub}>Only from here, while it's open.</Text>
-        </View>
-
-        {/* Where the score comes from */}
-        {place.unrated ? null : (
-          <View style={styles.block} testID="scores-section">
-            <Text style={styles.blockTitle}>where the score comes from</Text>
+      {place.unrated ? null : (
+        <Sheet open={scoreOpen} onClose={() => setScoreOpen(false)} title="Where the score comes from" testID="scores-section" background={palette.paper}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 8, gap: 10 }}>
             <View style={styles.sources}>
               <Source testID="signal-ranked" label="Locals ranked it" value={signals.ranked ? `★ ${scoreOutOf10(place.locals)}` : "-"} sub={signals.ranked ? `${signals.ranked.toLocaleString("en-US")} ${signals.ranked === 1 ? "local" : "locals"}` : "no rankings yet"} />
-              <Source testID="signal-moments" label="Moments" value={signals.moments ? compact(signals.moments) : "-"} sub={signals.moments === 1 ? "posted" : signals.moments ? "posted" : "none yet"} />
+              <Source testID="signal-moments" label="Moments" value={signals.moments ? compact(signals.moments) : "-"} sub={signals.moments ? "posted" : "none yet"} />
               <Source testID="signal-saves" label="Saves" value={signals.saves ? compact(signals.saves) : "-"} sub={signals.saves ? "saved it" : "none yet"} />
               <Source testID="signal-days" label="Shared days" value={signals.days ? String(signals.days) : "-"} sub={signals.days ? (signals.days === 1 ? "day it's in" : "days it's in") : "none yet"} />
             </View>
             <Text style={styles.rowSub} testID="signals-footnote">From people on Faves: rankings, moments and saves.</Text>
           </View>
-        )}
-        <Pressable testID="action-rank" accessibilityRole="button" onPress={() => router.push(`/rank?place=${encodeURIComponent(place.id)}`)} style={styles.rank}>
-          <Icon name="ribbon-outline" size={20} tint={palette.lavInk} />
-          <Text style={styles.rankText}>Been here? Rank it</Text>
-          <Icon name="chevron-forward" size={16} tint={palette.lavInk} />
-        </Pressable>
-      </ScrollView>
-
-      {/* Top buttons over the paper */}
-      <View testID="place-top" style={[styles.top, scrolled && styles.topScrolled, { paddingTop: insets.top + 6 }]}>
-        <Round testID="place-back" icon="chevron-back" label="Back" onPress={back} />
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Round testID="action-save" icon={saved ? "bookmark" : "bookmark-outline"} label={saved ? "Remove from Saved" : "Save"} onPress={toggleSave} tint={saved ? palette.roseInk : palette.ink} />
-          <Round testID="action-share" icon="share-outline" label="Share" onPress={() => setShare(true)} />
-          <Round testID="action-directions" icon="navigate-outline" label="Directions" onPress={directions} />
-        </View>
-        {/* A soft fade under the paper, so the page slides away under the buttons. */}
-        {scrolled ? <LinearGradient pointerEvents="none" colors={["rgba(255,248,241,0.98)", "rgba(255,248,241,0)"]} style={styles.topFade} /> : null}
-      </View>
-
-      {/* The sticky bar */}
-      <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <PrimaryButton testID="add-to-day" label="Add to a plan" icon="ticket" onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)} style={{ flex: 1 }} />
-        <SecondaryButton testID="send-to-chat" compact label="Send to a chat" icon="paper-plane-outline" onPress={() => setSend({ kind: "place", placeId: place.id, name: place.name })} style={{ flex: 1, height: 52 }} />
-      </View>
+        </Sheet>
+      )}
 
       <Toast text={toast} onHide={() => setToast(null)} top={insets.top + 54} />
       <SendToChat open={send != null} item={send} onClose={() => setSend(null)} onSent={setToast} />
@@ -264,15 +295,6 @@ function Round({ icon, label, onPress, testID, tint = palette.ink }: { icon: Ico
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={[styles.round, shadow.soft]}>
       <Icon name={icon} size={20} tint={tint} />
     </Pressable>
-  );
-}
-
-function Fact({ icon, text, tint = palette.inkSoft, testID }: { icon: IconName; text: string; tint?: string; testID?: string }) {
-  return (
-    <View style={styles.fact} testID={testID}>
-      <Icon name={icon} size={15} tint={tint} />
-      <Text style={[styles.factText, { color: tint }]}>{text}</Text>
-    </View>
   );
 }
 
@@ -318,9 +340,12 @@ const styles = StyleSheet.create({
   head: { paddingHorizontal: 20, paddingTop: 22, gap: 6 },
   name: { fontFamily: font.displayHeavy, fontSize: 32, lineHeight: 36, color: palette.ink, letterSpacing: -0.8 },
   vibe: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft },
-  facts: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
-  fact: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: palette.card, borderRadius: 999, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 10, paddingVertical: 6 },
-  factText: { fontFamily: font.sans, fontSize: 13.5, fontWeight: "700" },
+  lines: { marginHorizontal: 18, marginTop: 16, borderRadius: 16, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, overflow: "hidden" },
+  line: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 52, paddingHorizontal: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
+  lineText: { flex: 1, fontFamily: font.sans, fontSize: 15.5, color: palette.ink },
+  lineAction: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.roseInk },
+  wallBlock: { marginHorizontal: 18, marginTop: 22 },
+  sendButton: { width: 56, height: 52, borderRadius: 16, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   quote: { marginHorizontal: 18, marginTop: 20, padding: 16, paddingTop: 10, borderRadius: 16, backgroundColor: palette.sunsetTint, transform: [{ rotate: "0.6deg" }] },
   quoteMark: { fontFamily: font.displayHeavy, fontSize: 44, lineHeight: 44, color: palette.sunset },
   quoteText: { fontFamily: font.display, fontSize: 18, lineHeight: 24, color: palette.ink, marginTop: -8 },
@@ -343,7 +368,7 @@ const styles = StyleSheet.create({
   record: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(201,42,79,0.25)", alignItems: "center", justifyContent: "center" },
   recordDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: palette.roseInk },
   sources: { flexDirection: "row", gap: 8, paddingVertical: 6 },
-  source: { flex: 1, backgroundColor: palette.paper, borderRadius: 12, padding: 8, gap: 1 },
+  source: { flex: 1, backgroundColor: palette.card, borderRadius: 12, borderWidth: 1, borderColor: palette.line, padding: 8, gap: 1 },
   sourceLabel: { fontFamily: font.sans, fontSize: 11.5, fontWeight: "800", color: palette.inkMuted, letterSpacing: 0.3 },
   sourceValue: { fontFamily: font.display, fontSize: 18, color: palette.ink },
   sourceSub: { fontFamily: font.sans, fontSize: 11, color: palette.inkMuted },

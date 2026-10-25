@@ -1,8 +1,7 @@
 // Spot Moments as a postcard wall: everything people posted at a spot, pinned up as tilted
 // postcards on paper (who posted it, how long ago, "Taken here" when the phone was really there
-// while it was open). The spot's name and Locals Score stamp on top, one local quote, then the
-// wall with Highlights and Right now, and a bar to post your own (only from the spot), share or
-// save. A grid of a place's posts is inspired by Instagram's location pages.
+// while it was open). The spot's name and Locals Score stamp on top, then the wall with
+// Highlights and Right now, and a bar to post your own (only from the spot), share or save. A grid of a place's posts is inspired by Instagram's location pages.
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState, type ReactNode } from "react";
@@ -16,8 +15,8 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { PageThumb } from "@/components/spot/media";
 import { EmptyState, ErrorState, Icon, LoadingPill, OfflineBanner, Stamp, Toast } from "@/components/ui";
 import { metersBetween } from "@/lib/geo";
-import { openDirections, shareUrl } from "@/lib/links";
-import { compact, rankedBy, scoreOutOf10, bestQuote } from "@/lib/score";
+import { shareUrl } from "@/lib/links";
+import { compact, rankedBy, scoreOutOf10 } from "@/lib/score";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { actions, useStore } from "@/state/store";
@@ -37,7 +36,6 @@ export default function SpotMoments() {
   const mine = useMemo(() => [...(local ?? []), ...shared], [local, shared]);
   const hidden = useStore((s) => s.hidden);
   const saved = useStore((s) => s.saved.includes(placeId));
-  const transport = useStore((s) => s.profile.transport);
   const [tab, setTab] = useState<MomentTab>(params.tab === "now" ? "now" : "highlights");
   const [share, setShare] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -62,7 +60,6 @@ export default function SpotMoments() {
   const openNow = openForPosting(place, clock.day, clock.minutes).ok;
   const tile = Math.floor((Math.min(width, 520) - 16 * 2 - 14) / 2);
   const posts = pages.filter((p) => p.kind === "clip").length;
-  const quote = bestQuote(place);
   const toDetails = (t: string) => router.push(`/place/${encodeURIComponent(place.id)}?details=${t}`);
 
   return (
@@ -70,7 +67,7 @@ export default function SpotMoments() {
       <StatusBar style="dark" />
       <View style={styles.nav}>
         <Pressable testID="moments-close" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={close}><Icon name="chevron-back" size={28} tint={palette.ink} /></Pressable>
-        <Text style={styles.navTitle}>postcard wall</Text>
+        <Text style={styles.navTitle}>moments</Text>
         <View style={{ width: 28 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 + insets.bottom }} showsVerticalScrollIndicator={false}>
@@ -83,12 +80,6 @@ export default function SpotMoments() {
                 <Text style={styles.more}>details</Text><Icon name="arrow-forward" size={14} tint={palette.roseInk} />
               </Pressable>
             </View>
-            <View style={styles.addressRow}>
-              <Text style={styles.address} numberOfLines={2}>{place.address ?? place.hood ?? ""}</Text>
-              <Pressable testID="moments-directions" accessibilityRole="button" accessibilityLabel="Directions" onPress={() => openDirections({ ...place }, transport)} style={styles.dirButton}>
-                <Icon name="navigate" size={16} tint={palette.cream} />
-              </Pressable>
-            </View>
           </View>
           {place.unrated ? null : (
             <Pressable accessibilityRole="button" accessibilityLabel={`Locals Score ${scoreOutOf10(place.locals)}, ranked by ${compact(rankedBy(place))} locals`} onPress={() => toDetails("scores")}>
@@ -96,17 +87,6 @@ export default function SpotMoments() {
             </Pressable>
           )}
         </View>
-
-        {quote ? (
-          <View style={styles.quote}>
-            <Text style={styles.quoteMark}>“</Text>
-            <Text style={styles.quoteText} numberOfLines={4}>{quote.text}</Text>
-            <View style={styles.quoteFoot}>
-              <Text style={styles.quoteWho}>{place.hood ? `a local · ${place.hood}` : "a local"}</Text>
-              <Pressable testID="moments-view-all" accessibilityRole="button" onPress={() => toDetails("locals")} hitSlop={8}><Text style={styles.more}>what locals say</Text></Pressable>
-            </View>
-          </View>
-        ) : null}
 
         <View style={styles.tabs}>
           {(["highlights", "now"] as const).map((t) => (
@@ -137,7 +117,7 @@ export default function SpotMoments() {
         ) : (
           <View style={styles.empty} testID="moments-empty">
             <Text style={styles.emptyTitle}>Nothing from the last 24 hours</Text>
-            <Text style={styles.emptyBody}>Right now shows posts from today, so you can see if it's busy tonight.</Text>
+            <Text style={styles.emptyBody}>Posts from today show here.</Text>
           </View>
         )}
       </ScrollView>
@@ -175,14 +155,6 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.ink },
   moreLink: { flexDirection: "row", alignItems: "center", gap: 3 },
   more: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.roseInk },
-  addressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  address: { flex: 1, fontFamily: font.sans, fontSize: 14, color: palette.inkSoft },
-  dirButton: { width: 34, height: 34, borderRadius: 17, backgroundColor: palette.roseInk, alignItems: "center", justifyContent: "center" },
-  quote: { marginHorizontal: 16, marginBottom: 14, backgroundColor: palette.card, borderRadius: 16, borderWidth: 1, borderColor: palette.line, padding: 14, paddingTop: 6 },
-  quoteMark: { fontFamily: font.displayHeavy, fontSize: 40, lineHeight: 44, color: palette.rose },
-  quoteText: { fontFamily: font.sans, fontSize: 15.5, lineHeight: 21, color: palette.ink, marginTop: -8 },
-  quoteFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
-  quoteWho: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted },
   tabs: { flexDirection: "row", gap: 8, paddingHorizontal: 16, marginBottom: 14 },
   tab: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: palette.paperDeep },
   tabOn: { backgroundColor: palette.ink },

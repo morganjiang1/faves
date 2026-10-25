@@ -77,8 +77,7 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1, gap: 1 }}>
           <Text style={styles.rowName} numberOfLines={2}>{rank ? `${rank}. ` : ""}{place.name}</Text>
-          <Text style={styles.rowLine} numberOfLines={1}>{c.dollars ? `${c.dollars} | ` : ""}{kind}</Text>
-          {place.hood ? <Text style={styles.rowLine} numberOfLines={1}>{place.hood}</Text> : null}
+          <Text style={styles.rowLine} numberOfLines={1}>{[c.dollars, kind, place.hood].filter(Boolean).join(" · ")}</Text>
           {place.hiddenGem ? (
             <View style={[styles.gemRow, { marginTop: 4 }]}>
               <Icon name="diamond-outline" size={13} tint={palette.ink} />
@@ -88,17 +87,13 @@ export function PlaceRow({ place, clock, from, rank, onPress, onAdd, testID }: {
         </View>
         {place.unrated ? <ScoreBadge score="-" muted size={39} /> : <ScoreBadge score={scoreOutOf10(place.locals)} count={compact(rankedBy(place))} tint={color.scoreList} size={39} />}
       </View>
-      {place.reserveUrl ? (
-        <Pressable accessibilityRole="link" onPress={() => router.push(`/place/${encodeURIComponent(place.id)}?reserve=1`)} style={styles.slot}>
-          <Text style={styles.slotTop}>Reserve</Text>
-          <Text style={styles.slotSub}>TABLE</Text>
-        </Pressable>
-      ) : null}
       <View style={styles.rowBottom}>
         <Text style={styles.rowMeta} numberOfLines={1}>{metaLine(place, clock, from, false)}</Text>
-        <Pressable accessibilityLabel="Add to a day" hitSlop={8} onPress={onAdd ?? (() => router.push(`/builder?place=${encodeURIComponent(place.id)}`))}>
-          <Icon name="add-circle-outline" size={27} tint={palette.ink} />
-        </Pressable>
+        {onAdd ? (
+          <Pressable accessibilityLabel="Add to a day" hitSlop={8} onPress={onAdd}>
+            <Icon name="add-circle-outline" size={27} tint={palette.ink} />
+          </Pressable>
+        ) : null}
         <Pressable accessibilityLabel={saved ? "Unsave" : "Save"} hitSlop={8} onPress={() => actions.toggleSave(place.id)}>
           <Icon name={saved ? "bookmark" : "bookmark-outline"} size={25} tint={saved ? color.brand : "#000"} />
         </Pressable>

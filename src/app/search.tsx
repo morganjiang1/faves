@@ -1,6 +1,6 @@
-// Search: spots and days. Live suggestions as little postcards with their Locals Score, quick
-// add to a plan, save (a heart) and hide; submitted results call out hidden gems; no results
-// suggests other words, adding a spot, or planning a day instead.
+// Search: spots and days in your city. Live suggestions as little postcards with their
+// Locals Score and a save heart; submitted results call out hidden gems; no results suggests
+// other words, adding a spot, or planning a day instead.
 // Calling out hidden gems with the reason is inspired by Corner; recovering from no results
 // with suggestions is inspired by Yelp.
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,7 +49,6 @@ export default function Search() {
   const [submitted, setSubmitted] = useState<string | null>(params.q ? params.q : null);
   const [chip, setChip] = useState<BrowseChip | null>(null);
   const [tab, setTab] = useState<ResultTab>("foryou");
-  const [dismissed, setDismissed] = useState<string[]>([]);
   const [days, setDays] = useState<CommunityDay[] | null>(null);
   const [note, setNote] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -66,7 +65,7 @@ export default function Search() {
   const result = useMemo(() => (city && submitted ? searchSpots(city, submitted) : null), [city, submitted]);
   const shown = useMemo(() => (result ? arrangeHits(result, tab, interests, clock.day, clock.minutes) : []), [result, tab, interests, clock.day, clock.minutes]);
   const browsing = useMemo(() => (city && chip ? browse(city, chip, interests, clock.day, clock.minutes) : null), [city, chip, interests, clock.day, clock.minutes]);
-  const suggested = useMemo(() => (city ? browse(city, "recs", interests, clock.day, clock.minutes).filter((p) => !dismissed.includes(p.id)).slice(0, 12) : []), [city, interests, clock.day, clock.minutes, dismissed]);
+  const suggested = useMemo(() => (city ? browse(city, "recs", interests, clock.day, clock.minutes).slice(0, 12) : []), [city, interests, clock.day, clock.minutes]);
   const dayHits = useMemo(() => (city && days ? searchDays(days, city, q) : null), [city, days, q]);
 
   const submit = (text: string) => {
@@ -159,7 +158,7 @@ export default function Search() {
   const typing = q.trim().length > 0;
   const filterByChip = (ps: Place[]) => (chip && browsing ? ps.filter((p) => browsing.some((b) => b.id === p.id)) : ps);
   const liveRows = live ? filterByChip(live.hits).slice(0, 8) : [];
-  const listTitle = chip ? `${CHIPS.find((c) => c.id === chip)!.title} in ${city.name}` : `Spots you may like in ${city.name}`;
+  const listTitle = chip ? CHIPS.find((c) => c.id === chip)!.title : "You may like";
   const listRows = chip ? browsing ?? [] : suggested;
 
   return (
@@ -191,26 +190,21 @@ export default function Search() {
           autoCorrect={false}
           returnKeyType="search"
           onSubmitEditing={() => (kind === "spots" ? submit(q) : undefined)}
-          placeholder={kind === "spots" ? "Search spots, food, activities" : "Search days by name or stop"}
+          placeholder={kind === "spots" ? `Spots in ${city.name}` : `Days in ${city.name}`}
           placeholderTextColor={palette.inkMuted}
           style={[styles.fieldInput, noOutline]}
         />
         {typing ? <Pressable testID="search-clear" accessibilityLabel="Clear" hitSlop={8} onPress={() => setQ("")}><Icon name="close" size={20} tint={palette.inkMuted} /></Pressable> : null}
       </View>
-      <Pressable testID="search-city" accessibilityRole="button" accessibilityLabel={`City: ${city.name}. Change`} onPress={() => router.push("/city")} style={[styles.field, { marginTop: 10 }]}>
-        <Icon name="location" size={20} tint={palette.inkSoft} />
-        <Text style={[styles.fieldInput, { color: palette.ink }]}>{city.name}</Text>
-        <Icon name="chevron-down" size={18} tint={palette.inkMuted} />
-      </Pressable>
 
       {kind === "spots" ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ flexGrow: 0, flexShrink: 0 }}>
           {CHIPS.map((c) => {
             const on = chip === c.id;
             return (
-              <Pressable key={c.id} testID={`search-chip-${c.id}`} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setChip(on ? null : c.id)} style={[styles.chip, { backgroundColor: on ? color.brand : color.chipBeliOff }]}>
-                <Icon name={c.icon} size={15} tint="#fff" />
-                <Text style={styles.chipText}>{c.label}</Text>
+              <Pressable key={c.id} testID={`search-chip-${c.id}`} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setChip(on ? null : c.id)} style={[styles.chip, { backgroundColor: on ? palette.ink : palette.paperDeep }]}>
+                <Icon name={c.icon} size={15} tint={on ? palette.cream : palette.ink} />
+                <Text style={[styles.chipText, { color: on ? palette.cream : palette.ink }]}>{c.label}</Text>
               </Pressable>
             );
           })}
@@ -254,12 +248,11 @@ export default function Search() {
               <View style={styles.rowIcon}><Icon name="sparkles" size={18} tint={color.brand} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowName} numberOfLines={1}>Plan a day for this</Text>
-                <Text style={styles.rowSub} numberOfLines={1}>The planner builds a whole day around "{q.trim()}"</Text>
               </View>
               <Icon name="arrow-forward" size={18} tint={palette.inkMuted} />
             </Pressable>
             {liveRows.map((p, i) => <SpotRow key={p.id} place={p} index={i} />)}
-            {live && !liveRows.length ? <Text testID="search-no-live" style={styles.hint}>No spot names match yet. Press search to look through what locals say too.</Text> : null}
+            {live && !liveRows.length ? <Text testID="search-no-live" style={styles.hint}>No names match. Press search to look further.</Text> : null}
           </>
         ) : (
           <>
@@ -279,7 +272,7 @@ export default function Search() {
               </>
             ) : null}
             <Text style={[styles.section, { marginTop: 18 }]}>{listTitle}</Text>
-            {listRows.length ? listRows.map((p, i) => <SpotRow key={p.id} place={p} index={i} onDismiss={chip ? undefined : () => setDismissed((d) => [...d, p.id])} />) : (
+            {listRows.length ? listRows.map((p, i) => <SpotRow key={p.id} place={p} index={i} />) : (
               <Text testID="search-list-empty" style={styles.hint}>{chip === "open" ? "Nothing with listed hours is open right now." : "Nothing to show yet."}</Text>
             )}
           </>
@@ -290,9 +283,9 @@ export default function Search() {
   );
 }
 
-// A result: a little postcard of the spot, its name and where it is, its Locals Score stamp,
-// then add to a plan, save (a heart) and hide.
-function SpotRow({ place, index, onDismiss }: { place: Place; index: number; onDismiss?: () => void }) {
+// A result: a little postcard of the spot, its name and where it is, its Locals Score, and a
+// save heart.
+function SpotRow({ place, index }: { place: Place; index: number }) {
   const saved = useStore((s) => s.saved.includes(place.id));
   const sub = [place.hood, place.kind ?? categoryInfo(place.category).label].filter(Boolean).join(", ");
   return (
@@ -304,17 +297,9 @@ function SpotRow({ place, index, onDismiss }: { place: Place; index: number; onD
         <Text style={styles.rowName} numberOfLines={1}>{place.name}</Text>
         <Text style={styles.rowSub} numberOfLines={1}>{place.unrated ? sub : `${scoreOutOf10(place.locals)} locals · ${sub}`}</Text>
       </View>
-      <Pressable testID={`search-row-add-${index}`} accessibilityLabel={`Add ${place.name} to a day`} hitSlop={6} onPress={() => router.push(`/builder?place=${encodeURIComponent(place.id)}`)} style={styles.rowBtn}>
-        <Icon name="add" size={18} tint={palette.ink} />
-      </Pressable>
       <Pressable testID={`search-row-save-${index}`} accessibilityLabel={saved ? `Unsave ${place.name}` : `Save ${place.name}`} hitSlop={6} onPress={() => actions.toggleSave(place.id)} style={[styles.rowBtn, saved && { backgroundColor: palette.roseTint }]}>
         <Icon name={saved ? "heart" : "heart-outline"} size={17} tint={palette.roseInk} />
       </Pressable>
-      {onDismiss ? (
-        <Pressable testID={`search-row-dismiss-${index}`} accessibilityLabel={`Hide ${place.name}`} hitSlop={6} onPress={onDismiss}>
-          <Icon name="close" size={18} tint={palette.inkMuted} />
-        </Pressable>
-      ) : null}
     </Pressable>
   );
 }
@@ -380,8 +365,8 @@ const styles = StyleSheet.create({
   field: { marginHorizontal: 12, marginTop: 16, height: 49, borderRadius: 4, borderWidth: 1, borderColor: palette.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 14 },
   fieldInput: { flex: 1, fontFamily: font.sans, fontSize: 17, color: palette.ink, paddingVertical: 0 },
   chips: { paddingHorizontal: 16, gap: 8, paddingTop: 14, paddingBottom: 4 },
-  chip: { height: 32, borderRadius: 16, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 6 },
-  chipText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "500" },
+  chip: { height: 36, borderRadius: 18, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 6 },
+  chipText: { fontFamily: font.sans, fontSize: 15, fontWeight: "600" },
   sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingRight: 16, marginTop: 18 },
   section: { fontFamily: font.sans, fontSize: 18, fontWeight: "700", color: palette.ink, paddingHorizontal: 16, flexShrink: 1 },
   clear: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: color.brand },

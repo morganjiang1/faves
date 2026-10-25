@@ -1,11 +1,10 @@
 // "This week in <city>": a hand-dealt deck of postcards. The top card plays its clip; flick
-// it left or right (or tap the arrows) to deal the next one. The two cards under it peek
-// out at their own angles.
+// it left or right to deal the next one (or tap the dots under it). The two cards under it
+// peek out at their own angles.
 import { useMemo, useRef, useState } from "react";
-import { Animated, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
 import type { Place } from "@/data/types";
-import { font, palette } from "@/theme/tokens";
-import { Icon } from "../ui";
+import { palette } from "@/theme/tokens";
 import { Postcard } from "./Postcard";
 
 const TILTS = [-2, 5, -6, 3];
@@ -52,11 +51,9 @@ export function PostcardDeck({ places, active, width = 272, testID = "deck" }: {
           );
         })}
       </View>
-      <View style={styles.controls}>
-        <Pressable testID={`${testID}-prev`} accessibilityRole="button" accessibilityLabel="Previous postcard" onPress={() => deal(-1)} hitSlop={8} style={styles.arrow}><Icon name="arrow-back" size={18} tint={palette.ink} /></Pressable>
-        <Text style={styles.count} testID={`${testID}-count`}>{top + 1} of {n}</Text>
-        <Pressable testID={`${testID}-next`} accessibilityRole="button" accessibilityLabel="Next postcard" onPress={() => deal(1)} hitSlop={8} style={styles.arrow}><Icon name="arrow-forward" size={18} tint={palette.ink} /></Pressable>
-      </View>
+      <Pressable testID={`${testID}-next`} accessibilityRole="button" accessibilityLabel={`Postcard ${top + 1} of ${n}. Next`} onPress={() => deal(1)} style={styles.dots}>
+        {places.map((p, k) => <View key={p.id} style={[styles.dot, k === top && styles.dotOn]} />)}
+      </Pressable>
     </View>
   );
 }
@@ -64,7 +61,7 @@ export function PostcardDeck({ places, active, width = 272, testID = "deck" }: {
 const styles = StyleSheet.create({
   wrap: { alignItems: "center" },
   layer: { position: "absolute", top: 12 },
-  controls: { flexDirection: "row", alignItems: "center", gap: 18, marginTop: 2 },
-  arrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
-  count: { fontFamily: font.displaySemi, fontSize: 15, color: palette.inkSoft, minWidth: 60, textAlign: "center" },
+  dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, height: 32, marginTop: 10, paddingHorizontal: 16 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: palette.line },
+  dotOn: { width: 16, backgroundColor: palette.roseInk },
 });

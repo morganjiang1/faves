@@ -22,7 +22,7 @@ import { BrandToggle } from "@/components/social/controls";
 import { copiedFrom } from "@/components/social/dayPost";
 import { DaysDiary } from "@/components/social/Diary";
 import { useCommunityPosts } from "@/components/social/useDays";
-import { ActionPill, Avatar, CircleButton, EmptyState, ErrorState, Grabber, Icon, PlaceImage, SkeletonRows, Skeleton, type IconName } from "@/components/ui";
+import { CircleButton, EmptyState, ErrorState, Grabber, Icon, PlaceImage, SkeletonRows, Skeleton, type IconName } from "@/components/ui";
 import type { Place } from "@/data/types";
 import { metersBetween } from "@/lib/geo";
 import type { Plan } from "@/lib/planner";
@@ -71,7 +71,7 @@ function Spots() {
   const [sortOpen, setSortOpen] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [share, setShare] = useState(false);
-  const name = useStore((s) => s.profile.name) || "You";
+
 
   const from = useMemo(() => (city ? (here && metersBetween(here, city.center) < 60_000 ? here : city.center) : null), [city, here]);
   const { places, elsewhere } = useMemo(() => {
@@ -98,7 +98,7 @@ function Spots() {
   if (!places.length) {
     return (
       <ScrollView contentContainerStyle={{ paddingTop: 24, paddingBottom: 40 }}>
-        <EmptyState testID="saved-empty" icon="bookmark-outline" title="Save spots you want to try" body={`Tap the bookmark on any spot in ${city.name} and it lands here.${elsewhere ? ` You have ${elsewhere} saved in other cities.` : ""}`} cta="Explore spots" onCta={() => router.push("/explore")} />
+        <EmptyState testID="saved-empty" icon="bookmark-outline" title="Nothing saved yet" body={`Tap the bookmark on a spot to save it.${elsewhere ? ` ${elsewhere} saved in other cities.` : ""}`} cta="Explore spots" onCta={() => router.push("/explore")} />
       </ScrollView>
     );
   }
@@ -117,15 +117,6 @@ function Spots() {
         <CircleButton testID="saved-share" icon="share-outline" label="Share this list" onPress={() => setShare(true)} />
         <CircleButton testID="saved-map-toggle" icon={showMap ? "list" : "map-outline"} label={showMap ? "Show the list" : "Show on the map"} onPress={() => setShowMap((v) => !v)} />
       </View>
-      <View style={styles.ownerRow}>
-        <Avatar name={name} size={22} />
-        <Text style={styles.owner}>You • Private list</Text>
-      </View>
-      <Text style={styles.desc}>Spots you want to try in {city.name}.</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <ActionPill testID="saved-invite" icon="person-add-outline" label="Invite collaborators" onPress={() => setShare(true)} />
-        <ActionPill testID="saved-add" icon="add" label="Add places" onPress={() => router.push("/explore")} />
-      </ScrollView>
       <View style={styles.divider} />
       <View style={styles.countRow}>
         <Text style={styles.count}>{places.length} {places.length === 1 ? "place" : "places"}{elsewhere ? ` (+${elsewhere} in other cities)` : ""}</Text>

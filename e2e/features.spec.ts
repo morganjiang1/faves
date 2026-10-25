@@ -13,9 +13,11 @@ test("switch city and search", async ({ page }) => {
   await page.getByTestId("city-row-chicago").click();
   await page.getByTestId("city-continue").click();
   await expect(page.getByTestId("city-switcher")).toContainText(/chicago/i);
-  await expect(page.getByTestId("day-card-0")).toBeVisible();
+  await expect(page.getByTestId("top10-top")).toBeVisible();
 
-  await page.getByTestId("open-search").click();
+  // Search is one tap from Popular days.
+  await page.getByTestId("more-days").click();
+  await page.getByTestId("feed-search").click();
   await page.getByTestId("search-input").fill("pizza");
   await page.getByTestId("search-submit-row").click();
   await expect(page.getByTestId("search-results")).toBeVisible();
@@ -37,9 +39,12 @@ test("a spot's page: its postcard clips, the essentials, the postcard wall and t
   await expect(page.getByTestId("spot-clip").first()).toBeVisible();
   await expect(page.getByTestId("place-dots")).toBeVisible();
   await expect(page.getByTestId("locals-score-row")).toBeVisible();
-  // Clips read as Faves posts, and the score card shows what people on Faves did.
-  await expect(page.getByTestId("signal-ranked")).toBeVisible();
+  // Clips read as Faves posts, and the score line opens what people on Faves did.
   await expect(page.getByTestId("place-media-0")).not.toContainText(/tiktok/i);
+  await expect(page.getByTestId("score-line")).toContainText(/from [\d,]+ locals/);
+  await page.getByTestId("score-line").click();
+  await expect(page.getByTestId("signal-ranked")).toBeVisible();
+  await page.getByTestId("scores-section-close").click();
   await expect(page.getByTestId("details-section")).toBeVisible();
 
   // Send to a chat offers a new group for the spot.
@@ -86,9 +91,10 @@ test("a spot's score card shows community signals and no outside sources", async
   const problems = watchConsole(page);
   for (const id of [GOLDEN_GATE, "ChIJdx6kBe6AhYARsPFmpUAvvcY" /* Ina Coolbrith Park */, "ChIJXfZJOaB_j4ARqpK7DW1C0JE"]) {
     await startOnboarded(page, `/place/${id}`);
+    await page.getByTestId("score-line").click({ timeout: 20_000 });
     const card = page.getByTestId("scores-section");
-    await expect(card).toBeVisible({ timeout: 20_000 });
-    await expect(card).toContainText("where the score comes from");
+    await expect(card).toBeVisible();
+    await expect(card).toContainText(/where the score comes from/i);
     await expect(page.getByTestId("signal-ranked")).toContainText(/locals?/);
     await expect(page.getByTestId("signal-moments")).toBeVisible();
     await expect(page.getByTestId("signal-saves")).toBeVisible();
@@ -154,7 +160,8 @@ test("rank a spot from its page, then vote on a day by link", async ({ page, bro
   await page.getByTestId("builder-input").fill("date saturday: something fun, dinner and a view");
   await page.getByTestId("builder-send").click();
   await expect(page.getByTestId("itinerary")).toBeVisible({ timeout: 30_000 });
-  await page.getByTestId("link-vote").click();
+  await page.getByTestId("plan-menu").click();
+  await page.getByTestId("menu-group").click();
   await expect(page.getByTestId("group-screen")).toBeVisible();
   await page.getByTestId("group-invite").click();
   await expect(page.getByTestId("share-sheet")).toContainText("Anyone with the link can vote");

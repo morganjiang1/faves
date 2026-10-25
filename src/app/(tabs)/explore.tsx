@@ -1,8 +1,7 @@
-// Explore map. Copies Corner's map (corner_map_emoji_pins_categories_search.png): desaturated
-// basemap, emoji pins with a name and an italic descriptor, white shadowed filter pills, a
-// blue "search here" pill, the category row (object icon over label) and the black search
-// bar with a blue circle. List mode is Beli's recs list with its "View Map" pill and the
-// List | Map toggle from beli_appstore_ipad_list_map_toggle.
+// Explore: the city's spots on a map (OpenStreetMap under a paper wash, emoji pins with
+// names) or as a list. Search sits on top with one row of filters under it: a Category chip
+// (opens the categories), open now, hidden gems and moments. A floating pill switches
+// between the map and the list.
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -10,6 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { PlaceRow } from "@/components/cards";
 import FavesMap from "@/components/map/FavesMap";
 import type { MapPin } from "@/components/map/types";
+import { Sheet } from "@/components/Sheet";
 import { EmptyState, ErrorState, Icon, OfflineBanner, Skeleton } from "@/components/ui";
 import type { Place } from "@/data/types";
 import { metersBetween, type LatLng } from "@/lib/geo";
@@ -19,7 +19,7 @@ import { vibeLine } from "@/lib/score";
 import { useCity } from "@/state/city";
 import { useCityClock, useKnownLocation, useOnline } from "@/state/device";
 import { useStore } from "@/state/store";
-import { CATEGORIES, categoryInfo, color, font, palette, shadow, type CategoryId } from "@/theme/tokens";
+import { CATEGORIES, categoryInfo, font, palette, shadow, type CategoryId } from "@/theme/tokens";
 
 const SPORTS = ["pickleball", "tennis", "basketball"] as const;
 
@@ -40,6 +40,7 @@ export default function Explore() {
   const [query, setQuery] = useState(params.q ?? "");
   const [center, setCenter] = useState<LatLng | null>(null);
   const [searchCenter, setSearchCenter] = useState<LatLng | null>(null);
+  const [catsOpen, setCatsOpen] = useState(false);
 
   const start = useMemo(() => (city ? (here && metersBetween(here, city.center) < 60_000 ? here : city.center) : null), [city, here]);
   const focus = searchCenter ?? start;
@@ -73,7 +74,9 @@ export default function Explore() {
     return out;
   }, [results, here, saved]);
 
-  const pickCat = (c: CategoryId | "top") => { setCat(c); setSport(null); };
+  const pickCat = (c: CategoryId | "top") => { setCat(c); setSport(null); setCatsOpen(false); };
+  const catLabel = cat === "top" ? "Top picks" : CATEGORIES.find((c) => c.id === cat)?.short ?? "Category";
+  const catEmoji = cat === "top" ? "⭐" : categoryInfo(cat).emoji;
 
   if (status === "error") return <SafeAreaView style={{ flex: 1, justifyContent: "center" }}><ErrorState body={error ?? "We couldn't load this city."} onRetry={retry} /></SafeAreaView>;
   if (!city || !start) {
@@ -84,67 +87,58 @@ export default function Explore() {
     );
   }
 
-  // Map mode: Corner's white shadowed pills. List mode: Beli's outlined 32 pt chips.
-  const P = mode === "list" ? BeliChip : Pill;
+  // One row of filters: the category (a sheet of them), then open now, hidden gems, moments.
   const filterPills = (
     <ScrollView horizontal style={{ flexGrow: 0, flexShrink: 0 }} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pills} keyboardShouldPersistTaps="handled">
-      <P testID="pill-open" icon="time-outline" label={mode === "list" ? "Open now" : "open now"} on={open} onPress={() => setOpen((v) => !v)} />
-      <P testID="pill-gems" icon="diamond-outline" label={mode === "list" ? "Hidden gems" : "hidden gems"} on={gems} onPress={() => setGems((v) => !v)} />
-      <P testID="pill-moments" icon="play-circle-outline" label={mode === "list" ? "Moments" : "moments"} on={moments} onPress={() => setMoments((v) => !v)} />
-      {cat === "courts" ? SPORTS.map((s) => <P key={s} testID={`pill-${s}`} label={s} on={sport === s} onPress={() => setSport((v) => (v === s ? null : s))} />) : null}
-    </ScrollView>
-  );
-
-  const categoryRow = (
-    <ScrollView horizontal style={{ flexGrow: 0, flexShrink: 0 }} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cats} keyboardShouldPersistTaps="handled">
-      <CatItem testID="explore-cat-top" emoji="⭐" label="top picks" on={cat === "top"} onPress={() => pickCat("top")} />
-      {CATEGORIES.map((c) => <CatItem key={c.id} testID={`explore-cat-${c.id}`} emoji={c.emoji} label={c.short} on={cat === c.id} onPress={() => pickCat(c.id)} />)}
+      <Pressable testID="explore-category" accessibilityRole="button" accessibilityLabel={`Category: ${catLabel}`} onPress={() => setCatsOpen(true)} style={[styles.pill, shadow.soft, cat !== "top" && styles.pillOn]}>
+        <Text style={{ fontSize: 15 }}>{catEmoji}</Text>
+        <Text style={[styles.pillText, cat !== "top" && { color: palette.cream }]}>{catLabel}</Text>
+        <Icon name="chevron-down" size={14} tint={cat !== "top" ? palette.cream : palette.ink} />
+      </Pressable>
+      <Pill testID="pill-open" icon="time-outline" label="Open now" on={open} onPress={() => setOpen((v) => !v)} />
+      <Pill testID="pill-gems" icon="diamond-outline" label="Hidden gems" on={gems} onPress={() => setGems((v) => !v)} />
+      <Pill testID="pill-moments" icon="play-circle-outline" label="Moments" on={moments} onPress={() => setMoments((v) => !v)} />
+      {cat === "courts" ? SPORTS.map((s) => <Pill key={s} testID={`pill-${s}`} label={s} on={sport === s} onPress={() => setSport((v) => (v === s ? null : s))} />) : null}
     </ScrollView>
   );
 
   const searchBar = (
     <View style={[styles.search, shadow.soft]}>
+      <Icon name="search" size={18} tint={palette.inkMuted} />
       <TextInput testID="explore-search" value={query} onChangeText={setQuery} placeholder="hot pot, lit courts, rooftop" placeholderTextColor={palette.inkMuted} style={styles.searchInput} returnKeyType="search" />
-      <Pressable accessibilityLabel="Ask the planner" onPress={() => router.push(query.trim() ? `/builder?q=${encodeURIComponent(query)}` : "/builder")} style={styles.searchGo}>
-        <Icon name="sparkles" size={20} tint="#fff" />
-      </Pressable>
+      {query ? <Pressable accessibilityLabel="Clear" hitSlop={8} onPress={() => setQuery("")}><Icon name="close-circle" size={18} tint={palette.inkMuted} /></Pressable> : null}
     </View>
   );
 
-  const toggle = (
-    <View style={styles.toggle}>
-      <Pressable testID="toggle-list" onPress={() => setMode("list")} style={[styles.toggleHalf, mode === "list" ? styles.toggleOn : styles.toggleOff]}>
-        <Icon name="list" size={16} tint={mode === "list" ? "#fff" : color.brand} />
-        <Text style={[styles.toggleText, { color: mode === "list" ? "#fff" : color.brand }]}>List</Text>
-      </Pressable>
-      <Pressable testID="toggle-map" onPress={() => setMode("map")} style={[styles.toggleHalf, mode === "map" ? styles.toggleOn : styles.toggleOff]}>
-        <Icon name="map-outline" size={16} tint={mode === "map" ? "#fff" : color.brand} />
-        <Text style={[styles.toggleText, { color: mode === "map" ? "#fff" : color.brand }]}>Map</Text>
-      </Pressable>
-    </View>
+  const categories = (
+    <Sheet open={catsOpen} onClose={() => setCatsOpen(false)} title="Category" testID="explore-categories" background={palette.paper}>
+      <CatRow testID="explore-cat-top" emoji="⭐" label="Top picks" on={cat === "top"} onPress={() => pickCat("top")} />
+      {CATEGORIES.map((c) => <CatRow key={c.id} testID={`explore-cat-${c.id}`} emoji={c.emoji} label={c.label} on={cat === c.id} onPress={() => pickCat(c.id)} />)}
+    </Sheet>
+  );
+
+  // The floating switch between the map and the list.
+  const switcher = (
+    <Pressable testID={mode === "map" ? "toggle-list" : "view-map"} accessibilityRole="button" onPress={() => setMode(mode === "map" ? "list" : "map")} style={[styles.viewMap, shadow.card, { bottom: insets.bottom + 18 }]}>
+      <Icon name={mode === "map" ? "list" : "map-outline"} size={18} tint={palette.cream} />
+      <Text style={styles.viewMapText}>{mode === "map" ? "List" : "Map"}</Text>
+    </Pressable>
   );
 
   if (mode === "list") {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }} edges={["top"]} testID="explore-list">
-        <View style={styles.listHeader}>
-          <Pressable accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={10}><Icon name="chevron-back" size={26} /></Pressable>
-          <View style={{ flex: 1, alignItems: "center" }}>{toggle}</View>
-          <View style={{ width: 26 }} />
-        </View>
+        <View style={{ paddingHorizontal: 14, paddingTop: 6 }}>{searchBar}</View>
         {filterPills}
-        {categoryRow}
         <FlatList
           data={results}
           keyExtractor={(p) => p.id}
           renderItem={({ item, index }) => <PlaceRow testID={`explore-row-${index}`} place={item} clock={clock} from={start} />}
-          ListEmptyComponent={<View style={{ paddingTop: 30 }}><EmptyState icon="search-outline" title="Nothing here yet" body="Try another category, turn off a filter, or search a different word." cta="Clear filters" onCta={() => { setOpen(false); setGems(false); setMoments(false); setQuery(""); setSport(null); }} /></View>}
+          ListEmptyComponent={<View style={{ paddingTop: 30 }}><EmptyState icon="search-outline" title="Nothing here yet" body="Try another word or filter." cta="Clear filters" onCta={() => { setOpen(false); setGems(false); setMoments(false); setQuery(""); setSport(null); setCat("top"); }} /></View>}
           contentContainerStyle={{ paddingBottom: 100 }}
         />
-        <Pressable testID="view-map" onPress={() => setMode("map")} style={[styles.viewMap, shadow.soft, { bottom: insets.bottom + 20 }]}>
-          <Icon name="map-outline" size={20} tint="#fff" />
-          <Text style={styles.viewMapText}>View Map</Text>
-        </Pressable>
+        {switcher}
+        {categories}
         {!online ? <OfflineBanner /> : null}
       </SafeAreaView>
     );
@@ -164,91 +158,64 @@ export default function Explore() {
       />
       <SafeAreaView edges={["top"]} pointerEvents="box-none" style={styles.top}>
         <View style={styles.topRow} pointerEvents="box-none">
-          <Pressable testID="explore-back" accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={[styles.round, shadow.soft]}>
-            <Icon name="chevron-back" size={22} tint={palette.ink} />
-          </Pressable>
-          {toggle}
+          <View style={{ flex: 1 }}>{searchBar}</View>
           <Pressable testID="explore-locate" accessibilityLabel="Back to start" onPress={() => setSearchCenter(null)} style={[styles.round, shadow.soft]}>
             <Icon name="navigate" size={20} tint={palette.ink} />
           </Pressable>
         </View>
+        {filterPills}
         {moved ? (
           <Pressable testID="search-here" onPress={() => setSearchCenter(center)} style={styles.searchHere}>
-            <Icon name="refresh" size={17} tint="#fff" />
-            <Text style={styles.searchHereText}>search here</Text>
+            <Icon name="refresh" size={16} tint={palette.cream} />
+            <Text style={styles.searchHereText}>Search here</Text>
           </Pressable>
         ) : null}
-      </SafeAreaView>
-
-      <View style={[styles.bottom, { paddingBottom: insets.bottom + 10 }]} pointerEvents="box-none">
         {!results.length ? (
-          <View style={styles.noResults}><Text style={styles.noResultsText}>No spots match here. Try another filter or move the map.</Text></View>
+          <View style={styles.noResults}><Text style={styles.noResultsText}>No spots here. Try another filter.</Text></View>
         ) : null}
-        {filterPills}
-        {categoryRow}
-        <View style={{ paddingHorizontal: 14 }}>{searchBar}</View>
-        {!online ? <View style={{ marginTop: 8 }}><OfflineBanner /></View> : null}
-      </View>
+      </SafeAreaView>
+      {switcher}
+      {categories}
+      {!online ? <View style={{ position: "absolute", left: 0, right: 0, bottom: insets.bottom + 70 }}><OfflineBanner /></View> : null}
     </View>
   );
 }
 
 function Pill({ label, icon, on, onPress, testID }: { label: string; icon?: Parameters<typeof Icon>[0]["name"]; on: boolean; onPress: () => void; testID: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={[styles.pill, shadow.soft, on && { backgroundColor: "#000" }]}>
-      {icon ? <Icon name={icon} size={17} tint={on ? "#fff" : "#000"} /> : null}
-      <Text style={[styles.pillText, on && { color: "#fff" }]}>{label}</Text>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={[styles.pill, shadow.soft, on && styles.pillOn]}>
+      {icon ? <Icon name={icon} size={16} tint={on ? palette.cream : palette.ink} /> : null}
+      <Text style={[styles.pillText, on && { color: palette.cream }]}>{label}</Text>
     </Pressable>
   );
 }
 
-function BeliChip({ label, icon, on, onPress, testID }: { label: string; icon?: Parameters<typeof Icon>[0]["name"]; on: boolean; onPress: () => void; testID: string }) {
+function CatRow({ emoji, label, on, onPress, testID }: { emoji: string; label: string; on: boolean; onPress: () => void; testID: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={[styles.beliChip, on && styles.beliChipOn]}>
-      {icon ? <Icon name={icon} size={16} tint={on ? "#0F3F49" : "#424242"} /> : null}
-      <Text style={[styles.beliChipText, on && { color: "#0F3F49" }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function CatItem({ emoji, label, on, onPress, testID }: { emoji: string; label: string; on: boolean; onPress: () => void; testID: string }) {
-  return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={styles.cat}>
-      <View style={[styles.catIcon, on && styles.catIconOn]}><Text style={{ fontSize: 30 }}>{emoji}</Text></View>
-      <Text style={[styles.catLabel, on && { fontWeight: "700" }]} numberOfLines={1}>{label}</Text>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={styles.catRow}>
+      <Text style={{ fontSize: 24 }}>{emoji}</Text>
+      <Text style={[styles.catLabel, on && { fontWeight: "800" }]} numberOfLines={1}>{label}</Text>
+      {on ? <Icon name="checkmark" size={20} tint={palette.roseInk} /> : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   top: { position: "absolute", top: 0, left: 0, right: 0 },
-  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingTop: 6 },
-  round: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
-  searchHere: { alignSelf: "center", marginTop: 12, height: 32, borderRadius: 16, backgroundColor: color.cornerSearchHere, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14 },
-  searchHereText: { fontFamily: font.sans, color: "#fff", fontSize: 16, fontWeight: "600" },
-  bottom: { position: "absolute", left: 0, right: 0, bottom: 0 },
-  pills: { paddingHorizontal: 14, gap: 8, paddingVertical: 6 },
-  pill: { height: 30, borderRadius: 15, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12 },
-  pillText: { fontFamily: font.sans, fontSize: 16, color: palette.ink },
-  beliChip: { height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#424242", backgroundColor: palette.card, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
-  beliChipOn: { backgroundColor: palette.paperDeep, borderColor: "#A2ABC8" },
-  beliChipText: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft },
-  cats: { paddingHorizontal: 8, gap: 2, paddingVertical: 6 },
-  cat: { width: 70, alignItems: "center", gap: 2 },
-  catIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
-  catIconOn: { backgroundColor: "rgba(255,255,255,0.95)", borderWidth: 2, borderColor: "#000" },
-  catLabel: { fontFamily: font.sans, fontSize: 13, color: palette.ink, textShadowColor: "#fff", textShadowRadius: 4 },
-  search: { height: 47, borderRadius: 24, backgroundColor: color.cornerSearch, flexDirection: "row", alignItems: "center", paddingLeft: 18, paddingRight: 3, marginTop: 4 },
-  searchInput: { flex: 1, color: "#fff", fontSize: 17, fontFamily: font.sans, height: 47 },
-  searchGo: { width: 41, height: 41, borderRadius: 21, backgroundColor: color.cornerBlue, alignItems: "center", justifyContent: "center" },
-  noResults: { marginHorizontal: 14, marginBottom: 6, backgroundColor: palette.card, borderRadius: 12, padding: 12 },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingTop: 6 },
+  round: { width: 44, height: 44, borderRadius: 22, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
+  searchHere: { alignSelf: "center", marginTop: 6, height: 34, borderRadius: 17, backgroundColor: palette.ink, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14 },
+  searchHereText: { fontFamily: font.sans, color: palette.cream, fontSize: 15, fontWeight: "700" },
+  pills: { paddingHorizontal: 14, gap: 8, paddingVertical: 8 },
+  pill: { height: 36, borderRadius: 18, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13 },
+  pillOn: { backgroundColor: palette.ink, borderColor: palette.ink },
+  pillText: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.ink },
+  catRow: { flexDirection: "row", alignItems: "center", gap: 14, minHeight: 52, paddingHorizontal: 18 },
+  catLabel: { flex: 1, fontFamily: font.sans, fontSize: 16, color: palette.ink },
+  search: { height: 46, borderRadius: 23, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16 },
+  searchInput: { flex: 1, color: palette.ink, fontSize: 16, fontFamily: font.sans, height: 46 },
+  noResults: { alignSelf: "center", marginTop: 6, backgroundColor: palette.card, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   noResultsText: { fontFamily: font.sans, fontSize: 15, color: palette.ink },
-  toggle: { flexDirection: "row", width: 200, height: 32 },
-  toggleHalf: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
-  toggleOn: { backgroundColor: color.brand, borderRadius: 8.5 },
-  toggleOff: { backgroundColor: palette.card, borderWidth: 2, borderColor: color.brand, borderRadius: 8.5 },
-  toggleText: { fontFamily: font.sans, fontSize: 16, fontWeight: "600" },
-  listHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8 },
-  viewMap: { position: "absolute", right: 16, height: 41, borderRadius: 21, backgroundColor: color.brand, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16 },
-  viewMapText: { fontFamily: font.sans, color: "#fff", fontSize: 17, fontWeight: "600" },
+  viewMap: { position: "absolute", alignSelf: "center", height: 44, borderRadius: 22, backgroundColor: palette.ink, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 20 },
+  viewMapText: { fontFamily: font.sans, color: palette.cream, fontSize: 16, fontWeight: "700" },
 });
