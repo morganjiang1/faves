@@ -7,9 +7,8 @@
 //   POST /api/swap   { planId, stop?: 1-based number or name, want? }         -> the plan, one stop swapped
 //   POST /api/book   { planId }                                               -> how each stop is booked
 //   POST /api/group  { planId, name? }                                        -> a Faves group chat with the plan pinned
-//   POST /api/call   { groupId, placeName, phone, day, time, partySize, confirmedBy } -> the booking call (Cartesia)
 //   POST /api/tts    { text } -> mp3 (Cartesia Sonic);  POST /api/stt  <audio> -> { text } (Cartesia Ink)
-//   GET  /api/voice  -> what voice features are set up
+//   GET  /api/voice  -> { ready }: whether the Cartesia voice is set up
 //   POST /api/scout  { city?, query }                                         -> spots for a niche ask
 //   POST /api/replan { plan | planId, text }                                  -> "it's raining", "running late"...
 // swap, book and replan also take a whole plan (a group chat's ticket) instead of a planId.
@@ -31,7 +30,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 import { FAVES_ID, inviteCode, type ChatOp } from "../src/chat/reduce.mjs";
 import { createRelay } from "./relay.mjs";
-import { cartesiaReady, e164, getCall, placeCall, speak, transcribe } from "./cartesia";
+import { cartesiaReady, speak, transcribe } from "./cartesia";
 
 // .env and .env.local (never overriding what the shell already set).
 for (const f of [".env", ".env.local"]) {
@@ -206,8 +205,9 @@ async function book(body: { planId?: string; plan?: Plan }) {
   if (!st) throw new Error("No plan with that id. Plan again first.");
   const bookings = st.plan.stops.map((s, i) => {
     const p = st.city.byId.get(s.placeId) as Place;
-    const how = p.reserveUrl ? "online" : (p.category === "food" || p.category === "night" || p.category === "classes") && p.phone ? "call" : "walk-in";
-    return { n: i + 1, name: p.name, time: formatClock(s.start), how, url: p.reserveUrl, phone: how === "call" ? p.phone : null };
+    // "phone": the place only takes bookings by phone, so the group gets its number to call.
+    const how = p.reserveUrl ? "online" : (p.category === "food" || p.category === "night" || p.category === "classes") && p.phone ? "phone" : "walk-in";
+    return { n: i + 1, name: p.name, time: formatClock(s.start), how, url: p.reserveUrl, phone: how === "phone" ? p.phone : null };
   });
   return { planId: body.planId, day: st.plan.dayLabel, groupSize: st.plan.groupSize, bookings, fee: { amount: "0.5", currency: "FET", why: "Faves booking fee for the whole group's day" } };
 }
@@ -258,48 +258,6 @@ const readRaw = (req: IncomingMessage) => new Promise<Buffer>((resolve) => {
   req.on("end", () => resolve(Buffer.concat(parts)));
 });
 
-// The butler says something in a group chat (Convex or the relay).
-async function butlerSay(groupId: string, text: string) {
-  await chatApply(FAVES_ID, { op: "send", message: { id: `m-call-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, groupId, authorId: FAVES_ID, authorName: BUTLER.name, kind: "agent", text } } as ChatOp);
-}
-
-// The booking call. Never without a group member's confirm tap; the voice says it's an AI. It
-// dials the demo phone (FAVES_CALL_NUMBER) unless FAVES_CALL_REAL=1 lets it ring the place itself.
-type CallBody = { groupId?: string; placeName: string; phone?: string | null; day: string; time: string; partySize?: number; confirmedBy?: { id?: string; name?: string } };
-async function call(body: CallBody) {
-  const who = body.confirmedBy?.name?.trim();
-  if (!who || !body.confirmedBy?.id) throw new Error("Someone in the group has to confirm the call first.");
-  if (!body.placeName) throw new Error("Which place?");
-  const real = process.env.FAVES_CALL_REAL === "1";
-  const to = e164(String(real ? body.phone ?? "" : process.env.FAVES_CALL_NUMBER ?? ""));
-  if (!to) throw new Error(real ? `No phone number for ${body.placeName}.` : "Set FAVES_CALL_NUMBER (the demo phone) in .env.");
-  const vars = { place_name: body.placeName, booker_name: who.split(/\s+/)[0], party_size: String(Math.max(1, body.partySize ?? 2)), day: body.day, time: body.time };
-  const id = await placeCall(to, vars);
-  calls.set(id, { place: body.placeName, status: "started" });
-  if (body.groupId) await butlerSay(body.groupId, `Calling ${body.placeName} now to book for ${vars.party_size} on ${body.day} at ${body.time}, under ${vars.booker_name}. ${who.split(/\s+/)[0]} confirmed. The voice says it's an AI. I'll post how it goes.`);
-  void follow(id, body.groupId ?? null, body.placeName);
-  return { ok: true, callId: id, dialing: real ? "the place" : "the demo phone" };
-}
-
-// Calls placed by this server, with how each went (for GET /api/call/:id and the agents).
-const calls = new Map<string, { place: string; status: string; outcome?: string }>();
-
-async function follow(id: string, groupId: string | null, place: string) {
-  const done = async (status: string, outcome: string) => {
-    calls.set(id, { place, status, outcome });
-    if (groupId) await butlerSay(groupId, outcome);
-  };
-  for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 6000));
-    const c = await getCall(id).catch(() => null);
-    if (!c || c.status === "created" || c.status === "started") continue;
-    if (c.end_reason === "voicemail_detected") return done("voicemail", `${place} went to voicemail. I left a short message; try again later or book online.`);
-    if (c.status === "failed" || /^dial_/.test(c.end_reason ?? "")) return done("failed", `The call to ${place} didn't go through (${(c.end_reason ?? c.error_message ?? "failed").replace(/_/g, " ")}).`);
-    return done("completed", `Call with ${place} is done. ${c.summary ?? "No summary came back; check the transcript in Cartesia."}`);
-  }
-  return done("unknown", `Still no word from the call to ${place}. Check it in Cartesia.`);
-}
-
 const readBody = (req: IncomingMessage) => new Promise<Record<string, unknown>>((resolve) => {
   let raw = "";
   req.on("data", (c) => { raw += c; });
@@ -315,12 +273,8 @@ const http = createServer(async (req, res) => {
       const st = plans.get(decodeURIComponent(url.slice("/api/plan/".length)));
       return st ? send(res, 200, summarize(st.plan.id, st)) : send(res, 404, { error: "No plan with that id." });
     }
-    if (url.startsWith("/api/call/") && req.method === "GET") {
-      const c = calls.get(decodeURIComponent(url.slice("/api/call/".length)));
-      return c ? send(res, 200, c) : send(res, 404, { error: "No call with that id." });
-    }
     if (url === "/api/voice" && req.method === "GET") {
-      return send(res, 200, { ready: cartesiaReady(), calls: Boolean(cartesiaReady() && process.env.CARTESIA_AGENT_ID && process.env.CARTESIA_FROM_NUMBER_ID), dials: process.env.FAVES_CALL_REAL === "1" ? "the place" : process.env.FAVES_CALL_NUMBER ? "the demo phone" : null });
+      return send(res, 200, { ready: cartesiaReady() });
     }
     if (url.startsWith("/api/tts?") && req.method === "GET") {
       if (!cartesiaReady()) return send(res, 503, { error: "Voice needs CARTESIA_API_KEY." });
@@ -342,7 +296,6 @@ const http = createServer(async (req, res) => {
         res.writeHead(200, { "Content-Type": "audio/mpeg", "Access-Control-Allow-Origin": "*", "Content-Length": mp3.length });
         return res.end(mp3);
       }
-      if (url === "/api/call") return send(res, 200, await call(body as never));
       if (url === "/api/plan") return send(res, 200, await plan(body as never));
       if (url === "/api/swap") return send(res, 200, await swap(body as never));
       if (url === "/api/book") return send(res, 200, await book(body as never));

@@ -2,9 +2,9 @@
 
 Speaks the Agent Chat Protocol (so it works in ASI:One) and coordinates three agents:
 Faves Planner (the day, fair to everyone's starting point), Faves Scout (niche asks, live
-Apify runs) and Faves Booker (reservation links and AI booking calls). The whole flow works in
-one conversation: ask -> a fair plan with each friend's travel time -> swap a stop -> book ->
-a Faves group chat invite link. It charges a small booking fee through the Payment Protocol.
+Apify runs) and Faves Booker (reservation links, walk-ins, numbers to call). The whole flow
+works in one conversation: ask -> a fair plan with each friend's travel time -> swap a stop ->
+book -> a Faves group chat invite link. It charges a small booking fee through the Payment Protocol.
 If an agent doesn't answer, the Butler calls the Faves API itself, so the chat never stalls.
 """
 from __future__ import annotations
@@ -169,7 +169,7 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
         lines = [f"Here's what I found{tag}:"] + [spot(x) for x in spots]
         return chat_text("\n".join(lines) + "\n\nWant me to plan a day around one of them?")
 
-    if intent in {"swap", "book", "call", "group"} and not plan:
+    if intent in {"swap", "book", "group"} and not plan:
         return chat_text("Let's plan the day first. " + HELP)
 
     if intent == "swap":
@@ -183,34 +183,17 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
         save(ctx, sender, s)
         return chat_text(plan_text(new, new.get("changed")), plan_card(new))
 
-    if intent in {"book", "call"}:
-        call_stop = int(it["stop"]) if str(it.get("stop") or "").isdigit() else None
-        if intent == "call" and call_stop is None and it.get("stop"):
-            call_stop = next((st["n"] for st in plan["stops"] if str(it["stop"]).lower() in st["name"].lower()), None)
-        confirmed = intent == "call" and bool(it.get("confirm"))
-        if it.get("name"):
-            s["name"] = it["name"]
-        r = await ask(ctx, "booker", BookRequest(plan_id=plan["planId"], call_stop=call_stop, confirmed=confirmed, booker_name=s.get("name")), BookReply)
-        res = r.model_dump() if r and r.ok else {**(await api.book(plan["planId"])), "call": None}
+    if intent == "book":
+        r = await ask(ctx, "booker", BookRequest(plan_id=plan["planId"]), BookReply)
+        res = r.model_dump() if r and r.ok else await api.book(plan["planId"])
         lines = ["Here's how the day gets booked:"]
-        calls = []
         for b in res["bookings"]:
             if b["how"] == "online":
                 lines.append(f"- **{b['name']}** ({b['time']}): [reserve online]({b['url']})")
-            elif b["how"] == "call":
-                calls.append(b)
-                lines.append(f"- **{b['name']}** ({b['time']}): phone bookings only, {b['phone']}")
+            elif b["how"] == "phone":
+                lines.append(f"- **{b['name']}** ({b['time']}): books by phone only, call them at {b['phone']}")
             else:
                 lines.append(f"- **{b['name']}** ({b['time']}): no booking needed, just show up")
-        call = res.get("call")
-        if call and call.get("callId"):
-            s["callId"] = call["callId"]
-            who = s.get("name") or "your group"
-            lines.append(f"\nCalling now, to {call.get('dialing', 'the place')}, with an AI voice that says it's an AI and books under **{who}**. Ask **how did the call go?** in a minute.")
-        elif call:
-            lines.append(f"\nCall: {call.get('message') or call.get('status')}")
-        elif calls and intent != "call":
-            lines.append(f"\nI can call {calls[0]['name']} for you with an AI voice that says it's booking for your group. Say **yes, call stop {calls[0]['n']} under <your name>** to confirm.")
         s["booked"] = True
         save(ctx, sender, s)
         fee = res.get("fee")
@@ -225,14 +208,6 @@ async def handle(ctx: Context, sender: str, text: str) -> ChatMessage:
             ))
         lines.append("\nWant a group chat for your friends? Say **make a group chat**.")
         return chat_text("\n".join(lines))
-
-    if intent == "callstatus":
-        if not s.get("callId"):
-            return chat_text("There's no call yet. Say **yes, call stop N** (and **under <your name>**) to book one by phone.")
-        c = await api.call_status(s["callId"])
-        if c.get("outcome"):
-            return chat_text(c["outcome"])
-        return chat_text(f"The call to {c.get('place', 'the place')} is still going. Ask again in a minute.")
 
     if intent == "group":
         g = await api.group(plan["planId"], s.get("groupName") or "")

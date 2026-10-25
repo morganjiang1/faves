@@ -6,7 +6,6 @@ Settings come from faves/.env (never committed):
   ASI_ONE_API_KEY      ASI:One LLM for understanding requests (optional; rules work without it)
   AGENTVERSE_API_KEY   registers the agents on Agentverse so ASI:One can find them
   APIFY_TOKEN          live scouting through Apify Actors (optional)
-  CARTESIA_API_KEY     the booking call voice (optional)
 """
 from __future__ import annotations
 
@@ -36,7 +35,6 @@ FAVES_API_URL = os.getenv("FAVES_API_URL", "http://localhost:8787").rstrip("/")
 ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY") or None
 AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY") or None
 APIFY_TOKEN = os.getenv("APIFY_TOKEN") or None
-CARTESIA_API_KEY = os.getenv("CARTESIA_API_KEY") or None
 
 # FAVES_AGENTS_LOCAL=1 keeps the agents off Agentverse (tests run them in one process).
 MAILBOX = os.getenv("FAVES_AGENTS_LOCAL") != "1"
@@ -90,11 +88,6 @@ class FavesAPI:
     async def group(self, plan_id: str, name: str = "") -> dict[str, Any]:
         return await self._post("group", {"planId": plan_id, "name": name})
 
-    async def call_status(self, call_id: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=20) as client:
-            r = await client.get(f"{self.base}/api/call/{call_id}")
-            return r.json()
-
     async def scout(self, city: str, query: str) -> dict[str, Any]:
         return await self._post("scout", {"city": city, "query": query})
 
@@ -133,14 +126,10 @@ class ScoutReply(Model):
 
 class BookRequest(Model):
     plan_id: str
-    call_stop: Optional[int] = None  # a stop to phone (only after a person confirms)
-    confirmed: bool = False
-    booker_name: Optional[str] = None  # the name the booking goes under
 
 
 class BookReply(Model):
     ok: bool
     bookings: list[dict[str, Any]] = []
     fee: Optional[dict[str, Any]] = None
-    call: Optional[dict[str, Any]] = None
     error: Optional[str] = None
