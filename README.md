@@ -7,8 +7,9 @@ plans the whole day so it's fair for everyone's starting point, and lets your gr
 together with an agent that books and reminds.
 
 - **Spots are postcards.** Home opens on "this week in <city>", a deck of the spots locals love,
-  each with a short clip and a Locals Score stamp. A spot's page is one big postcard with the
-  facts on paper, a real local quote and a wall of posts from people who went.
+  each with a short clip and a Locals Score stamp. A spot's page is one big postcard, the facts
+  and the score as one line each (tap for the details), a real local quote and the posts from
+  people who went. Every screen keeps what you need now in view and the rest one tap away.
 - **Locals Score** for every spot: what people on Faves rank, post and save, with a hidden-gem
   flag for places locals rate highly that few visitors have found. So the app works on day one, the
   10 launch cities were seeded from what locals already share publicly (reviews and local posts,

@@ -52,8 +52,8 @@ signals only (locals who ranked it, moments, saves, shared days), in the palette
   degrees, in the postcard's top corner. Muted (line ring) when a spot isn't rated yet.
 - **Postmark** (`Postmark`): wavy lines with the neighborhood and how long ago it was posted.
 - **Ticket** (`Ticket`): a perforated edge between the stops and a sunset stub with the day, the
-  date, the start time and "admit N". Stops with times, travel legs, a route sketch, the fairness
-  row ("everyone's within 25 min" with each person's trip), who's in.
+  date, the start time and "admit N". Stops as one line each (time and name), the mini map, one
+  fairness line ("Everyone's within 25 min", tap it for each person's trip), who's in by name.
 - **Buttons:** primary = roseInk with a darker lip (`#8F1C38`, 3 pt) and cream label; secondary =
   card with a line border; chips = paperDeep pills, ink when selected.
 - **Corners:** cards 18, sheets 24, buttons 16, chips full round, postcard frames 10.
@@ -62,21 +62,31 @@ signals only (locals who ranked it, moments, saves, shared days), in the palette
 
 | Component | Where | What makes it Faves |
 |---|---|---|
-| Postcard deck | Home, "this week in <city>" | a pile of tilted postcards you flick through; the top one plays its clip |
-| Postcard rows | Home (tonight, this weekend, hidden gems) | small postcards with stamps; gems get a lavender gem badge |
-| Place page | `place/[id]` | one big 4:5 postcard (clips and photos, swipe with dots), the facts written on paper below, a postcard wall of Spot Moments, sticky "Add to a plan" and "Send to a chat" |
-| Plan ticket | itinerary, chats, Home "your plans" | the ticket above; in a chat it carries In / Maybe / Out, a thumbs up, Swap a stop, Lock it in, Itinerary |
-| Pinned hangout | top of a chat | the next locked plan as a stub with a countdown, tap for directions |
-| The agent | every group chat | "Fave" (renamable), rose-tint bubbles with a heart; change notes in lavender pills say who changed what; a phone number in its message is bold and underlined, tap it to call |
-| Quick asks | above the chat composer | Plan something, Find a spot, Book it, Remind us, Running late, tl;dr |
+| Postcard deck | Home, "this week in <city>" | a pile of tilted postcards you flick through; the top one plays its clip; quiet dots under it (tap to deal the next) |
+| Postcard rows | Home (tonight, or this weekend when tonight is empty; hidden gems) | small postcards with stamps; gems get a lavender gem badge |
+| Place page | `place/[id]` | one big 4:5 postcard (clips and photos, swipe with dots), the name and a one-line vibe, one facts line ("Open till 12 AM · Free · 0.4 mi", tap for the Details sheet), one score line ("9.7 from 348 locals", tap for where it comes from), a local's quote, a small strip of moments, sticky "Add to a plan" with a send-to-chat icon |
+| Plan ticket | chats, Home "your plans" | the ticket above; in a chat it carries In / Maybe / Out, Lock it in (Add to calendar once locked) and a "..." Plan options sheet (swap a stop, the full day); option tickets add a thumbs up for the vote |
+| Pinned hangout | top of a chat | the next locked plan as a stub: day, time, title, the countdown and who's going |
+| The agent | every group chat | "Fave" (renamable), rose-tint bubbles with a heart, one or two short spoken lines that never repeat the ticket; change notes in lavender pills say who asked; a phone number in its message is bold and underlined, tap it to call |
+| Quick asks | above the chat composer | the three that fit the moment (no plan: Plan something, Find a spot, Two options or tl;dr; a proposed plan: Book it, tl;dr, Plan something; locked: Running late, Remind us, Book it), and a pinned "+" that opens every ask |
+| More sheets | ticket "...", itinerary "Change plans", group info, Settings | `MenuRow` rows on a paper `Sheet`: what you need now stays on the screen, the rest is one tap away |
 | Voice | chat header and composer | a speaker that reads the agent's replies aloud, a mic for voice notes |
 | Map | Explore, itinerary, day page, saved | OpenStreetMap tiles under a paper wash, emoji spot pins with names, numbered plum teardrops on the route |
 | Onboarding | first run | three of the city's postcards fanned on paper, the rose wordmark, one question per screen with postcard-framed photo tiles |
 | Empty states | everywhere | a blank tilted postcard with a dashed stamp holding the icon, a display title, one line, one button |
 
+## Simple, not bare
+
+Each screen shows what the person needs for what they're doing right now, and tucks the rest
+one tap away. It isn't one rule for every screen: a plan ticket keeps its stops, times and In /
+Maybe / Out in view, a spot page keeps why it's good (the score, a local's words, moments) in
+view, and the details (hours, address, phone, each person's trip, re-plans, weather, the score
+breakdown) open in a sheet or a tap. No sentence where a label works, no helper text people
+don't need to act, one row of chips at most, tap targets of 44 pt or more.
+
 ## Words
 
-Plain and short. No em dashes. Say what happens ("Moved the reminders to the new times"), not
+Plain and short. No em dashes. The agent talks in one or two short lines that can be read aloud. Say what happens ("Moved the reminders to the new times"), not
 what the system is. Sample people are tagged **Sample**; rewards and payouts in this build are
 tagged **Test data**.
 
