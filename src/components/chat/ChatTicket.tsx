@@ -2,14 +2,12 @@
 // up, "swap a stop", "lock it in", add to calendar, and a nudge to re-balance when someone's
 // starting point changed since the plan was made.
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { addToCalendar } from "@/chat/calendar";
 import { needsRebalance, planForGroup } from "@/chat/plan";
 import type { Group, Member, Rsvp, Ticket as TicketT } from "@/chat/reduce.mjs";
 import { chat } from "@/chat/store";
-import { apiBase, voiceStatus } from "@/chat/voice";
-import { formatClock } from "@/lib/time";
 import type { City } from "@/data/types";
 import { alternativesFor, swapStop, type Plan } from "@/lib/planner";
 import { font, palette } from "@/theme/tokens";
@@ -27,9 +25,6 @@ export function ChatTicket({ ticket, group, users, me, city, testID }: { ticket:
   const plan = ticket.plan as Plan;
   const [swapOpen, setSwapOpen] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const [callOpen, setCallOpen] = useState(false);
-  // Stops that only book by phone: the butler can call them, after someone here confirms.
-  const phoneStops = useMemo(() => (city ? plan.stops.map((s, i) => ({ s, i, p: city.byId.get(s.placeId) })).filter((x) => x.p && x.p.phone && !x.p.reserveUrl && ["food", "night", "classes"].includes(x.p.category)) : []), [plan, city]);
   const people = group.members.map((m) => ({ id: m.id, name: (users[m.id] ?? m).name, answer: ticket.rsvps[m.id] }));
   const mine = ticket.rsvps[me.id];
   const thumbs = Object.values(ticket.thumbs).filter(Boolean).length;
@@ -74,7 +69,6 @@ export function ChatTicket({ ticket, group, users, me, city, testID }: { ticket:
           <Small testID={`${testID}-lock`} icon="lock-closed-outline" label="Lock it in" onPress={() => chat.updateTicket(ticket.id, { status: "locked" }, `${name} locked in the plan`)} />
         )}
         <Small testID={`${testID}-open`} icon="map-outline" label="Itinerary" onPress={() => router.push(`/plan/${plan.id}`)} />
-        {phoneStops.length ? <Small testID={`${testID}-call`} icon="call-outline" label="Call to book" onPress={() => setCallOpen(true)} /> : null}
       </View>
       {note ? <Text style={styles.note}>{note}</Text> : null}
     </>
@@ -89,50 +83,11 @@ export function ChatTicket({ ticket, group, users, me, city, testID }: { ticket:
         setSwapOpen(false);
         await chat.updateTicket(ticket.id, { plan: swapStop(plan, city, index, placeId) }, `${name} swapped ${before} for ${after}`);
       }} /> : null}
-      {phoneStops.length ? <CallSheet open={callOpen} onClose={() => setCallOpen(false)} stops={phoneStops.map((x) => ({ name: x.p!.name, phone: x.p!.phone!, time: formatClock(x.s.start) }))} day={plan.dayLabel} party={Math.max(Object.values(ticket.rsvps).filter((a) => a === "in").length, 2)} who={name} butler={group.butlerName || "Fave"}
-        onCall={async (stop) => {
-          setCallOpen(false);
-          const base = apiBase();
-          if (!base) { setNote("Can't reach the Faves server for calls."); return; }
-          try {
-            const r = await fetch(`${base}/api/call`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ groupId: group.id, placeName: stop.name, phone: stop.phone, day: plan.dayLabel, time: stop.time, partySize: Math.max(Object.values(ticket.rsvps).filter((a) => a === "in").length, 2), confirmedBy: { id: me.id, name: me.name } }) });
-            const data = (await r.json()) as { error?: string; dialing?: string };
-            setNote(r.ok ? `Calling ${stop.name} (${data.dialing ?? "the place"}).` : data.error ?? "The call didn't start.");
-          } catch {
-            setNote("Can't reach the Faves server for calls.");
-          }
-        }} /> : null}
     </>
   );
 }
 
-// The confirm step before the butler phones a place: who it calls, what it asks for, and that
-// the voice says it's an AI. Nothing is dialed until someone taps Call now.
-function CallSheet({ open, onClose, stops, day, party, who, butler, onCall }: { open: boolean; onClose: () => void; stops: { name: string; phone: string; time: string }[]; day: string; party: number; who: string; butler: string; onCall: (s: { name: string; phone: string; time: string }) => void }) {
-  const [pick, setPick] = useState(0);
-  const [dials, setDials] = useState<string | null>(null);
-  useEffect(() => { if (open) voiceStatus().then((v) => setDials(v.dials)).catch(() => {}); }, [open]);
-  const s = stops[Math.min(pick, stops.length - 1)];
-  return (
-    <Sheet open={open} onClose={onClose} title="Call to book?" subtitle={`${butler} makes the call`} testID="call-sheet">
-      <View style={{ paddingHorizontal: 18, gap: 10, paddingBottom: 12 }}>
-        {stops.length > 1 ? stops.map((x, i) => (
-          <Pressable key={x.name} testID={`call-pick-${i}`} onPress={() => setPick(i)} style={[styles.sheetRow, i === pick && { borderColor: palette.rose }]}>
-            <Text style={styles.callName}>{x.name}</Text><Text style={styles.callSub}>{x.time}</Text>
-          </Pressable>
-        )) : null}
-        <Text style={styles.callBody} testID="call-what">{butler} calls {s.name}{dials === "the demo phone" ? " (in this demo it rings the demo phone)" : ` at ${s.phone}`} to book for {party} on {day} at {s.time}, under {who}. The voice says it's an AI assistant, and it never gives card details.</Text>
-        <Pressable testID="call-confirm" accessibilityRole="button" onPress={() => onCall(s)} style={styles.callGo}>
-          <Icon name="call" size={17} tint={palette.cream} />
-          <Text style={styles.callGoText}>Call now</Text>
-        </Pressable>
-        <Pressable testID="call-cancel" accessibilityRole="button" onPress={onClose} style={{ alignSelf: "center", padding: 8 }}><Text style={styles.callSub}>Not now</Text></Pressable>
-      </View>
-    </Sheet>
-  );
-}
-
-function Small({ icon, label, onPress, testID }: { icon: "swap-horizontal" | "calendar-outline" | "lock-closed-outline" | "map-outline" | "call-outline"; label: string; onPress: () => void; testID?: string }) {
+function Small({ icon, label, onPress, testID }: { icon: "swap-horizontal" | "calendar-outline" | "lock-closed-outline" | "map-outline"; label: string; onPress: () => void; testID?: string }) {
   return (
     <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={styles.small}>
       <Icon name={icon} size={15} tint={palette.roseInk} />
@@ -177,11 +132,6 @@ export function GoingFaces({ names }: { names: string[] }) {
 }
 
 const styles = StyleSheet.create({
-  callName: { flex: 1, fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.ink },
-  callSub: { fontFamily: font.sans, fontSize: 13.5, color: palette.inkMuted },
-  callBody: { fontFamily: font.sans, fontSize: 15, lineHeight: 21, color: palette.ink },
-  callGo: { flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", backgroundColor: palette.roseInk, borderRadius: 14, paddingVertical: 13, marginTop: 4 },
-  callGoText: { fontFamily: font.sans, fontSize: 16, fontWeight: "800", color: palette.cream },
   answers: { flexDirection: "row", gap: 6, alignItems: "center" },
   answer: { flex: 1, height: 36, borderRadius: 10, borderWidth: 1.5, borderColor: palette.ink, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
   answerOn: { backgroundColor: palette.ink },

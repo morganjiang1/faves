@@ -19,6 +19,7 @@ import { Ticket } from "@/components/ticket/Ticket";
 import { Chip, EmptyState, Icon, PrimaryButton, UserDisc } from "@/components/ui";
 import type { City } from "@/data/types";
 import { findDay } from "@/lib/community";
+import { callNumber } from "@/lib/links";
 import type { Plan } from "@/lib/planner";
 import { formatClock } from "@/lib/time";
 import { useCityBySlug } from "@/state/city";
@@ -268,11 +269,20 @@ function MessageRow({ m, mine, showName, city, tickets, render }: { m: Message; 
       {day && city ? <View style={{ width: "100%", marginVertical: 4 }}><Ticket plan={day.plan} city={city} compact sample onPress={() => router.push(`/day/${encodeURIComponent(day.id)}`)} /></View> : null}
       {m.text ? (
         <View style={[styles.bubble, mine ? styles.mine : isFaves ? styles.faves : styles.theirs, m.pending && { opacity: 0.7 }]}>
-          <Text style={[styles.text, mine && { color: palette.cream }]}>{m.text}</Text>
+          <Text style={[styles.text, mine && { color: palette.cream }]}>{isFaves ? withPhoneLinks(m.text) : m.text}</Text>
         </View>
       ) : null}
     </View>
   );
+}
+
+// Phone numbers in the butler's messages ("books by phone only, call them at (415) 555-0101")
+// are tappable, so anyone can call the place themselves.
+const PHONE = /(\(?\d{3}\)?[ .-]\d{3}-\d{4})/g;
+function withPhoneLinks(text: string) {
+  const parts = text.split(PHONE);
+  if (parts.length === 1) return text;
+  return parts.map((x, i) => (i % 2 ? <Text key={i} style={styles.phoneLink} accessibilityRole="link" onPress={() => callNumber(x)}>{x}</Text> : x));
 }
 
 const DAYS = [
@@ -348,6 +358,7 @@ const styles = StyleSheet.create({
   theirs: { backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, borderBottomLeftRadius: 5 },
   faves: { backgroundColor: palette.roseTint, borderBottomLeftRadius: 5 },
   text: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.ink },
+  phoneLink: { fontWeight: "700", textDecorationLine: "underline" },
   voice: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", marginRight: 10, borderWidth: 1, borderColor: palette.line },
   voiceOn: { backgroundColor: palette.roseInk, borderColor: palette.roseInk },
   asks: { flexGrow: 0, backgroundColor: palette.paper },

@@ -66,7 +66,7 @@ export const book = internalAction({
       const at = formatClock(s.start, { compact: true });
       if (!p) return `• ${at}: no booking needed`;
       if (p.reserveUrl) return `• ${at} ${p.name}: reserve here ${p.reserveUrl}`;
-      if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: books by phone at ${p.phone}. Tap Call to book on the ticket and I'll call for us.`;
+      if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: books by phone only, call them at ${p.phone}`;
       return `• ${at} ${p.name}: walk in, nothing to book`;
     });
     const lead = t.status === "locked" ? `Locked in! ${t.going} going. Here's the booking:` : "Here's how to book it:";

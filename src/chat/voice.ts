@@ -10,13 +10,13 @@ export function apiBase(): string | null {
   return ws ? ws.replace(/^ws/, "http") : null;
 }
 
-export type VoiceStatus = { ready: boolean; calls: boolean; dials: string | null };
+export type VoiceStatus = { ready: boolean };
 let cached: { at: number; v: VoiceStatus } | null = null;
 
 export async function voiceStatus(): Promise<VoiceStatus> {
   if (cached && Date.now() - cached.at < 60_000) return cached.v;
   const base = apiBase();
-  let v: VoiceStatus = { ready: false, calls: false, dials: null };
+  let v: VoiceStatus = { ready: false };
   if (base) {
     try {
       const r = await fetch(`${base}/api/voice`);

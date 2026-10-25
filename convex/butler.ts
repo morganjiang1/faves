@@ -135,7 +135,7 @@ async function findByVibe(ctx: ActionCtx, g: GroupView, vibe: string) {
   return `A few spots that match "${vibe}": ${hits.map((h) => h.name).join(", ")}.`;
 }
 
-// Book: post how to book each stop (links, phone, walk-in). The flow posts the message itself.
+// Book: post how to book each stop (links, the number to call, walk-in). The flow posts the message itself.
 async function bookIt(ctx: ActionCtx, g: GroupView): Promise<string> {
   if (!g.ticket) return "There's no plan to book yet. Ask me to plan something first.";
   await ctx.runAction(internal.flow.book, { ticketId: g.ticket.ticketId });
@@ -154,12 +154,6 @@ async function remindUs(ctx: ActionCtx, g: GroupView): Promise<string> {
   const left = rs.filter((r) => !r.sent);
   if (!left.length) return "All the reminders for this plan have gone out.";
   return `Reminders are set:\n${left.map((r) => `• ${r.when}: ${r.text}`).join("\n")}`;
-}
-
-// Calls never start from a message: someone taps Call to book on the ticket and confirms.
-function callFirst(g: GroupView): string {
-  if (!g.ticket) return "There's no plan to call about yet. Ask me to plan something first.";
-  return "I can call to book. Tap Call to book on the ticket and confirm, and I'll ring them. I always say I'm an AI.";
 }
 
 function summary(g: GroupView) {
@@ -194,8 +188,7 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
       planOptions: createTool({ description: "Post two different plans (Option A and Option B) for the group to vote on with thumbs up.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => planOptions(ctx, g, request, askedBy) }),
       pickWinner: createTool({ description: "Count the thumbs on Option A and Option B and lock in the winner.", inputSchema: z.object({}), execute: async (ctx): Promise<string> => pickWinner(ctx, g) }),
       summarize: createTool({ description: "Sum up the chat (tl;dr).", inputSchema: z.object({}), execute: async (): Promise<string> => summary(g) }),
-      book: createTool({ description: "Book the current plan: post how to book each stop (reservation links, phone, walk-in).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => (await bookIt(ctx, g)) || "Posted the booking details." }),
-      callToBook: createTool({ description: "When someone asks you to phone a place to book: explain how to confirm the call (you never dial without a confirm tap).", inputSchema: z.object({}), execute: async (): Promise<string> => callFirst(g) }),
+      book: createTool({ description: "Book the current plan: post how to book each stop (reservation links, the phone number for places that only book by phone, walk-in). You never phone anyone yourself; if someone asks you to call a place, use this so they get its number.", inputSchema: z.object({}), execute: async (ctx): Promise<string> => (await bookIt(ctx, g)) || "Posted the booking details." }),
       remind: createTool({ description: "Set or list reminders for the locked-in plan (the evening before, and leave-now for each person).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => remindUs(ctx, g) }),
     },
     stopWhen: stepCountIs(4),
@@ -210,8 +203,8 @@ async function rules(ctx: ActionCtx, g: GroupView, text: string, askedBy: string
   if (/\b(tl;?dr|summary|sum up|recap)\b/i.test(t)) return summary(g);
   if (/\b(which one|who won|winner|count the votes|tally)\b/i.test(t)) return pickWinner(ctx, g);
   if (/\b(options?|choices|to vote on)\b/i.test(t)) return planOptions(ctx, g, t, askedBy);
-  if (/\b(call|phone|ring)\b/i.test(t)) return callFirst(g);
-  if (/\bbook\b/i.test(t) && !/\b(book ?store|books)\b/i.test(t)) return bookIt(ctx, g);
+  // Asked to call a place: the booking details, with the number for anyone to call.
+  if (/\b(book|call|phone)\b/i.test(t) && !/\b(book ?store|books)\b/i.test(t)) return bookIt(ctx, g);
   if (/\bremind\b/i.test(t)) return remindUs(ctx, g);
   if (g.ticket && /\b(rain|raining|late|cheaper|remove|skip)\b/i.test(t)) return changePlan(ctx, g, t, askedBy);
   const sw = t.match(/\b(?:swap|replace|switch)\s+(?:the\s+)?(?:stop\s+)?(.+?)\s+(?:for|with)\s+(.+)$/i);
