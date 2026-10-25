@@ -102,6 +102,27 @@ async function findByVibe(ctx: ActionCtx, g: GroupView, vibe: string) {
   return `A few spots that match "${vibe}": ${hits.map((h) => h.name).join(", ")}.`;
 }
 
+// Book: post how to book each stop (links, phone, walk-in). The flow posts the message itself.
+async function bookIt(ctx: ActionCtx, g: GroupView): Promise<string> {
+  if (!g.ticket) return "There's no plan to book yet. Ask me to plan something first.";
+  await ctx.runAction(internal.flow.book, { ticketId: g.ticket.ticketId });
+  return "";
+}
+
+// Remind us: say which reminders are set, or what it takes to set them.
+async function remindUs(ctx: ActionCtx, g: GroupView): Promise<string> {
+  if (!g.ticket) return "There's no plan yet. Ask me to plan something, lock it in, and I'll remind everyone.";
+  if (g.ticket.status !== "locked") return "Lock the plan in and I'll remind everyone the evening before, plus a leave-now nudge for each of you with your own travel time.";
+  let rs = await ctx.runQuery(internal.flow.remindersFor, { ticketId: g.ticket.ticketId });
+  if (!rs.length) {
+    await ctx.runMutation(internal.flow.scheduleReminders, { ticketId: g.ticket.ticketId });
+    rs = await ctx.runQuery(internal.flow.remindersFor, { ticketId: g.ticket.ticketId });
+  }
+  const left = rs.filter((r) => !r.sent);
+  if (!left.length) return "All the reminders for this plan have gone out.";
+  return `Reminders are set:\n${left.map((r) => `• ${r.when}: ${r.text}`).join("\n")}`;
+}
+
 function summary(g: GroupView) {
   const p = g.ticket?.plan;
   const when = p?.dateISO && p.start != null ? ` on ${dayWord(p.dateISO)} at ${formatClock(p.start)}` : "";
@@ -125,13 +146,15 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
   const options: any = {
     name: g.butlerName,
     languageModel: asi().chat("asi1-mini"),
-    instructions: `You are ${g.butlerName}, the butler in the Faves group chat "${g.name}" (${g.members.length} people). You plan hangouts that are fair for everyone's starting point, change plans when asked (rain, running late, cheaper, swap a stop), find spots by vibe, and sum up the chat. Use the tools to act; then answer in one or two short, warm sentences. No markdown.`,
+    instructions: `You are ${g.butlerName}, the butler in the Faves group chat "${g.name}" (${g.members.length} people). You plan hangouts that are fair for everyone's starting point, change plans when asked (rain, running late, cheaper, swap a stop), find spots by vibe, book the plan, set reminders, and sum up the chat. Use the tools to act; then answer in one or two short, warm sentences. No markdown.`,
     tools: {
       planDay: createTool({ description: "Plan a day or hangout for the group and post it as a ticket.", inputSchema: z.object({ request: z.string().describe("what, when, budget, e.g. 'saturday 1pm to 6pm, pickleball then hot pot'") }), execute: async (ctx, { request }): Promise<string> => planDay(ctx, g, request, askedBy) }),
       changePlan: createTool({ description: "Change the current plan: rain, running late, cheaper, remove or add something.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => changePlan(ctx, g, request, askedBy) }),
       swapStop: createTool({ description: "Swap one stop of the current plan for another kind of spot.", inputSchema: z.object({ stop: z.string().describe("stop number or name"), want: z.string().describe("what instead, e.g. ramen") }), execute: async (ctx, { stop, want }): Promise<string> => swap(ctx, g, stop, want, askedBy) }),
       findSpot: createTool({ description: "Find spots in the city that match a vibe or a niche ask and drop them in the chat.", inputSchema: z.object({ vibe: z.string() }), execute: async (ctx, { vibe }): Promise<string> => findByVibe(ctx, g, vibe) }),
       summarize: createTool({ description: "Sum up the chat (tl;dr).", inputSchema: z.object({}), execute: async (): Promise<string> => summary(g) }),
+      book: createTool({ description: "Book the current plan: post how to book each stop (reservation links, phone, walk-in).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => (await bookIt(ctx, g)) || "Posted the booking details." }),
+      remind: createTool({ description: "Set or list reminders for the locked-in plan (the evening before, and leave-now for each person).", inputSchema: z.object({}), execute: async (ctx): Promise<string> => remindUs(ctx, g) }),
     },
     stopWhen: stepCountIs(4),
   };
@@ -143,6 +166,8 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
 async function rules(ctx: ActionCtx, g: GroupView, text: string, askedBy: string): Promise<string> {
   const t = text.replace(/@\w+/g, "").trim();
   if (/\b(tl;?dr|summary|sum up|recap)\b/i.test(t)) return summary(g);
+  if (/\bbook\b/i.test(t) && !/\b(book ?store|books)\b/i.test(t)) return bookIt(ctx, g);
+  if (/\bremind\b/i.test(t)) return remindUs(ctx, g);
   if (g.ticket && /\b(rain|raining|late|cheaper|remove|skip)\b/i.test(t)) return changePlan(ctx, g, t, askedBy);
   const sw = t.match(/\b(?:swap|replace|switch)\s+(?:the\s+)?(?:stop\s+)?(.+?)\s+(?:for|with)\s+(.+)$/i);
   if (g.ticket && sw) return swap(ctx, g, sw[1], sw[2], askedBy);
@@ -174,7 +199,7 @@ export const reply = internalAction({
       // The model or a tool failed: fall back to the rules once.
       try { answer = await rules(ctx, g, text, askedBy); how = "rules (fallback)"; } catch (e2) { answer = `I couldn't do that just now (${(e2 as Error).message}).`; void e; }
     }
-    await ctx.runMutation(internal.flow.say, { groupId, text: answer });
+    if (answer.trim()) await ctx.runMutation(internal.flow.say, { groupId, text: answer });
     await ctx.runMutation(internal.butler.logRun, { groupId, kind: how, askedBy, input: text, output: answer, status: "done" });
   },
 });

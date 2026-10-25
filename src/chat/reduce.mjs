@@ -58,10 +58,13 @@ export function applyOp(state, op, ctx) {
     case "updateGroup": {
       const g = state.groups[op.groupId];
       if (!isMember(g, ctx.actorId)) return { events: [], error: "not-a-member" };
-      const group = { ...g, ...pick(op.patch, ["name", "emoji"]), updatedAt: now };
+      const patch = pick(op.patch, ["name", "emoji", "butlerName"]);
+      if (patch.butlerName != null) patch.butlerName = String(patch.butlerName).replace(/[^\p{L}\p{N} '-]/gu, "").trim().slice(0, 20) || "Fave";
+      const group = { ...g, ...patch, updatedAt: now };
       state.groups[g.id] = group;
       const events = [{ type: "group", group }];
       if (op.patch.name && op.patch.name !== g.name) events.push(note(state, g.id, `${firstName(actor)} renamed the group to ${op.patch.name}`, now, seed));
+      if (patch.butlerName && patch.butlerName !== (g.butlerName || "Fave")) events.push(note(state, g.id, `${firstName(actor)} named the butler ${patch.butlerName}`, now, seed));
       return { events, result: group };
     }
     case "setStart": {

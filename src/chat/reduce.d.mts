@@ -16,6 +16,7 @@ export interface Group {
   members: Member[];
   inviteCode: string;
   starts?: Record<string, StartPoint>; // by member id
+  butlerName?: string; // the group's butler, "Fave" unless renamed
   createdBy: string;
   createdAt: number; // set by whoever applied the op (the server when one is reachable)
   updatedAt: number;
@@ -65,7 +66,7 @@ export type ChatOp =
   | { op: "hello"; member: Member }
   | { op: "findUser"; handle: string }
   | { op: "createGroup"; group: Omit<Group, "createdAt" | "updatedAt" | "createdBy"> }
-  | { op: "updateGroup"; groupId: string; patch: Partial<Pick<Group, "name" | "emoji">> }
+  | { op: "updateGroup"; groupId: string; patch: Partial<Pick<Group, "name" | "emoji" | "butlerName">> }
   | { op: "addMember"; groupId: string; member: Member }
   | { op: "join"; code: string; member: Member }
   | { op: "removeMember"; groupId: string; memberId: string }

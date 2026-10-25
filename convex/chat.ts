@@ -10,6 +10,8 @@ import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 
 const MENTION = /(^|\s)@(faves?|butler)\b/i;
+// "@jarvis" when the group renamed its butler Jarvis.
+const mentions = (text: string, name?: string) => Boolean(name) && new RegExp(`(^|\\s)@${name!.split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text);
 
 async function groupJson(ctx: QueryCtx, g: Doc<"groups">): Promise<Group> {
   const members = (await ctx.db.query("members").withIndex("by_group", (q) => q.eq("groupId", g.groupId)).collect()).sort((a, b) => a.order - b.order);
@@ -18,6 +20,7 @@ async function groupJson(ctx: QueryCtx, g: Doc<"groups">): Promise<Group> {
     id: g.groupId, name: g.name, emoji: g.emoji, city: g.city, inviteCode: g.inviteCode, createdBy: g.createdBy, createdAt: g.createdAt, updatedAt: g.updatedAt,
     members: members.map((m) => ({ id: m.userId, name: m.name, handle: m.handle, ...(m.sample ? { sample: true } : {}) })),
     starts: Object.fromEntries(locs.map((l) => [l.userId, { hood: l.hood, lat: l.lat, lng: l.lng, mode: l.mode as "transit", live: l.live, at: l.at }])),
+    ...(g.butlerName ? { butlerName: g.butlerName } : {}),
   };
 }
 
@@ -109,7 +112,7 @@ async function persist(ctx: MutationCtx, e: ChatEvent) {
     if (u) await ctx.db.patch(u._id, row); else await ctx.db.insert("users", row);
   } else if (e.type === "group") {
     const g = e.group;
-    const row = { groupId: g.id, name: g.name, emoji: g.emoji, city: g.city, inviteCode: g.inviteCode, createdBy: g.createdBy, createdAt: g.createdAt, updatedAt: g.updatedAt };
+    const row = { groupId: g.id, name: g.name, emoji: g.emoji, city: g.city, inviteCode: g.inviteCode, createdBy: g.createdBy, createdAt: g.createdAt, updatedAt: g.updatedAt, ...(g.butlerName ? { butlerName: g.butlerName } : {}) };
     const existing = await ctx.db.query("groups").withIndex("by_groupId", (q) => q.eq("groupId", g.id)).unique();
     if (existing) await ctx.db.patch(existing._id, row); else await ctx.db.insert("groups", row);
     const rows = await ctx.db.query("members").withIndex("by_group", (q) => q.eq("groupId", g.id)).collect();
@@ -131,7 +134,8 @@ async function persist(ctx: MutationCtx, e: ChatEvent) {
     const m = e.message;
     const dup = await ctx.db.query("messages").withIndex("by_messageId", (q) => q.eq("messageId", m.id)).unique();
     if (!dup) await ctx.db.insert("messages", { messageId: m.id, groupId: m.groupId, authorId: m.authorId, authorName: m.authorName, kind: m.kind, text: m.text, ticketId: m.ticketId, placeId: m.placeId, dayId: m.dayId, createdAt: m.createdAt });
-    if (m.kind === "text" && m.text && MENTION.test(m.text)) {
+    const g = m.kind === "text" && m.text ? await ctx.db.query("groups").withIndex("by_groupId", (q) => q.eq("groupId", m.groupId)).unique() : null;
+    if (m.kind === "text" && m.text && (MENTION.test(m.text) || mentions(m.text, g?.butlerName))) {
       await ctx.scheduler.runAfter(0, internal.butler.reply, { groupId: m.groupId, text: m.text, askedBy: m.authorName });
     }
   } else if (e.type === "ticket") {

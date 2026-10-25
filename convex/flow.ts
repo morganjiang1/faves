@@ -41,7 +41,7 @@ export const ticket = internalQuery({
     if (!t) return null;
     const g = await ctx.db.query("groups").withIndex("by_groupId", (q) => q.eq("groupId", t.groupId)).unique();
     const going = (await ctx.db.query("rsvps").withIndex("by_ticket", (q) => q.eq("ticketId", ticketId)).collect()).filter((r) => r.answer === "in").length;
-    return { groupId: t.groupId, plan: t.plan as PlanJson, butlerName: g?.butlerName ?? "Fave", going };
+    return { groupId: t.groupId, plan: t.plan as PlanJson, status: t.status, butlerName: g?.butlerName ?? "Fave", going };
   },
 });
 
@@ -69,7 +69,8 @@ export const book = internalAction({
       if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: books by phone at ${p.phone}. Say "@fave call ${p.name}" and I'll call for us.`;
       return `• ${at} ${p.name}: walk in, nothing to book`;
     });
-    await ctx.runMutation(internal.flow.say, { groupId: t.groupId, ticketId, text: `Locked in! ${t.going} going. Here's the booking:\n${lines.join("\n")}` });
+    const lead = t.status === "locked" ? `Locked in! ${t.going} going. Here's the booking:` : "Here's how to book it:";
+    await ctx.runMutation(internal.flow.say, { groupId: t.groupId, ticketId, text: `${lead}\n${lines.join("\n")}` });
   },
 });
 
@@ -99,6 +100,22 @@ export const scheduleReminders = internalMutation({
       await ctx.scheduler.runAt(Math.max(w.at, now + 1000), internal.flow.sendReminder, { reminderId: id });
     }
     await butlerSays(ctx, t.groupId, `I'll remind everyone the evening before and send each of you a leave-now nudge with your own travel time.`, { ticketId });
+  },
+});
+
+// A reminder's time on the city's clock: "Fri 7:00 PM".
+export function wallTime(at: number, citySlug: string): string {
+  const off = offsetHours(STD_OFFSET[citySlug] ?? -8, new Date(at));
+  const d = new Date(at + off * 3600_000);
+  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${formatClock(d.getUTCHours() * 60 + d.getUTCMinutes())}`;
+}
+
+export const remindersFor = internalQuery({
+  args: { ticketId: v.string() },
+  handler: async (ctx, { ticketId }) => {
+    const t = await ctx.db.query("plans").withIndex("by_ticketId", (q) => q.eq("ticketId", ticketId)).unique();
+    const rs = await ctx.db.query("reminders").withIndex("by_ticket", (q) => q.eq("ticketId", ticketId)).collect();
+    return rs.sort((a, b) => a.at - b.at).map((r) => ({ at: r.at, when: wallTime(r.at, (t?.plan as PlanJson | undefined)?.citySlug ?? "san-francisco"), text: r.text, sent: r.sent }));
   },
 });
 

@@ -10,13 +10,16 @@ import { isOpenAt } from "@/lib/hours";
 import { activitiesIn, parseRequest } from "@/lib/parser";
 import { parseReplan, replan, type Plan } from "@/lib/planner";
 import { costOf, scoreOutOf10 } from "@/lib/score";
-import { cityClock } from "@/lib/time";
+import { cityClock, formatClock } from "@/lib/time";
 import { getState } from "@/state/store";
 import { groupStarts, planForGroup } from "./plan";
 import type { Group, Member, Ticket } from "./reduce.mjs";
 import { chat } from "./store";
 
-export const mentionsFaves = (text: string) => /(^|\s)@(faves?|butler)\b/i.test(text);
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// "@fave", "@faves", "@butler", or the butler's own name when the group renamed it.
+export const mentionRe = (name?: string) => new RegExp(`(^|\\s)@(faves?|butler${name ? `|${esc(name.split(/\s+/)[0])}` : ""})\\b`, "i");
+export const mentionsFaves = (text: string, name?: string) => mentionRe(name).test(text);
 
 export function currentTicket(tickets: Record<string, Ticket>, groupId: string): Ticket | null {
   const list = Object.values(tickets).filter((t) => t.groupId === groupId);
@@ -47,10 +50,32 @@ export function nearbyPick(city: City, text: string, at: LatLng, exclude: Set<st
 
 export async function answer(input: { city: City; group: Group; users: Record<string, Member>; tickets: Record<string, Ticket>; text: string }): Promise<void> {
   const { city, group, users, tickets } = input;
-  const text = input.text.replace(/@(faves?|butler)\b/gi, "").trim();
+  const text = input.text.replace(new RegExp(mentionRe(group.butlerName).source.replace("(^|\\s)", ""), "gi"), "").trim();
   const ticket = currentTicket(tickets, group.id);
   const plan = ticket ? (ticket.plan as Plan) : null;
   const intent = parseReplan(text, activitiesIn);
+
+  // tl;dr, booking and reminders.
+  if (/\b(tl;?dr|sum up|summary|recap)\b/i.test(text)) {
+    const p = plan ? `Plan: ${plan.title}, ${plan.dayLabel} at ${formatClock(plan.start)}, ${ticket?.status === "locked" ? "locked in" : "not locked yet"}, ${Object.values(ticket?.rsvps ?? {}).filter((a) => a === "in").length} going.` : "No plan yet.";
+    await chat.sayAsFaves(group.id, { text: `tl;dr: ${p}` });
+    return;
+  }
+  if (/\bbook\b/i.test(text)) {
+    if (!plan || !ticket) { await chat.sayAsFaves(group.id, { text: "There's no plan to book yet. Ask me to plan something first." }); return; }
+    const lines = plan.stops.map((s) => {
+      const p = city.byId.get(s.placeId);
+      if (!p) return null;
+      const at = formatClock(s.start, { compact: true });
+      return p.reserveUrl ? `• ${at} ${p.name}: reserve here ${p.reserveUrl}` : p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "") ? `• ${at} ${p.name}: books by phone at ${p.phone}` : `• ${at} ${p.name}: walk in, nothing to book`;
+    }).filter(Boolean);
+    await chat.sayAsFaves(group.id, { ticketId: ticket.id, text: `Here's the booking:\n${lines.join("\n")}` });
+    return;
+  }
+  if (/\bremind\b/i.test(text)) {
+    await chat.sayAsFaves(group.id, { text: ticket?.status === "locked" ? "Reminders for everyone need the live chat, so for now tap Add to calendar on the ticket and your phone will remind you." : "Lock the plan in first, then I'll set reminders." });
+    return;
+  }
 
   // Re-plan the current ticket.
   if (plan && ticket && intent.kind !== "unknown" && intent.kind !== "add") {
