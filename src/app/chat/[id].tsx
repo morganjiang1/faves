@@ -2,8 +2,8 @@
 // In / Maybe / Out, the next locked-in hangout pinned under the header with a countdown,
 // a "plan" button in the composer and @faves for quick asks.
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { answer, currentTicket, mentionsFaves } from "@/chat/agent";
 import { countdown } from "@/chat/calendar";
@@ -35,6 +35,7 @@ export default function ChatThread() {
   const [text, setText] = useState("");
   const [planOpen, setPlanOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => { if (group) chat.markRead(groupId); }, [groupId, group, messages?.length]);
   const [here, setHere] = useState<string[]>([]);
@@ -52,13 +53,16 @@ export default function ChatThread() {
     );
   }
 
-  const send = async () => {
-    const t = text.trim();
+  const butler = group.butlerName || "Fave";
+  const at = `@${butler.split(/\s+/)[0].toLowerCase()}`;
+  const current = currentTicket(v.data.tickets, groupId);
+  const send = async (raw?: string) => {
+    const t = (raw ?? text).trim();
     if (!t) return;
-    setText("");
+    if (raw == null) setText("");
     await chat.sendText(groupId, t);
     // With Convex the group's butler answers from the server; otherwise this phone answers.
-    if (mentionsFaves(t) && city && !serverButler()) {
+    if (mentionsFaves(t, group.butlerName) && city && !serverButler()) {
       setThinking(true);
       try { await answer({ city, group, users: v.data.users, tickets: v.data.tickets, text: t }); } finally { setThinking(false); }
     }
@@ -99,8 +103,8 @@ export default function ChatThread() {
         keyExtractor={(m) => m.id}
         contentContainerStyle={{ padding: 12, gap: 8 }}
         keyboardShouldPersistTaps="handled"
-        ListHeaderComponent={thinking ? <Text style={styles.thinking}>Faves is thinking…</Text> : undefined}
-        ListFooterComponent={<Intro groupName={group.name} />}
+        ListHeaderComponent={thinking ? <Text style={styles.thinking}>{butler} is thinking…</Text> : undefined}
+        ListFooterComponent={<Intro groupName={group.name} butler={at} />}
         renderItem={({ item, index }) => {
           const older = list[index + 1];
           const showName = item.authorId !== me.id && (!older || older.authorId !== item.authorId || older.kind === "note");
@@ -108,26 +112,39 @@ export default function ChatThread() {
         }}
       />
 
+      {!text ? (
+        // Quick asks for the group's butler.
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.asks} contentContainerStyle={styles.asksRow} testID="butler-chips">
+          <View style={styles.asksLabel}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
+          <Chip testID="butler-plan" label="Plan something" onPress={() => { setText(`${at} plan `); inputRef.current?.focus(); }} />
+          <Chip testID="butler-find" label="Find a spot" onPress={() => { setText(`${at} find `); inputRef.current?.focus(); }} />
+          {current ? <Chip testID="butler-book" label="Book it" onPress={() => send(`${at} book it`)} /> : null}
+          {current?.status === "locked" ? <Chip testID="butler-remind" label="Remind us" onPress={() => send(`${at} remind us`)} /> : null}
+          {current?.status === "locked" ? <Chip testID="butler-late" label="Running late" onPress={() => { setText(`${at} running 15 min late`); inputRef.current?.focus(); }} /> : null}
+          {(messages?.length ?? 0) > 3 ? <Chip testID="butler-tldr" label="tl;dr" onPress={() => send(`${at} tl;dr`)} /> : null}
+        </ScrollView>
+      ) : null}
       <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <Pressable testID="composer-plan" accessibilityRole="button" accessibilityLabel="Plan a hangout" onPress={() => setPlanOpen(true)} style={styles.planButton}>
           <Icon name="ticket" size={20} tint={palette.ink} />
         </Pressable>
         <TextInput
+          ref={inputRef}
           testID="composer-input"
           value={text}
           onChangeText={setText}
-          placeholder="Message, or ask @fave"
+          placeholder={`Message, or ask ${at}`}
           placeholderTextColor={palette.inkMuted}
           style={styles.input}
           multiline
           numberOfLines={1}
           maxLength={1000}
-          onSubmitEditing={send}
+          onSubmitEditing={() => send()}
           blurOnSubmit={false}
           returnKeyType="send"
           submitBehavior="submit"
         />
-        <Pressable testID="composer-send" accessibilityRole="button" accessibilityLabel="Send" disabled={!text.trim()} onPress={send} style={[styles.send, !text.trim() && { opacity: 0.4 }]}>
+        <Pressable testID="composer-send" accessibilityRole="button" accessibilityLabel="Send" disabled={!text.trim()} onPress={() => send()} style={[styles.send, !text.trim() && { opacity: 0.4 }]}>
           <Icon name="arrow-up" size={20} tint={palette.cream} />
         </Pressable>
       </View>
@@ -142,11 +159,11 @@ export default function ChatThread() {
   );
 }
 
-function Intro({ groupName }: { groupName: string }) {
+function Intro({ groupName, butler }: { groupName: string; butler: string }) {
   return (
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{groupName}</Text>
-      <Text style={styles.introBody}>Tap the ticket to plan a hangout for everyone, or type @faves with what you're in the mood for.</Text>
+      <Text style={styles.introBody}>Tap the ticket to plan a hangout for everyone, or ask {butler}: it plans, books, reminds and sums up.</Text>
     </View>
   );
 }
@@ -278,6 +295,10 @@ const styles = StyleSheet.create({
   theirs: { backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, borderBottomLeftRadius: 5 },
   faves: { backgroundColor: palette.roseTint, borderBottomLeftRadius: 5 },
   text: { fontFamily: font.sans, fontSize: 16, lineHeight: 21, color: palette.ink },
+  asks: { flexGrow: 0, backgroundColor: palette.paper },
+  asksRow: { paddingHorizontal: 10, paddingTop: 6, paddingBottom: 2, gap: 6, alignItems: "center" },
+  asksLabel: { flexDirection: "row", alignItems: "center", gap: 4, paddingRight: 2 },
+  asksName: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.roseInk },
   composer: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: palette.line, backgroundColor: palette.paper },
   planButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: palette.sunset, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }] },
   input: { flex: 1, minHeight: 40, maxHeight: 120, borderRadius: 20, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontFamily: font.sans, fontSize: 16, color: palette.ink },

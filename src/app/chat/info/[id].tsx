@@ -32,6 +32,7 @@ export default function GroupInfo() {
   const [handle, setHandle] = useState("");
   const [hint, setHint] = useState<string | null>(null);
   const [name, setName] = useState(group?.name ?? "");
+  const [butler, setButler] = useState(group?.butlerName ?? "Fave");
   const [hoodQuery, setHoodQuery] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
@@ -43,6 +44,14 @@ export default function GroupInfo() {
     const q = hoodQuery.trim().toLowerCase();
     return (city?.hoods ?? []).filter((h) => !q || h.toLowerCase().includes(q)).slice(0, q ? 8 : 6);
   }, [city, hoodQuery]);
+
+  const saveName = () => {
+    if (group && name.trim() && name.trim() !== group.name) chat.rename(groupId, name.trim());
+  };
+  const saveButler = () => {
+    const b = butler.trim();
+    if (group && b && b !== (group.butlerName ?? "Fave")) chat.renameButler(groupId, b);
+  };
 
   if (!group || !me) {
     return <View style={[styles.screen, { paddingTop: insets.top + 40 }]}><EmptyState icon="people-outline" title="Group not found" body="You may have left it." cta="Back to chats" onCta={() => router.replace("/chats")} /></View>;
@@ -107,7 +116,7 @@ export default function GroupInfo() {
       <ScrollView contentContainerStyle={{ padding: 18, gap: 22, paddingBottom: insets.bottom + 40 }} keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: "center", gap: 10 }}>
           <View style={styles.sticker}><Text style={{ fontSize: 40 }}>{group.emoji}</Text></View>
-          <TextInput testID="info-name" value={name} onChangeText={setName} onEndEditing={() => name.trim() && name !== group.name && chat.rename(groupId, name.trim())} style={styles.nameInput} maxLength={40} />
+          <TextInput testID="info-name" value={name} onChangeText={setName} onBlur={saveName} onSubmitEditing={saveName} returnKeyType="done" style={styles.nameInput} maxLength={40} />
           <View style={styles.emojis}>
             {EMOJIS.map((e) => <Pressable key={e} accessibilityRole="button" onPress={() => chat.rename(groupId, group.name, e)} style={[styles.emoji, group.emoji === e && styles.emojiOn]}><Text style={{ fontSize: 18 }}>{e}</Text></Pressable>)}
           </View>
@@ -134,6 +143,16 @@ export default function GroupInfo() {
           </View>
           {hint ? <Text style={styles.sub}>{hint}</Text> : null}
           {Platform.OS !== "web" ? <Row icon="people-circle-outline" label="Invite from contacts" onPress={fromContacts} testID="info-contacts" /> : null}
+        </Section>
+
+        <Section title="THE GROUP'S BUTLER">
+          <View style={styles.member}>
+            <View style={styles.butlerDisc}><Icon name="heart" size={18} tint={palette.cream} /></View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <TextInput testID="info-butler-name" value={butler} onChangeText={setButler} onBlur={saveButler} onSubmitEditing={saveButler} returnKeyType="done" style={styles.butlerInput} maxLength={20} autoCorrect={false} accessibilityLabel="Butler's name" />
+              <Text style={styles.sub}>Plans, books, reminds and sums up. Ask with @{(butler.trim() || "Fave").split(/\s+/)[0].toLowerCase()}. It's an AI.</Text>
+            </View>
+          </View>
         </Section>
 
         <Section title="INVITE LINK">
@@ -197,6 +216,8 @@ function Row({ icon, label, onPress, danger, testID }: { icon: "people-circle-ou
 }
 
 const styles = StyleSheet.create({
+  butlerDisc: { width: 36, height: 36, borderRadius: 18, backgroundColor: palette.rose, alignItems: "center", justifyContent: "center" },
+  butlerInput: { fontFamily: font.display, fontSize: 18, color: palette.ink, paddingVertical: 2, borderBottomWidth: 1, borderBottomColor: palette.line },
   screen: { flex: 1, backgroundColor: palette.paper },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingBottom: 8 },
   topTitle: { fontFamily: font.display, fontSize: 19, color: palette.ink },

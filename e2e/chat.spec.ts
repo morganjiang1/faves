@@ -102,3 +102,37 @@ test("an agent's plan becomes a group chat: the invite link opens it with the ti
   await expect(page.getByTestId("chat-messages")).toContainText("Ana joined with the invite link");
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("rename the butler, then use its quick asks: plan, book it, remind us", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganc${run}` });
+  await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
+  await page.getByTestId("chats-new").click();
+  await typeInto(page, "group-name", "Chips test");
+  await page.getByTestId("add-samples").click();
+  await page.getByTestId("create-group").click();
+  await expect(page.getByTestId("chat-screen")).toBeVisible();
+  // Name the butler Jarvis in group info.
+  await page.getByTestId("chat-info").click();
+  const name = page.getByTestId("info-butler-name");
+  await name.fill("Jarvis");
+  await name.blur();
+  await expect(page.getByTestId("group-info")).toContainText("Ask with @jarvis");
+  await page.getByTestId("info-back").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("named the butler Jarvis");
+  await expect(page.getByTestId("butler-chips")).toContainText("Jarvis");
+  // "Plan something" starts the ask; finish it and send.
+  await page.getByTestId("butler-plan").click();
+  await expect(page.getByTestId("composer-input")).toHaveValue("@jarvis plan ");
+  await page.getByTestId("composer-input").pressSequentially("pickleball then hot pot on saturday afternoon", { delay: 2 });
+  await page.getByTestId("composer-send").click();
+  const lock = page.locator('[data-testid^="ticket-"][data-testid$="-lock"]').first();
+  await expect(lock).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("butler-book").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Here's how to book it", { timeout: 30_000 });
+  await lock.click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Locked in!", { timeout: 30_000 });
+  await page.getByTestId("butler-remind").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Reminders are set", { timeout: 30_000 });
+  expect(problems, problems.join("\n")).toEqual([]);
+});
