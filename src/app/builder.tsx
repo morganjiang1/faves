@@ -1,8 +1,8 @@
-// Plan builder. The free-text ask copies Google Maps' "Ask Maps" sheet
+// Plan builder. The free-text ask is inspired by Google Maps' "Ask Maps" sheet
 // (promo_video_ask_maps_sheet_suggestions.png: header with the sparkle icon and round
 // buttons, a big greeting, suggestion rows; promo_video_ask_maps_prompt_glow.png: the prompt
 // card with a gray-to-blue gradient stroke, a soft blue glow, mic and a blue send arrow in a
-// pale circle). The guided path copies Airbnb's question flow (appstore_07_host_question_flow_cards.png:
+// pale circle). The guided path is inspired by Airbnb's question flow (appstore_07_host_question_flow_cards.png:
 // one question per screen, × top right, big left-aligned question, 16 pt radius option cards
 // with a 3D object at the right) and ends on Wanderlog's "Plan a new trip" form
 // (android_video_plan_new_trip_filled.png: labeled bordered fields). While the agent works,

@@ -1,4 +1,4 @@
-// Spot rewards wallet parts. Each one copies a measured reference (docs/design_references.md,
+// Spot rewards wallet parts. Each one is inspired by a measured reference (docs/design_references.md,
 // "Spot rewards wallet" sections and the Element map at the end):
 // - BalanceBox, TxRow: Ibotta Earnings (wallet/ibotta/appstore_05_earnings_withdraw_transactions.png)
 // - MethodCard: Venmo Transfer Balance (wallet/venmo/yt_wHGzOIg7ayA_t043_instant_selected_fee.png)

@@ -1,4 +1,4 @@
-// Group vote on a plan, copied from Partiful:
+// Group vote on a plan, inspired by Partiful:
 // - plans/partiful/appstore_10_find_a_time_poll_responses.png: the purple gradient header
 //   (navy #010039 at the top glowing to #7E00F7 behind the cards), "‹ title •••" nav, the
 //   horizontally scrolling option cards (one row per stop: the planned place and its Plan B

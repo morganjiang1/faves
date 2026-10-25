@@ -1,12 +1,12 @@
-// Saved. The Spots | Days switch copies Beli's List | Map toggle (discovery/beli/
+// Saved. The Spots | Days switch is inspired by Beli's List | Map toggle (discovery/beli/
 // beli_appstore_ipad_list_map_toggle.png: 32 pt, radius 8.5, 2 pt teal outline, selected half
-// teal). Spots copies Google Maps' saved list sheet (discovery/google_maps/
+// teal). Spots is inspired by Google Maps' saved list sheet (discovery/google_maps/
 // google_maps_saved_list_sheet_nyc_restaurants.png, element map #7): emoji + 24 pt list title
 // with grey share / map circles, avatar stack + "You • Private list", a description, tonal 42 pt
 // chips "Invite collaborators" / "+ Add places" (#D2F7FF / #014F5B), a #E3E3E3 divider, "N places"
 // + a 34 pt "✓ Recently saved ▾" chip (#DEE4E4), a 148 pt photo row (radius 8), then the spots
 // as Beli list rows; the map toggle shows the list on the map with white emoji markers under
-// a 30 pt-radius sheet. Days copies Letterboxd's Diary (social/letterboxd/appstore_03_diary.png).
+// a 30 pt-radius sheet. Days is inspired by Letterboxd's Diary (social/letterboxd/appstore_03_diary.png).
 // Empty states are Beli's empty card; loading is Instagram's skeleton; offline is the tab bar's
 // Spotify bar.
 import { router, useLocalSearchParams } from "expo-router";

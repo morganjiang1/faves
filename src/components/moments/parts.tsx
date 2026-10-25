@@ -1,4 +1,4 @@
-// Spot Moments parts. Each copies a measured reference (docs/design_references.md, "Spot
+// Spot Moments parts. Each is inspired by a measured reference (docs/design_references.md, "Spot
 // Moments" sections and the Element map at the end of the moments catalog):
 // - TakenHerePill: BeReal location pill (moments/bereal/yt_KXVIqgEsm64_t012_post_location_pill_3h_late.png)
 // - DarkMessage: BeReal empty feed (moments/bereal/yt_FMZgxjwSkfo_t020_empty_feed_take_your_bereal.png)

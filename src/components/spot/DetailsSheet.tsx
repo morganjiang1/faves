@@ -1,4 +1,4 @@
-// A spot's details in a dark bottom sheet that copies TikTok's comments sheet
+// A spot's details in a dark bottom sheet that is inspired by TikTok's comments sheet
 // (video/tiktok/yt_XDmV5t6Y-0Y_t061_comments_sheet_tabs_add_comment.png, 1.24 px/pt): it rises
 // to 278 pt from the top (two thirds of the screen) with a 10 pt top radius and no scrim, so
 // the clip keeps playing above it; a 44 pt row of text tabs with counts ("Comments 1 Likes 2

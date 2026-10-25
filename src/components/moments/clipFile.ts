@@ -1,4 +1,4 @@
-// Keeps a captured clip on the phone: copies the camera's temporary file into the app's
+// Keeps a captured clip on the phone: is inspired by the camera's temporary file into the app's
 // document folder (expo-file-system's File / Directory / Paths API, SDK 58) so it survives
 // restarts, and finds it again if the app's container path changed after an update.
 import { Directory, File, Paths } from "expo-file-system";

@@ -1,4 +1,4 @@
-// One stop's rating, copied from Uber Eats' "Rate your courier" block
+// One stop's rating, inspired by Uber Eats' "Rate your courier" block
 // (social/ubereats/appstore_07_rate_order_thumbs_chips_stars.png, 2.11 px/pt): a ~22 pt bold
 // question, a ~16 pt #717171 line under it, two 62 pt circles 18 pt apart (off = #F3F3F3 with
 // a #727272 outline thumb, on = #000 with a white filled thumb), then 38 pt reason chips

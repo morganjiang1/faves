@@ -1,11 +1,11 @@
-// The Community feed post. Anatomy copies Beli's feed post (social/beli/
+// The Community feed post. Anatomy is inspired by Beli's feed post (social/beli/
 // appstore_03_feed_post_ranked_share.png, measured at 2.70 px/pt, and video t174): 60 pt
 // avatar 14 pt from the edge, a sentence headline with bold names 22 pt to its right, grey
 // meta lines with the category glyph and "↻", a 40 pt score circle at the top right, a
 // horizontal row of 156 pt square photos (radius 7, gap 8, 21 pt inset) one per stop, a
 // "Notes:" line, the counts row, the action row and the grey date over a 1 pt #F4F5F8 divider.
-// Likes copy Strava kudos (social/strava/appstore_02 + appstore_06): thumbs-up, facepile and
-// "48 loved this day". "Do this day" copies DoorDash's Reorder pill (social/doordash/
+// Likes are inspired by Strava kudos (social/strava/appstore_02 + appstore_06): thumbs-up, facepile and
+// "48 loved this day". "Do this day" is inspired by DoorDash's Reorder pill (social/doordash/
 // appstore2026_05_order_it_again_reorder.png): 25 pt #F1F1F1 pill, bold 13 pt #181818 label.
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";

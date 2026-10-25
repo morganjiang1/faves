@@ -8,7 +8,7 @@ export class LocalTransport extends BaseTransport {
   private me: Member | null = null;
   private onEvent: (e: ChatEvent) => void = () => {};
 
-  // `state` is a working copy the phone keeps of everything it knows.
+  // `state` is a working are inspired by the phone keeps of everything it knows.
   constructor(private state: () => ChatState) { super(); }
 
   async connect(me: Member, onEvent: (e: ChatEvent) => void, onStatus: (s: TransportStatus) => void): Promise<Snapshot | null> {

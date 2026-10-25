@@ -4,7 +4,7 @@
 // color, a check list (18.7 pt filled circles, 36 pt pitch), the 355 x 75 pt "Not sure yet?"
 // trial card with a 28.7 pt radio, two 355 x 65 pt plan rows (radius 16, 11 pt apart, MOST
 // POPULAR badge on the selected row's top border) and a 62 pt Continue pill. The legal paragraph
-// above the pill and "Restore" under it copy Timeleft
+// above the pill and "Restore" under it are inspired by Timeleft
 // (references/paywall/timeleft/paywallscreens_01_unlimited_dinners_plan_cards.png). "Also on
 // Faves" uses the icon + bold title + grey line feature rows of Meetup's other paywall
 // (references/paywall/meetup/paywallscreens_01_join_meetup_plus_toggle_features.png).

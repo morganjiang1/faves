@@ -1,13 +1,13 @@
-// Search. The search home and live suggestions copy Beli's search
+// Search. The search home and live suggestions are inspired by Beli's search
 // (references/discovery/beli/beli_search_restaurants_members_vid.jpg and
 // references/social/beli/yt_GlMma4eXe18_t176_search_tabs_chips.png, about 1.5 px/pt): wordmark +
 // grey ✕ circle, two half-width tabs with an icon (teal label and underline when active), two
 // outlined 49 pt fields 12 pt from the edges, filled chips (#9DB3B7 off, brand on), a bold
 // section title, rows of name + grey line with ⊕, bookmark and ✕.
-// Submitted results copy Corner's AI search results
+// Submitted results are inspired by Corner's AI search results
 // (references/discovery/corner/corner_ai_search_results_hidden_gem_cards.png): the query bubble,
 // a grey one-line answer, text tabs with a 2 pt black underline, CornerCard rows and the
-// "get more specific" bar with "+ ..." chips. No results copy Yelp's recovery
+// "get more specific" bar with "+ ..." chips. No results are inspired by Yelp's recovery
 // (references/discovery/yelp/yelp_empty_no_results_android_vid.png): headline, helper line,
 // "People also search for" chips, "Notice something missing here?" with "Add a spot".
 import { LinearGradient } from "expo-linear-gradient";

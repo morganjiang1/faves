@@ -1,4 +1,4 @@
-// Profile pieces copied from Beli's profile (social/beli/appstore_06_profile_stats.png, 2.70 px/pt;
+// Profile pieces inspired by Beli's profile (social/beli/appstore_06_profile_stats.png, 2.70 px/pt;
 // own-profile layout from yt_GlMma4eXe18_t192_profile_new_user.png; activity from
 // discovery/beli/beli_appstore_ipad_profile_activity.png).
 import type { ReactNode } from "react";

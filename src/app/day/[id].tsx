@@ -1,10 +1,10 @@
-// A day's page. Header copies Beli's post page (social/beli/appstore_03_feed_post_ranked_share.png:
-// plain back chevron, then the post header, Notes and kudos); the map copies Wanderlog's route
+// A day's page. Header is inspired by Beli's post page (social/beli/appstore_03_feed_post_ranked_share.png:
+// plain back chevron, then the post header, Notes and kudos); the map is inspired by Wanderlog's route
 // map (plans/wanderlog/appstore_04_road_trip_route_map_numbered_stops.png: 26x37 numbered
 // teardrops in the day color, route line at about 60%, walk legs dotted like Citymapper);
-// the stops copy Airbnb's "What you'll do" list (plans/airbnb/android_video_2025_experience_
+// the stops are inspired by Airbnb's "What you'll do" list (plans/airbnb/android_video_2025_experience_
 // what_youll_do.png: 76 pt square photo radius 8, 20 pt gap, bold title, grey 2-line
-// description, a thin #EBEBEB line joining the photos); the footer copies Airbnb's floating
+// description, a thin #EBEBEB line joining the photos); the footer is inspired by Airbnb's floating
 // listing footer (android_video_2025_experience_detail_show_dates.png: white pill card 15 pt
 // from the edges, price at the left, a 162x49 pt pill button at the right).
 import { router, useLocalSearchParams } from "expo-router";

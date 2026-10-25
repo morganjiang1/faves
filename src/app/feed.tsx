@@ -1,9 +1,9 @@
-// Community tab. The fixed top copies Beli's feed (social/beli/yt_GlMma4eXe18_t160 and t174):
+// Community tab. The fixed top is inspired by Beli's feed (social/beli/yt_GlMma4eXe18_t160 and t174):
 // serif wordmark at the left with three icons at the right, the #EBEBED search field, the
-// filled chips row (selected #134456, others #9DB3B7). Posts copy Beli's feed post
+// filled chips row (selected #134456, others #9DB3B7). Posts are inspired by Beli's feed post
 // (appstore_03_feed_post_ranked_share.png), likes Strava kudos (appstore_02 / appstore_06),
 // "Do this day" DoorDash's Reorder pill (appstore2026_05). The "Post your first day" card
-// copies Beli's invite card (t160). Loading = Instagram skeleton, error = TikTok tap to retry,
+// is inspired by Beli's invite card (t160). Loading = Instagram skeleton, error = TikTok tap to retry,
 // offline = Spotify's bar (drawn by the tab bar), empty = Beli's empty card.
 import { router } from "expo-router";
 import { useMemo, useState } from "react";

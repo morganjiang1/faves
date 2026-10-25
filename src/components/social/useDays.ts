@@ -47,7 +47,7 @@ export function facesFor(post: DayPost, all: DayPost[], index: number): string[]
   return [0, 1, 2].map((k) => names[(index + k) % names.length]).filter((n, i, a) => a.indexOf(n) === i);
 }
 
-// "Do this day": copies the day's exact stops for today (tomorrow if today's start has
+// "Do this day": is inspired by the day's exact stops for today (tomorrow if today's start has
 // passed) with lib/community.ts doThisDay, saves it to your days, then opens it.
 export function doThisDay(post: DayPost, city: City) {
   const day: CommunityDay = { id: post.id, city: city.slug, plan: post.plan, author: post.author, sample: true, doneCount: post.doneCount ?? 0, likes: post.likes, daysAgo: 0, quote: post.quote };

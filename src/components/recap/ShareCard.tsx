@@ -1,4 +1,4 @@
-// The shareable day card, copied from Spotify Wrapped 2025's summary share card
+// The shareable day card, inspired by Spotify Wrapped 2025's summary share card
 // (social/spotify/wrapped2025_newsroom_summary_share_cards.png): 9:16, corner radius 7.1% of
 // the width, text inset 7.4%; the top ~48% is the art (a big vertical accent word down the
 // left, the photo framed by ink/paper stripes); then two numbered columns, two big stats

@@ -1,4 +1,4 @@
-// The vote input, copied from Partiful's RSVP sheet (plans/partiful/ios_video_rsvp_sheet_going_maybe_cant.png,
+// The vote input, inspired by Partiful's RSVP sheet (plans/partiful/ios_video_rsvp_sheet_going_maybe_cant.png,
 // 1.27 px/pt, and the dark version ios_video_rsvp_sheet_dark.png for the emoji 👍 🤔 😢):
 // sheet #F0F4EC fading to #FBFBF9, "Cancel" top-left (#21271A), three ~96 pt choice circles
 // with the emoji over a ~13 pt label (the picked one gets a ring and the green #CAFFC9
