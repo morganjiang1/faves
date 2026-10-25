@@ -19,9 +19,10 @@ starting point, and lets your group chat plan it together with a butler that boo
 - **Plans are tickets in group chats.** Make a group, add friends by username, contacts, link or
   QR. Plans arrive as tickets with In / Maybe / Out, swaps post a note saying who changed what,
   and the next locked plan is pinned with a countdown and an add-to-calendar.
-- **Every group has a butler** ("Fave", rename it): ask it to plan, find a spot by vibe, book, set
-  reminders (the evening before, and a leave-now nudge with each person's own travel time),
-  handle running late, or sum up the chat. It can phone a place to book, only after someone in
+- **Every group has a butler** ("Fave", rename it): ask it to plan, post two options and run the
+  vote, find a spot by vibe, book, set reminders (the evening before, and a leave-now nudge with
+  each person's own travel time), handle running late (times and reminders move), or sum up the
+  chat. Moments people post at a spot show up on its postcard wall for everyone. It can phone a place to book, only after someone in
   the group confirms, and it always says it's an AI. It can read its replies aloud.
 - **Spot Moments, Community, rankings, recaps**, plus Spot rewards and Faves Plus on test data.
 - 10 cities: New York, Los Angeles, San Francisco, Chicago, Seattle, Boston, Austin, Miami,
