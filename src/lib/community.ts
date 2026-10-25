@@ -82,11 +82,12 @@ function featuredDay(city: City, f: Featured, now: Date, topCount: number): Comm
   };
 }
 
-// "Do this day": the same stops, today (or this Saturday when the day's start has passed).
+// "Do this day": the same stops, today, or tomorrow when the first stop's time has already
+// gone (a copied day never starts in the past).
 export function doThisDay(day: CommunityDay, city: City, now: Date = new Date()): Plan {
   const today = wallDateFor(city.utcOffset, { offsetDays: 0 }, now);
   const first = day.plan.stops[0]?.start ?? 600;
-  const date = cityClock(city.utcOffset, now).minutes > first + 60 ? wallDateFor(city.utcOffset, { offsetDays: 1 }, now) : today;
+  const date = cityClock(city.utcOffset, now).minutes + 15 > first ? wallDateFor(city.utcOffset, { offsetDays: 1 }, now) : today;
   const copy = planFromStops(city, {
     id: `${day.id}-mine-${now.getTime().toString(36)}`,
     title: day.plan.title,

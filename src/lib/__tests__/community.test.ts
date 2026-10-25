@@ -36,3 +36,13 @@ test("Do this day copies the same stops", () => {
   expect(mine.id).not.toBe(top.id);
   expect(mine.stops.map((s) => s.placeId)).toEqual(top.plan.stops.map((s) => s.placeId));
 });
+
+test("'Do this day' never copies a day into the past: after its first stop's time it's tomorrow", () => {
+  const top = communityDays(city)[0];
+  const first = top.plan.stops[0].start; // 9:00 AM
+  const before = doThisDay(top, city, new Date(Date.UTC(2026, 9, 24, 15))); // Sat 8:00 AM in SF
+  expect(before.dateISO).toBe("2026-10-24");
+  const after = doThisDay(top, city, new Date(Date.UTC(2026, 9, 24, 16, 30))); // Sat 9:30 AM
+  expect(after.dateISO).toBe("2026-10-25");
+  expect(first).toBe(9 * 60);
+});
