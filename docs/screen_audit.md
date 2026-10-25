@@ -38,7 +38,7 @@ X for <idea>".
 | Group vote | `src/app/group/[id].tsx` | vote on a plan by link | Partiful for RSVPs | `group-4-voted.png` |
 | Search | `src/app/search.tsx` | spots and days, live suggestions, results with hidden gems, no-results help | Beli for add, save and hide on each suggestion; Corner for calling out hidden gems | `r-search.png` |
 | City | `src/app/city.tsx` | switch city | none | `city.png` |
-| Spot Moments | `src/app/moments/[id].tsx` | every post at a spot | Instagram for a place's grid of posts | `moments.png` |
+| Spot Moments | `src/app/moments/[id].tsx` | the postcard wall: every post at a spot pinned up as a tilted postcard (who, when, taken here), the Locals Score stamp, one local quote, Pin one up; posts from other phones arrive live through Convex | Instagram for a place's grid of posts | `r-moments.png` |
 | Post a moment | `src/app/post-moment/[id].tsx` | record or pick a clip; "Taken here" only when you're there while it's open | BeReal for proving you're really there | `post-camera.png` |
 | Full-screen day | `src/app/reel.tsx` | swipe through a day's stops as clips | TikTok for vertical swiping | `reel-day.png` |
 | Spot rewards | `src/app/wallet.tsx`, `src/app/payout.tsx` | earnings from your days and spots, cash out (test data, labeled) | Ibotta and Venmo for earnings and transfers | `r-wallet.png`, `payout.png` |
