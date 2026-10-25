@@ -64,3 +64,26 @@ test("typing works in the plan builder and search", async ({ page }) => {
   await typeInto(page, "search-input", "pizza");
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("the group's butler plans in the chat, and locking the plan books it and sets reminders", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, "/chats", { name: "Morgan", handle: `morganb${run}` });
+  await expect(page.getByTestId("chats-local")).toBeHidden({ timeout: 15_000 });
+  await page.getByTestId("chats-new").click();
+  await typeInto(page, "group-name", "Butler test");
+  await page.getByTestId("add-samples").click();
+  await page.getByTestId("create-group").click();
+  await expect(page.getByTestId("chat-screen")).toBeVisible();
+  await typeInto(page, "composer-input", "@fave plan pickleball then hot pot on saturday afternoon");
+  await page.getByTestId("composer-send").click();
+  // The butler (on the server) answers with a ticket.
+  const lock = page.locator('[data-testid^="ticket-"][data-testid$="-lock"]').first();
+  await expect(lock).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText(/Here's a plan/);
+  await lock.click();
+  // The plan flow: booked, then reminders scheduled, all said in the chat.
+  await expect(page.getByTestId("chat-messages")).toContainText("Locked in!", { timeout: 30_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText(/remind everyone/, { timeout: 30_000 });
+  await expect(page.getByTestId("chat-pinned")).toBeVisible();
+  expect(problems, problems.join("\n")).toEqual([]);
+});

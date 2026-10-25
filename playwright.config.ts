@@ -20,6 +20,6 @@ export default defineConfig({
   webServer: [
     { command: "node scripts/serve-web.mjs 8090", url: "http://localhost:8090", reuseExistingServer: true, timeout: 30_000 },
     // The chat relay (npm run chat-server) for the group chat tests.
-    { command: "node server/chat-server.mjs", url: "http://localhost:8787/health", reuseExistingServer: true, timeout: 30_000 },
+    { command: "npm run chat-server", url: "http://localhost:8787/api/health", reuseExistingServer: true, timeout: 30_000 },
   ],
 });
