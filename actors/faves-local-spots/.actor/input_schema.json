@@ -1,0 +1,72 @@
+{
+  "title": "Faves Local Spots input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "city": {
+      "title": "City",
+      "type": "string",
+      "description": "A city, e.g. San Francisco, New York, Los Angeles.",
+      "editor": "textfield",
+      "prefill": "San Francisco"
+    },
+    "vibe": {
+      "title": "Vibe or ask",
+      "type": "string",
+      "description": "What you're looking for, in plain words: \"cozy bookstore\", \"lit pickleball courts\", \"hot pot\", \"a quiet view\".",
+      "editor": "textfield",
+      "prefill": "cozy bookstore"
+    },
+    "neighborhood": {
+      "title": "Neighborhood (optional)",
+      "type": "string",
+      "description": "Keep results near this neighborhood.",
+      "editor": "textfield"
+    },
+    "subreddit": {
+      "title": "Subreddit (optional)",
+      "type": "string",
+      "description": "Where locals talk. Defaults to the city's ask-locals subreddit (AskSF, AskNYC, ...).",
+      "editor": "textfield"
+    },
+    "maxResults": {
+      "title": "Max results",
+      "type": "integer",
+      "description": "How many spots to return.",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 50
+    },
+    "redditThreads": {
+      "title": "Reddit threads to read",
+      "type": "integer",
+      "description": "How many top threads (and their comments) to read for mentions.",
+      "default": 6,
+      "minimum": 0,
+      "maximum": 20
+    },
+    "useApifyProxy": {
+      "title": "Use Apify Proxy for Reddit",
+      "type": "boolean",
+      "description": "Reddit often blocks data-center IPs. Turn on to route Reddit requests through Apify Proxy.",
+      "default": false
+    },
+    "redditScraper": {
+      "title": "Fall back to Apify's Reddit scraper",
+      "type": "boolean",
+      "description": "When Reddit blocks direct reads, read the same threads with harshmaur/reddit-scraper (billed to your account, capped by the budget below).",
+      "default": true
+    },
+    "redditBudgetUsd": {
+      "title": "Reddit scraper budget (USD)",
+      "type": "string",
+      "description": "The most one run of the Reddit scraper may cost.",
+      "editor": "textfield",
+      "default": "0.3"
+    }
+  },
+  "required": [
+    "city",
+    "vibe"
+  ]
+}

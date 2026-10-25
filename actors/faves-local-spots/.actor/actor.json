@@ -1,0 +1,22 @@
+{
+  "actorSpecification": 1,
+  "name": "faves-local-spots",
+  "title": "Faves Local Spots",
+  "description": "Spots locals love for a vibe in a city: OpenStreetMap places ranked by what locals say on the city's subreddit, with a Locals Score and hidden-gem flags.",
+  "version": "0.1",
+  "buildTag": "latest",
+  "input": "./input_schema.json",
+  "dockerfile": "./Dockerfile",
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "views": {
+        "spots": {
+          "title": "Spots",
+          "transformation": { "fields": ["rank", "name", "kind", "neighborhood", "address", "localsScore", "hiddenGem", "redditMentions", "redditUpvotes", "lat", "lng", "osmUrl"] },
+          "display": { "component": "table" }
+        }
+      }
+    }
+  }
+}

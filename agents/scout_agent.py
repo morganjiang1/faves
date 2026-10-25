@@ -1,6 +1,8 @@
 """Faves Scout: finds spots for niche asks ("a Gundam store near Japantown"). Looks in Faves'
-data first; when that has nothing and APIFY_TOKEN is set, runs the Faves Local Spots Actor on
-Apify live (Google Maps, Reddit, TikTok) and returns what it found as fresh finds."""
+data first; when that has nothing and APIFY_TOKEN is set, runs our Faves Local Spots Actor
+(actors/faves-local-spots) on Apify live: OpenStreetMap places ranked by what locals say on the
+city's subreddit, with a Locals Score. Returns what it found as fresh finds."""
+import os
 import certs  # noqa: F401  (first: TLS roots for Agentverse)
 import httpx
 from uagents import Agent, Context, Protocol
@@ -11,7 +13,8 @@ api = FavesAPI()
 scout = Agent(name=NAMES["scout"], seed=seed_for("scout"), port=PORTS["scout"], mailbox=MAILBOX,
               description="Scouts niche spots (a Gundam store, a quiet rooftop) from Faves data and live Apify runs.")
 proto = Protocol(name="FavesScout", version="1.0.0")
-ACTOR = "faves~faves-local-spots"  # actors/faves-local-spots, published under the Faves Apify account
+# actors/faves-local-spots, pushed with `apify push`: "<your Apify username>~faves-local-spots".
+ACTOR = os.environ.get("APIFY_ACTOR", "faves~faves-local-spots").replace("/", "~")
 
 
 async def live(city: str, query: str) -> list[dict]:
@@ -19,7 +22,7 @@ async def live(city: str, query: str) -> list[dict]:
         return []
     url = f"https://api.apify.com/v2/acts/{ACTOR}/run-sync-get-dataset-items"
     async with httpx.AsyncClient(timeout=120) as client:
-        r = await client.post(url, params={"token": APIFY_TOKEN, "maxTotalChargeUsd": "0.5"}, json={"city": city, "vibe": query, "maxSpots": 5})
+        r = await client.post(url, params={"token": APIFY_TOKEN, "maxTotalChargeUsd": "0.5"}, json={"city": city, "vibe": query, "maxResults": 5, "redditThreads": 4})
         r.raise_for_status()
         return [{**s, "source": "apify", "fresh": True} for s in r.json()][:5]
 

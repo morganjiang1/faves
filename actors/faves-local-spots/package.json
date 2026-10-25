@@ -1,0 +1,17 @@
+{
+  "name": "faves-local-spots",
+  "version": "0.1.0",
+  "description": "Spots locals love for a vibe in a city, ranked by what locals say on Reddit, with a Locals Score.",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "apify": "^3.2.6",
+    "undici": "^6.29.1"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

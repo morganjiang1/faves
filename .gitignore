@@ -25,3 +25,4 @@ agents/.venv/
 agents/.seeds.json
 agents/.env
 agents/*_data.json
+actors/*/storage/
