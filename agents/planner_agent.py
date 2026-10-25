@@ -1,6 +1,6 @@
-"""Faves Planner: builds the day with Faves' own planner (Locals Score from Google, Yelp,
-Reddit and TikTok; opening hours; sunset; travel legs) and the meet-in-the-middle rule: the
-first stop is the fairest one for everyone's starting point."""
+"""Faves Planner: builds the day with Faves' own planner (the Locals Score from what people on
+Faves rank, post and save; opening hours; sunset; travel legs) and the meet-in-the-middle rule:
+the first stop is the fairest one for everyone's starting point."""
 import certs  # noqa: F401  (first: TLS roots for Agentverse)
 from uagents import Agent, Context, Protocol
 

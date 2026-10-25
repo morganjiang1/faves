@@ -3,8 +3,8 @@
 // leave-now nudge for each person with their own travel time). Survives restarts.
 import { WorkflowManager } from "@convex-dev/workflow";
 import { v } from "convex/values";
+import * as lines from "../src/chat/lines";
 import { FAVES_ID } from "../src/chat/reduce.mjs";
-import { reserveLink } from "../src/lib/linktext";
 import { formatClock, offsetHours } from "../src/lib/time";
 import { components, internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
@@ -22,6 +22,12 @@ export function planTime(plan: PlanJson, minutes: number): number {
   const std = STD_OFFSET[plan.citySlug] ?? -8;
   const off = offsetHours(std, new Date(Date.UTC(y, m - 1, d, 12)));
   return Date.UTC(y, m - 1, d, 0, minutes) - off * 3600_000;
+}
+
+// Today's date in the city ("2026-10-25"), so the agent can say "today" or "tomorrow".
+export function cityToday(citySlug: string, at = Date.now()): string {
+  const off = offsetHours(STD_OFFSET[citySlug] ?? -8, new Date(at));
+  return new Date(at + off * 3600_000).toISOString().slice(0, 10);
 }
 
 export const planFlow = workflow
@@ -62,17 +68,14 @@ export const book = internalAction({
     const t = await ctx.runQuery(internal.flow.ticket, { ticketId });
     if (!t) return;
     const places = await ctx.runQuery(internal.places.byIds, { ids: t.plan.stops.map((s) => s.placeId) });
-    const lines = t.plan.stops.map((s) => {
+    const rows = t.plan.stops.map((s) => {
       const p = places.find((x) => x.placeId === s.placeId);
-      const at = formatClock(s.start, { compact: true });
-      if (!p) return `• ${at}: no booking needed`;
-      // A short tappable label ("Reserve on Google"), never the long reservation URL.
-      if (p.reserveUrl) return `• ${at} ${p.name}: ${reserveLink(p.reserveUrl)}`;
-      if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: books by phone only, call them at ${p.phone}`;
-      return `• ${at} ${p.name}: walk in, nothing to book`;
+      // A short tappable label ("Reserve on Google"), never the long reservation URL; the
+      // number to call for places that only book by phone; else walk in.
+      const phone = p?.phone && /restaurant|bar|food|class/i.test(p.kind ?? "") ? p.phone : null;
+      return lines.bookLine({ at: s.start, name: p?.name, url: p?.reserveUrl, phone });
     });
-    const lead = t.status === "locked" ? `Locked in! ${t.going} going. Here's the booking:` : "Here's how to book it:";
-    await ctx.runMutation(internal.flow.say, { groupId: t.groupId, ticketId, text: `${lead}\n${lines.join("\n")}` });
+    await ctx.runMutation(internal.flow.say, { groupId: t.groupId, ticketId, text: lines.bookMessage(lines.bookLead(t.status === "locked", t.going), rows) });
   },
 });
 
@@ -85,19 +88,23 @@ async function schedule(ctx: MutationCtx, ticketId: string, moved: boolean) {
   const firstAt = plan.stops[0]?.start ?? plan.start;
   const start = planTime(plan, firstAt);
   const now = Date.now();
-  const wanted: { at: number; text: string }[] = [];
+  const wanted: { at: number; text: string; kind: "night" | "leave" | "heads-up" }[] = [];
   // The day before, at 7 PM in the city.
-  wanted.push({ at: planTime(plan, -5 * 60), text: `Tomorrow: ${plan.title}. First stop ${firstName} at ${formatClock(firstAt)}. Tap In on the ticket if you haven't.` });
+  wanted.push({ at: planTime(plan, -5 * 60), text: lines.nightBeforeLine(plan.title, firstName, firstAt), kind: "night" });
   // Leave now, for each person, from their own starting point.
   const firstTime = planTime(plan, firstAt);
-  for (const l of plan.fairness?.toFirst ?? []) wanted.push({ at: firstTime - (l.minutes + 10) * 60_000, text: `${l.name.split(/\s+/)[0]}, leave in 10: it's ${l.minutes} min by ${l.mode} to ${firstName}.` });
-  if (!plan.fairness?.toFirst?.length) wanted.push({ at: start - 45 * 60_000, text: `Heads up: ${firstName} in 45 minutes.` });
+  for (const l of plan.fairness?.toFirst ?? []) wanted.push({ at: firstTime - (l.minutes + 10) * 60_000, text: lines.leaveLine(l.name, l.minutes, l.mode), kind: "leave" });
+  if (!plan.fairness?.toFirst?.length) wanted.push({ at: start - 45 * 60_000, text: lines.headsUpLine(firstName), kind: "heads-up" });
+  const set = new Set<string>();
   for (const w of wanted) {
     if (w.at < now - 60_000) continue; // already past
     const id = await ctx.db.insert("reminders", { groupId: t.groupId, ticketId, at: w.at, text: w.text, sent: false });
     await ctx.scheduler.runAt(Math.max(w.at, now + 1000), internal.flow.sendReminder, { reminderId: id });
+    set.add(w.kind);
   }
-  await butlerSays(ctx, t.groupId, moved ? `Moved the reminders to the new times: first stop ${firstName} at ${formatClock(firstAt)}.` : `I'll remind everyone the evening before and send each of you a leave-now nudge with your own travel time.`, { ticketId });
+  // Say only the reminders that will really go out.
+  const leave = set.has("leave") ? "each" : set.has("heads-up") ? "heads-up" : null;
+  await butlerSays(ctx, t.groupId, moved ? lines.remindersMovedLine(firstAt) : lines.remindersSetLine({ nightBefore: set.has("night"), leave }), { ticketId });
 }
 
 export const scheduleReminders = internalMutation({
@@ -115,11 +122,11 @@ export const rescheduleReminders = internalMutation({
   },
 });
 
-// A reminder's time on the city's clock: "Fri 7:00 PM".
+// A reminder's time on the city's clock: "Fri 7 PM".
 export function wallTime(at: number, citySlug: string): string {
   const off = offsetHours(STD_OFFSET[citySlug] ?? -8, new Date(at));
   const d = new Date(at + off * 3600_000);
-  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${formatClock(d.getUTCHours() * 60 + d.getUTCMinutes())}`;
+  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${formatClock(d.getUTCHours() * 60 + d.getUTCMinutes(), { compact: true })}`;
 }
 
 export const remindersFor = internalQuery({

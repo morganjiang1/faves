@@ -5,17 +5,18 @@
 //   (or near everyone) and answers with its postcard;
 // - anything else plans a day for the group and posts a ticket.
 import type { City, Place } from "@/data/types";
-import { metersBetween, bestLeg, formatLeg, type LatLng } from "@/lib/geo";
+import { fairLine } from "@/lib/fair";
+import { metersBetween, bestLeg, formatDuration, type LatLng } from "@/lib/geo";
 import { isOpenAt } from "@/lib/hours";
 import { activitiesIn, parseRequest } from "@/lib/parser";
 import { parseReplan, replan, type Plan } from "@/lib/planner";
-import { reserveLink } from "@/lib/linktext";
-import { costOf, scoreOutOf10 } from "@/lib/score";
-import { cityClock, formatClock, startsAt } from "@/lib/time";
+import { costOf } from "@/lib/score";
+import { cityClock, startsAt, wallDateFor } from "@/lib/time";
 import { getState } from "@/state/store";
+import * as say from "./lines";
 import { groupStarts, planForGroup } from "./plan";
-import type { Group, Member, Ticket } from "./reduce.mjs";
-import { chat } from "./store";
+import { chatterFor, type Group, type Member, type Ticket } from "./reduce.mjs";
+import { chat, chatView } from "./store";
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // "@fave", "@faves", "@agent", or the agent's own name when the group renamed it.
@@ -55,26 +56,33 @@ export async function answer(input: { city: City; group: Group; users: Record<st
   const ticket = currentTicket(tickets, group.id);
   const plan = ticket ? (ticket.plan as Plan) : null;
   const intent = parseReplan(text, activitiesIn);
+  const today = wallDateFor(city.utcOffset, { offsetDays: 0 }).toISOString().slice(0, 10);
 
-  // tl;dr, booking and reminders.
+  // Help, tl;dr, booking and reminders.
+  if (/^(help|hi|hey|hello|what can you do)\b/i.test(text) && text.length < 40) {
+    await chat.sayAsFaves(group.id, { text: say.helpLine(group.butlerName) });
+    return;
+  }
   if (/\b(tl;?dr|sum up|summary|recap)\b/i.test(text)) {
-    const p = plan ? `Plan: ${plan.title}, ${plan.dayLabel} at ${formatClock(startsAt(plan))}, ${ticket?.status === "locked" ? "locked in" : "not locked yet"}, ${Object.values(ticket?.rsvps ?? {}).filter((a) => a === "in").length} going.` : "No plan yet.";
-    await chat.sayAsFaves(group.id, { text: `tl;dr: ${p}` });
+    const going = Object.entries(ticket?.rsvps ?? {}).filter(([, a]) => a === "in").map(([id]) => (users[id] ?? group.members.find((m) => m.id === id))?.name ?? "Someone");
+    const chatter = chatterFor(chatView().data.messages[group.id] ?? [], group.butlerName).map((m) => ({ author: m.authorName, text: m.text! }));
+    await chat.sayAsFaves(group.id, { text: say.tldrLine({ plan: plan ? { title: plan.title, day: say.dayWord(plan.dateISO, today), at: startsAt(plan) } : null, locked: ticket?.status === "locked", going, chatter }) });
     return;
   }
   if (/\bbook\b/i.test(text)) {
-    if (!plan || !ticket) { await chat.sayAsFaves(group.id, { text: "There's no plan to book yet. Ask me to plan something first." }); return; }
+    if (!plan || !ticket) { await chat.sayAsFaves(group.id, { text: say.NO_PLAN_TO_BOOK }); return; }
     const lines = plan.stops.map((s) => {
       const p = city.byId.get(s.placeId);
       if (!p) return null;
-      const at = formatClock(s.start, { compact: true });
-      return p.reserveUrl ? `• ${at} ${p.name}: ${reserveLink(p.reserveUrl)}` : p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "") ? `• ${at} ${p.name}: books by phone only, call them at ${p.phone}` : `• ${at} ${p.name}: walk in, nothing to book`;
-    }).filter(Boolean);
-    await chat.sayAsFaves(group.id, { ticketId: ticket.id, text: `Here's the booking:\n${lines.join("\n")}` });
+      // A short label for reservation links; the number to call for phone-only places.
+      return say.bookLine({ at: s.start, name: p.name, url: p.reserveUrl, phone: p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "") ? p.phone : null });
+    }).filter((x): x is string => Boolean(x));
+    await chat.sayAsFaves(group.id, { ticketId: ticket.id, text: say.bookMessage(say.bookLead(false, 0), lines) });
     return;
   }
   if (/\bremind\b/i.test(text)) {
-    await chat.sayAsFaves(group.id, { text: ticket?.status === "locked" ? "Reminders for everyone need the live chat, so for now tap Add to calendar on the ticket and your phone will remind you." : "Lock the plan in first, then I'll set reminders." });
+    // Reminders for everyone run on the live chat (Convex); here the phone's calendar does it.
+    await chat.sayAsFaves(group.id, { text: !ticket ? say.NO_PLAN : ticket.status === "locked" ? "I can't send reminders here. Tap Add to calendar on the ticket." : "Lock the plan in, then tap Add to calendar on the ticket." });
     return;
   }
 
@@ -82,8 +90,8 @@ export async function answer(input: { city: City; group: Group; users: Record<st
   if (plan && ticket && intent.kind !== "unknown" && intent.kind !== "add") {
     const r = replan(plan, city, text, { lexicon: activitiesIn });
     if (r.changed.length || intent.kind === "late") {
-      const tag = intent.kind === "rain" ? "rain" : intent.kind === "late" ? "running late" : intent.kind === "cheaper" ? "cheaper" : "change";
-      await chat.updateTicket(ticket.id, { plan: r.plan }, `${tag}: ${r.message}`);
+      // The note on the ticket says who asked for what; the message says what changed.
+      await chat.updateTicket(ticket.id, { plan: r.plan }, say.changeNote(chatView().me?.name ?? "Someone", say.changeGist(text, r.message)));
       await chat.sayAsFaves(group.id, { text: r.message, ticketId: ticket.id });
       return;
     }
@@ -97,23 +105,24 @@ export async function answer(input: { city: City; group: Group; users: Record<st
     const used = new Set(plan?.stops.map((s) => s.placeId) ?? []);
     const pick = at ? nearbyPick(city, text, at, used) : null;
     if (pick && at) {
+      // The postcard shows the score and the price; the line says how far it is.
       const leg = bestLeg(at, pick, getState().profile.transport);
+      const how = leg.mode === "walk" ? "walk" : leg.mode === "drive" ? "drive" : leg.mode === "bike" ? "ride" : "by transit";
       const where = last ? `from ${last.name}` : "from the middle of everyone";
-      const cost = costOf(pick);
-      await chat.sayAsFaves(group.id, { placeId: pick.id, text: `${pick.name}: ${formatLeg(leg)} ${where}. Locals Score ${scoreOutOf10(pick.locals)}${cost.dollars ? `, ${cost.dollars}` : cost.perPerson === 0 && !cost.estimated ? ", free" : ""}.` });
+      await chat.sayAsFaves(group.id, { placeId: pick.id, text: `Try ${pick.name}, ${formatDuration(leg.minutes)} ${how} ${where}.` });
       return;
     }
-    await chat.sayAsFaves(group.id, { text: "Nothing nearby fits that. Try another word, like dessert, drinks or tacos." });
+    await chat.sayAsFaves(group.id, { text: "Nothing nearby fits. Try dessert, drinks or tacos." });
     return;
   }
 
   // Otherwise: plan the day for everyone.
   const made = planForGroup(city, group, users, text || "something fun and food", { meetInMiddle: true });
   if (!made.stops.length) {
-    await chat.sayAsFaves(group.id, { text: "I couldn't fit a day into that window. Try a longer stretch of time." });
+    await chat.sayAsFaves(group.id, { text: say.COULDNT_PLAN });
     return;
   }
   const ticketId = await chat.postTicket(group.id, made);
   const f = made.fairness;
-  await chat.sayAsFaves(group.id, { ticketId, text: f && f.toFirst.length > 1 ? `Here's a plan for ${group.members.length}. The first stop is the fairest one for everyone's starting point.` : `Here's a plan for ${group.members.length}. Tap In, Maybe or Out.` });
+  await chat.sayAsFaves(group.id, { ticketId, text: say.planLine({ title: made.title, day: say.dayWord(made.dateISO, today), fairLine: f && f.toFirst.length > 1 ? fairLine(f) : null }) });
 }

@@ -7,10 +7,11 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { Agent, createThread, createTool, stepCountIs } from "@convex-dev/agent";
 import { v } from "convex/values";
 import { z } from "zod/v3";
+import * as lines from "../src/chat/lines";
 import { chatterFor, FAVES_ID } from "../src/chat/reduce.mjs";
-import { formatClock } from "../src/lib/time";
 import { api, components, internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery, type ActionCtx } from "./_generated/server";
+import { cityToday } from "./flow";
 
 const FAVES_API = () => (process.env.FAVES_API_URL ?? "http://localhost:8787").replace(/\/$/, "");
 const asi = () => createOpenAI({ apiKey: process.env.ASI_ONE_API_KEY ?? "", baseURL: "https://api.asi1.ai/v1" });
@@ -26,7 +27,7 @@ type GroupView = {
   groupId: string; name: string; city: string; butlerName: string; threadId: string | null;
   members: { id: string; name: string }[];
   starts: { id: string; name: string; hood: string | null; lat: number; lng: number; mode: string }[];
-  ticket: { ticketId: string; plan: { id: string; title: string; dateISO?: string; start?: number; end?: number; stops: { placeId: string; start?: number; end?: number }[]; request?: { raw?: string } }; status: string; going: number } | null;
+  ticket: { ticketId: string; plan: { id: string; title: string; dateISO?: string; start?: number; end?: number; stops: { placeId: string; start?: number; end?: number }[]; request?: { raw?: string } }; status: string; going: string[] } | null;
   recent: { author: string; text: string }[];
 };
 
@@ -48,7 +49,8 @@ export const view = internalQuery({
     const locs = await ctx.db.query("locations").withIndex("by_group", (q) => q.eq("groupId", groupId)).collect();
     const plans = await ctx.db.query("plans").withIndex("by_group", (q) => q.eq("groupId", groupId)).collect();
     const t = plans.sort((a, b) => (b.status === "locked" ? 1 : 0) - (a.status === "locked" ? 1 : 0) || b.updatedAt - a.updatedAt)[0] ?? null;
-    const going = t ? (await ctx.db.query("rsvps").withIndex("by_ticket", (q) => q.eq("ticketId", t.ticketId)).collect()).filter((r) => r.answer === "in").length : 0;
+    // Who's in, by name (the tl;dr says it).
+    const going = t ? (await ctx.db.query("rsvps").withIndex("by_ticket", (q) => q.eq("ticketId", t.ticketId)).collect()).filter((r) => r.answer === "in").map((r) => members.find((m) => m.userId === r.userId)?.name ?? "Someone") : [];
     const recent = (await ctx.db.query("messages").withIndex("by_group", (q) => q.eq("groupId", groupId)).order("desc").take(40)).reverse();
     return {
       groupId, name: g.name, city: g.city, butlerName: g.butlerName ?? "Fave", threadId: g.butlerThread ?? null,
@@ -78,54 +80,59 @@ export const setThread = internalMutation({
 
 async function planDay(ctx: ActionCtx, g: GroupView, text: string, askedBy: string, opts: { exclude?: string[]; label?: string; quiet?: boolean } = {}) {
   const friends = g.starts.map((s) => ({ id: s.id, name: s.name, from: s.hood ?? undefined, lat: s.lat, lng: s.lng, mode: s.mode }));
-  const res = await call<{ raw: { title: string; stops: { placeId: string }[] }; title: string; fairLine: string | null; travel: { name: string; minutes: number; mode: string }[] }>("plan", { city: g.city, text: `${text}${/\b(friends|of us|people)\b/.test(text) ? "" : `, ${g.members.length} of us`}`, friends, exclude: opts.exclude ?? [] });
-  if (!res.raw || !res.raw.stops?.length) return "I couldn't fit a day into that. Try a longer stretch of time, or other activities.";
+  const res = await call<{ raw: { title: string; dateISO?: string; stops: { placeId: string }[] }; title: string; fairLine: string | null; travel: { name: string; minutes: number; mode: string }[] }>("plan", { city: g.city, text: `${text}${/\b(friends|of us|people)\b/.test(text) ? "" : `, ${g.members.length} of us`}`, friends, exclude: opts.exclude ?? [] });
+  if (!res.raw || !res.raw.stops?.length) return lines.COULDNT_PLAN;
   if (opts.label) res.raw.title = `${opts.label}: ${res.raw.title}`;
   const ticketId = `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "postTicket", ticket: { id: ticketId, groupId: g.groupId, plan: res.raw, status: "proposed", createdBy: FAVES_ID, rsvps: {} }, message: { id: `m-${ticketId}`, groupId: g.groupId, authorId: FAVES_ID, authorName: g.butlerName, kind: "ticket", ticketId } } });
   if (opts.quiet) return res.raw.stops.map((s) => s.placeId).join(",");
-  const trips = res.travel.map((t) => `${t.name.split(" ")[0]} ${t.minutes} min ${t.mode}`).join(" · ");
-  return `Here's a plan${askedBy ? ` (${askedBy} asked)` : ""}: ${res.title}.${res.fairLine ? ` Getting there, ${res.fairLine}${trips ? `: ${trips}` : ""}.` : " Set where you're starting from in group info and I'll make the first stop fair for everyone."} Tap In, Maybe or Out.`;
+  // Each person's travel time is on the ticket; the message only says it's fair.
+  return lines.planLine({ title: res.title, day: lines.dayWord(res.raw.dateISO, cityToday(g.city)), fairLine: res.travel.length > 1 ? res.fairLine : null });
 }
 
 // Two different plans to choose from: Option A and Option B, then everyone votes with a thumbs up.
 async function planOptions(ctx: ActionCtx, g: GroupView, text: string, askedBy: string) {
   const ask = text.replace(/\b(give us|some|a few|two|2|three|3|options?|choices|ideas|to vote on|vote)\b/gi, " ").replace(/\s+/g, " ").trim() || "something fun and food";
   const a = await planDay(ctx, g, ask, askedBy, { label: "Option A", quiet: true });
-  if (!a.includes(",") && a.startsWith("I couldn't")) return a;
+  if (a === lines.COULDNT_PLAN) return a;
   const b = await planDay(ctx, g, ask, askedBy, { label: "Option B", quiet: true, exclude: a.split(",") });
-  if (b.startsWith("I couldn't")) return "Here's one plan; I couldn't find a different second one for that. Tap In, Maybe or Out.";
-  return `Two ways to do it${askedBy ? ` (${askedBy} asked)` : ""}: Option A and Option B, with no stop in common. Give a thumbs up to the one you want, and ask "@${g.butlerName.toLowerCase()} which one?" when you're ready; I'll lock in the winner.`;
+  if (b === lines.COULDNT_PLAN) return lines.ONE_OPTION;
+  return lines.optionsLine(g.butlerName);
 }
 
 // Count the thumbs on the open options and lock in the one with the most.
 async function pickWinner(ctx: ActionCtx, g: GroupView): Promise<string> {
   const open = await ctx.runQuery(internal.butler.openOptions, { groupId: g.groupId });
-  if (open.length < 2) return "There's no vote going. Ask me for options and I'll post two plans to vote on.";
+  if (open.length < 2) return lines.NO_VOTE;
   const best = [...open].sort((x, y) => y.thumbs - x.thumbs || x.createdAt - y.createdAt);
-  if (best[0].thumbs === 0) return "Nobody has voted yet. Give a thumbs up to the option you want.";
-  if (best[0].thumbs === best[1].thumbs) return `It's a tie at ${best[0].thumbs} each. One more thumbs up decides it.`;
-  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: best[0].ticketId, patch: { status: "locked" }, note: `${g.butlerName} locked in ${best[0].title.split(":")[0]} (${best[0].thumbs} votes)` } });
-  return `${best[0].title.split(":")[0]} wins with ${best[0].thumbs} ${best[0].thumbs === 1 ? "vote" : "votes"}. It's locked in; I'll book it and remind everyone.`;
+  if (best[0].thumbs === 0) return lines.NO_VOTES_YET;
+  if (best[0].thumbs === best[1].thumbs) return lines.tieLine(best[0].thumbs);
+  const label = best[0].title.split(":")[0];
+  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: best[0].ticketId, patch: { status: "locked" }, note: `${g.butlerName} locked in ${label}` } });
+  // Locking it books it: the booking message right after says "Locked in!" and how to book.
+  return lines.winnerLine(label, best[0].thumbs);
 }
 
 async function changePlan(ctx: ActionCtx, g: GroupView, text: string, askedBy: string) {
-  if (!g.ticket) return "There's no plan yet. Ask me to plan something first.";
+  if (!g.ticket) return lines.NO_PLAN;
   const res = await call<{ raw: unknown; message: string; changed: number[] }>("replan", { plan: g.ticket.plan, text });
   if (!res.changed.length && !/late/i.test(text)) return res.message;
-  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: `${askedBy} asked: ${res.message}` } });
-  if (g.ticket.status === "locked") await ctx.runMutation(internal.flow.rescheduleReminders, { ticketId: g.ticket.ticketId });
-  return res.message;
+  // The note on the ticket says who asked for what; the message says what changed.
+  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: lines.changeNote(askedBy, lines.changeGist(text, res.message)) } });
+  if (g.ticket.status !== "locked") return res.message;
+  // Locked in: say what changed first, then the reminders move (and say so).
+  await ctx.runMutation(internal.flow.say, { groupId: g.groupId, text: res.message, ticketId: g.ticket.ticketId });
+  await ctx.runMutation(internal.flow.rescheduleReminders, { ticketId: g.ticket.ticketId });
+  return "";
 }
 
 async function swap(ctx: ActionCtx, g: GroupView, stop: string, want: string, askedBy: string) {
-  if (!g.ticket) return "There's no plan yet. Ask me to plan something first.";
+  if (!g.ticket) return lines.NO_PLAN;
   const res = await call<{ raw: unknown; changed: { stop: number; from: string; to: string; asked: string | null; matched: boolean } }>("swap", { plan: g.ticket.plan, stop: /^\d+$/.test(stop) ? Number(stop) : stop, want });
   const c = res.changed;
-  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: `${askedBy} asked: swapped ${c.from} for ${c.to}` } });
+  await ctx.runMutation(api.chat.apply, { actorId: FAVES_ID, op: { op: "updateTicket", ticketId: g.ticket.ticketId, patch: { plan: res.raw }, note: lines.changeNote(askedBy, `swap ${c.from}`) } });
   // Say which stop changed; when nothing matched what they named, say that too.
-  const what = `stop ${c.stop}, ${c.from}, for ${c.to}`;
-  return c.matched === false && c.asked ? `I couldn't find "${c.asked}" in the plan, so I swapped ${what}.` : `Swapped ${what}.`;
+  return lines.swapLine(c.from, c.to, c.matched === false ? c.asked : null);
 }
 
 async function findByVibe(ctx: ActionCtx, g: GroupView, vibe: string) {
@@ -133,47 +140,45 @@ async function findByVibe(ctx: ActionCtx, g: GroupView, vibe: string) {
   if (!hits.length) {
     // Nothing in our data: scout it live (Apify) through the Faves server.
     const s = await call<{ spots: { name: string; hood: string | null }[] }>("scout", { city: g.city, query: vibe }).catch(() => ({ spots: [] }));
-    return s.spots.length ? `Here's what I found: ${s.spots.map((x) => `${x.name}${x.hood ? ` (${x.hood})` : ""}`).join(", ")}.` : "I couldn't find that yet. Try other words.";
+    return s.spots.length ? lines.spotsLine(s.spots.map((x) => (x.hood ? `${x.name} in ${x.hood}` : x.name))) : lines.SPOT_NOT_FOUND;
   }
+  // The best two as postcards; a third, if there is one, as a line (never the same names twice).
   for (const h of hits.slice(0, 2)) await ctx.runMutation(internal.flow.say, { groupId: g.groupId, placeId: h.placeId, text: `${h.name}${h.hood ? `, ${h.hood}` : ""}` });
-  return `A few spots that match "${vibe}": ${hits.map((h) => h.name).join(", ")}.`;
+  return hits[2] ? `Or try ${hits[2].name}.` : "";
 }
 
 // Book: post how to book each stop (links, the number to call, walk-in). The flow posts the message itself.
 async function bookIt(ctx: ActionCtx, g: GroupView): Promise<string> {
-  if (!g.ticket) return "There's no plan to book yet. Ask me to plan something first.";
+  if (!g.ticket) return lines.NO_PLAN_TO_BOOK;
   await ctx.runAction(internal.flow.book, { ticketId: g.ticket.ticketId });
   return "";
 }
 
 // Remind us: say which reminders are set, or what it takes to set them.
 async function remindUs(ctx: ActionCtx, g: GroupView): Promise<string> {
-  if (!g.ticket) return "There's no plan yet. Ask me to plan something, lock it in, and I'll remind everyone.";
-  if (g.ticket.status !== "locked") return "Lock the plan in and I'll remind everyone the evening before, plus a leave-now nudge for each of you with your own travel time.";
+  if (!g.ticket) return lines.NO_PLAN;
+  if (g.ticket.status !== "locked") return lines.LOCK_FOR_REMINDERS;
   let rs = await ctx.runQuery(internal.flow.remindersFor, { ticketId: g.ticket.ticketId });
   if (!rs.length) {
     await ctx.runMutation(internal.flow.scheduleReminders, { ticketId: g.ticket.ticketId });
     rs = await ctx.runQuery(internal.flow.remindersFor, { ticketId: g.ticket.ticketId });
   }
   const left = rs.filter((r) => !r.sent);
-  if (!left.length) return "All the reminders for this plan have gone out.";
-  return `Reminders are set:\n${left.map((r) => `• ${r.when}: ${r.text}`).join("\n")}`;
+  if (!left.length) return lines.REMINDERS_SENT;
+  return lines.remindersListLine(left);
 }
 
 function summary(g: GroupView) {
   const p = g.ticket?.plan;
   // The first stop's time, so a plan that moved (running late) reads right.
-  const at = p?.stops[0]?.start ?? p?.start;
-  const when = p?.dateISO && at != null ? ` on ${dayWord(p.dateISO)} at ${formatClock(at)}` : "";
-  const plan = g.ticket && p ? `Plan: ${p.title}${when}, ${g.ticket.status === "locked" ? "locked in" : "not locked yet"}, ${g.ticket.going} going.` : "No plan yet.";
-  const last = g.recent.slice(-3).map((m) => `${m.author.split(" ")[0]}: "${m.text.length > 60 ? `${m.text.slice(0, 57)}...` : m.text}"`).join("; ");
-  return `tl;dr: ${plan}${last ? ` Lately, ${last}.` : " Quiet so far."}`;
+  const at = p?.stops[0]?.start ?? p?.start ?? null;
+  return lines.tldrLine({
+    plan: g.ticket && p ? { title: p.title, day: lines.dayWord(p.dateISO, cityToday(g.city)), at } : null,
+    locked: g.ticket?.status === "locked",
+    going: g.ticket?.going ?? [],
+    chatter: g.recent,
+  });
 }
-
-const dayWord = (iso: string) => {
-  const d = new Date(`${iso}T12:00:00Z`);
-  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]}, ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()]} ${d.getUTCDate()}`;
-};
 
 // ---- The agent ------------------------------------------------------------------------------
 
@@ -185,12 +190,12 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
   const options: any = {
     name: g.butlerName,
     languageModel: asi().chat("asi1-mini"),
-    instructions: `You are ${g.butlerName}, the agent in the Faves group chat "${g.name}" (${g.members.length} people). You plan hangouts that are fair for everyone's starting point, change plans when asked (rain, running late, cheaper, swap a stop), find spots by vibe, book the plan, set reminders, and sum up the chat. Use the tools to act; then answer in one or two short, warm sentences. No markdown.`,
+    instructions: lines.agentInstructions({ butlerName: g.butlerName, name: g.name, people: g.members.length }),
     tools: {
       planDay: createTool({ description: "Plan a day or hangout for the group and post it as a ticket.", inputSchema: z.object({ request: z.string().describe("what, when, budget, e.g. 'saturday 1pm to 6pm, pickleball then hot pot'") }), execute: async (ctx, { request }): Promise<string> => planDay(ctx, g, request, askedBy) }),
-      changePlan: createTool({ description: "Change the current plan: rain, running late, cheaper, remove or add something.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => changePlan(ctx, g, request, askedBy) }),
+      changePlan: createTool({ description: "Change the current plan: rain, running late, cheaper, remove or add something.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => (await changePlan(ctx, g, request, askedBy)) || "Posted what changed and moved the reminders." }),
       swapStop: createTool({ description: "Swap one stop of the current plan for another kind of spot.", inputSchema: z.object({ stop: z.string().describe("stop number or name"), want: z.string().describe("what instead, e.g. ramen") }), execute: async (ctx, { stop, want }): Promise<string> => swap(ctx, g, stop, want, askedBy) }),
-      findSpot: createTool({ description: "Find spots in the city that match a vibe or a niche ask and drop them in the chat.", inputSchema: z.object({ vibe: z.string() }), execute: async (ctx, { vibe }): Promise<string> => findByVibe(ctx, g, vibe) }),
+      findSpot: createTool({ description: "Find spots in the city that match a vibe or a niche ask and drop them in the chat.", inputSchema: z.object({ vibe: z.string() }), execute: async (ctx, { vibe }): Promise<string> => (await findByVibe(ctx, g, vibe)) || "Posted the spots as postcards." }),
       planOptions: createTool({ description: "Post two different plans (Option A and Option B) for the group to vote on with thumbs up.", inputSchema: z.object({ request: z.string() }), execute: async (ctx, { request }): Promise<string> => planOptions(ctx, g, request, askedBy) }),
       pickWinner: createTool({ description: "Count the thumbs on Option A and Option B and lock in the winner.", inputSchema: z.object({}), execute: async (ctx): Promise<string> => pickWinner(ctx, g) }),
       summarize: createTool({ description: "Sum up the chat (tl;dr).", inputSchema: z.object({}), execute: async (): Promise<string> => summary(g) }),
@@ -206,6 +211,7 @@ function butlerAgent(g: GroupView, askedBy: string): ButlerAgent {
 
 async function rules(ctx: ActionCtx, g: GroupView, text: string, askedBy: string): Promise<string> {
   const t = text.replace(/@\w+/g, "").trim();
+  if (/^(help|hi|hey|hello|what can you do)\b/i.test(t) && t.length < 40) return lines.helpLine(g.butlerName);
   if (/\b(tl;?dr|summary|sum up|recap)\b/i.test(t)) return summary(g);
   if (/\b(which one|who won|winner|count the votes|tally)\b/i.test(t)) return pickWinner(ctx, g);
   if (/\b(options?|choices|to vote on)\b/i.test(t)) return planOptions(ctx, g, t, askedBy);
@@ -241,7 +247,7 @@ export const reply = internalAction({
       }
     } catch (e) {
       // The model or a tool failed: fall back to the rules once.
-      try { answer = await rules(ctx, g, text, askedBy); how = "rules (fallback)"; } catch (e2) { answer = `I couldn't do that just now (${(e2 as Error).message}).`; void e; }
+      try { answer = await rules(ctx, g, text, askedBy); how = "rules (fallback)"; } catch (e2) { answer = lines.ASK_AGAIN; how = `failed: ${(e2 as Error).message}`; void e; }
     }
     if (answer.trim()) await ctx.runMutation(internal.flow.say, { groupId, text: answer });
     await ctx.runMutation(internal.butler.logRun, { groupId, kind: how, askedBy, input: text, output: answer, status: "done" });

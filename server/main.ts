@@ -29,6 +29,7 @@ import { formatClock } from "../src/lib/time";
 import { reserveLabel } from "../src/lib/linktext";
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
+import { helloLine } from "../src/chat/lines";
 import { FAVES_ID, inviteCode, type ChatOp } from "../src/chat/reduce.mjs";
 import { createRelay } from "./relay.mjs";
 import { cartesiaReady, speak, transcribe } from "./cartesia";
@@ -240,7 +241,7 @@ async function group(body: { planId: string; name?: string }) {
   await chatApply(actor, { op: "createGroup", group: { id, name, emoji: "🎟️", city: st.city.slug, members: convex ? [] : [BUTLER], inviteCode: code } } as ChatOp);
   const ticketId = `t-${Date.now().toString(36)}`;
   await chatApply(actor, { op: "postTicket", ticket: { id: ticketId, groupId: id, plan: st.plan, status: "proposed", createdBy: actor, rsvps: {} }, message: { id: `m-${ticketId}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "ticket", ticketId } } as ChatOp);
-  await chatApply(actor, { op: "send", message: { id: `m-hi-${id}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "agent", text: `Hi! I'm Fave, this group's agent. Here's the plan for ${st.plan.dayLabel}. Tap In, Maybe or Out, and set where you're starting from in group info so I can keep the first stop fair for everyone.` } } as ChatOp);
+  await chatApply(actor, { op: "send", message: { id: `m-hi-${id}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "agent", text: helloLine(BUTLER.name) } } as ChatOp);
   return { groupId: id, name, code, web: `${WEB}/join/${code}`, app: `faves://join/${code}`, expoGo: `exp://${lan}:${EXPO_PORT}/--/join/${code}`, backend: convex ? "convex" : "relay" };
 }
 

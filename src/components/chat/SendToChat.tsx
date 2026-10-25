@@ -2,6 +2,7 @@
 // chats, or start a new group for it.
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { helloLine } from "@/chat/lines";
 import { chat, useChat } from "@/chat/store";
 import type { Plan } from "@/lib/planner";
 import { useStore } from "@/state/store";
@@ -32,7 +33,7 @@ export function SendToChat({ open, item, onClose, onSent }: { open: boolean; ite
     const g = await chat.createGroup({ name: title.slice(0, 40) || "New plan", emoji: item.kind === "place" ? "📍" : "🎟️", members: [], city: item.kind === "plan" ? item.plan.citySlug : city });
     if (item.kind !== "plan") return send(g.id);
     const ticketId = await chat.postTicket(g.id, item.plan);
-    await chat.sayAsFaves(g.id, { ticketId, text: `Hi! I'm Fave, this group's agent. Here's the plan for ${item.plan.dayLabel}. Everyone taps In, Maybe or Out, and sets where they're starting from in group info so I can keep the first stop fair. Ask me with @fave to change it, book it or remind you.` });
+    await chat.sayAsFaves(g.id, { ticketId, text: helloLine("Fave") });
     onClose();
     onSent?.(`Made ${g.name}`);
     router.push(`/chat/${g.id}`);

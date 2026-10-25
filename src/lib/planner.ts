@@ -948,7 +948,7 @@ export function replan(input: Plan, city: City, text: string, opts: { lexicon: (
         s.slot = { ...s.slot, categories: s.slot.categories.filter((c) => !OUTDOOR.has(c)).length ? s.slot.categories.filter((c) => !OUTDOOR.has(c)) : ["culture", "games"], keywords: [], sport: undefined, anchor: undefined, duration: Math.max(s.slot.duration, 60) };
         replaceAt(i, (a, b) => `${a} is outdoors, so ${b} takes its place.`, (c) => !isOutdoor(c));
       }
-      if (!changed.length) log.push("Everything left on the plan is already indoors.");
+      if (!changed.length) log.push("Everything left is already indoors.");
       retime(plan, city, firstOpen, undefined, log);
       break;
     }
@@ -960,13 +960,13 @@ export function replan(input: Plan, city: City, text: string, opts: { lexicon: (
         const lastOptional = [...plan.stops].reverse().findIndex((s) => !s.slot.mustDo && !s.slot.interest);
         if (lastOptional < 0) break;
         const idx = plan.stops.length - 1 - lastOptional;
-        log.push(`Dropped ${city.byId.get(plan.stops[idx].placeId)?.name} so the day still ends on time.`);
+        log.push(`${city.byId.get(plan.stops[idx].placeId)?.name} is out so the day still ends on time.`);
         plan.stops.splice(idx, 1);
         retime(plan, city, Math.max(firstOpen, idx), undefined, log);
       }
       // The day now starts when its first stop does (the ticket and reminders read this).
       if (firstOpen === 0 && plan.stops.length) plan.start = plan.stops[0].start;
-      log.unshift(`Pushed the rest of the day back ${intent.minutes} min.`);
+      log.unshift(`Pushed ${firstOpen > 0 ? "the rest of the day" : "everything"} back ${intent.minutes} min.`);
       for (let i = firstOpen; i < plan.stops.length; i++) changed.push(i);
       break;
     }
@@ -974,22 +974,22 @@ export function replan(input: Plan, city: City, text: string, opts: { lexicon: (
       for (let i = firstOpen; i < plan.stops.length; i++) {
         const p = city.byId.get(plan.stops[i].placeId)!;
         if (costOf(p).perPerson < 20) continue;
-        replaceAt(i, (a, b) => `${b} instead of ${a}: it costs less.`, (c) => costOf(c).perPerson < costOf(p).perPerson);
+        replaceAt(i, (a, b) => `${b} instead of ${a}, it's cheaper.`, (c) => costOf(c).perPerson < costOf(p).perPerson);
       }
-      if (!changed.length) log.push("Every stop is already one of the cheaper picks.");
+      if (!changed.length) log.push("Every stop is already a cheap pick.");
       retime(plan, city, firstOpen, undefined, log);
       break;
     }
     case "swap": {
       const i = findStop(plan, city, intent.target, opts.lexicon);
-      if (i < 0) { log.push(`Couldn't tell which stop "${intent.target}" means. Tap Swap on the stop instead.`); break; }
+      if (i < 0) { log.push(`Which stop is "${intent.target}"? Tap Swap on it instead.`); break; }
       replaceAt(i, (a, b) => `Swapped ${a} for ${b}.`);
       retime(plan, city, i, undefined, log);
       break;
     }
     case "remove": {
       const i = findStop(plan, city, intent.target, opts.lexicon);
-      if (i < 0) { log.push(`Couldn't tell which stop "${intent.target}" means.`); break; }
+      if (i < 0) { log.push(`Which stop is "${intent.target}"?`); break; }
       log.push(`Removed ${city.byId.get(plan.stops[i].placeId)?.name}.`);
       plan.stops.splice(i, 1);
       if (i < plan.stops.length) { retime(plan, city, i, undefined, log); changed.push(i); }
@@ -1008,7 +1008,7 @@ export function replan(input: Plan, city: City, text: string, opts: { lexicon: (
       break;
     }
     default:
-      log.push("Try \"it's raining\", \"we're running 30 min late\", \"swap the sushi spot\", \"make it cheaper\" or \"add dessert\".");
+      log.push("Try \"it's raining\", \"running 30 min late\", \"make it cheaper\" or \"add dessert\".");
   }
   plan.revision += 1;
   plan.log = [...log, ...plan.log].slice(0, 12);

@@ -8,7 +8,7 @@ By default the clock is pinned (FAVES_NOW) to Saturday, Oct 24 2026 at 10 PM in 
 the moment a run once planned "a Saturday" for 10:15 PM that night, so the run is the same on
 any day at any hour. Every reply is checked for what it should say, not for one word:
 - the plan is a day with several stops, on a Saturday, starting after "now";
-- "swap the hot pot for ramen" changed the hot pot stop (and says which stop), to ramen;
+- "swap the hot pot for ramen" changed the hot pot stop (and names it), to ramen, in its place;
 - "book it" answers with every stop's booking in a chat message (short link labels, never a
   raw URL), then a Payment Protocol request, which this test user pays;
 - "make a group chat" answers with the invite link.
@@ -48,7 +48,8 @@ NOW = (datetime.fromisoformat(os.environ["FAVES_NOW"]) if os.environ["FAVES_NOW"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 DAY_LINE = re.compile(r"\*\*(\w+), (\w{3}) (\d{1,2}) · (\d{1,2}:\d{2} [AP]M) to (\d{1,2}:\d{2} [AP]M)")
 STOP_LINE = re.compile(r"^(\d+)\. \*\*(\d{1,2}:\d{2} [AP]M) (.+?)\*\*(?: \(([^)]*)\))?", re.M)
-SWAP_LINE = re.compile(r"Swapped stop (\d+), \*\*(.+?)\*\*(?: \(([^)]*)\))?, for \*\*(.+?)\*\*(?: \(([^)]*)\))?\.")
+SWAP_LINE = re.compile(r"Swapped \*\*(.+?)\*\* for \*\*(.+?)\*\*\.")
+PHONE = re.compile(r"call \+?\(?\d{3}\)?[ .-]?\d{3}[ .-]\d{4}")
 
 state: dict = {"i": 0, "failures": [], "stops": [], "hot": None, "request": None, "completed": False, "thanks": False, "done": False}
 
@@ -89,25 +90,29 @@ def check_swap(text: str) -> None:
     m = SWAP_LINE.search(text)
     if not m:
         return fail("the swap reply doesn't say which stop changed")
-    n, before, to, to_kind = int(m.group(1)), m.group(2), m.group(4), m.group(5) or ""
-    if state["hot"] and (n, before) != state["hot"][:2]:
-        fail(f"'swap the hot pot' changed stop {n} ({before}), not the hot pot stop {state['hot'][0]} ({state['hot'][1]})")
+    before, to = m.group(1), m.group(2)
+    if state["hot"] and before != state["hot"][1]:
+        fail(f"'swap the hot pot' changed {before}, not the hot pot stop {state['hot'][0]} ({state['hot'][1]})")
+    stops = stops_of(text)
+    new = next((s for s in stops if s[1] == to), None)
+    to_kind = new[2] if new else ""
     if "ramen" not in f"{to} {to_kind}".lower():
         fail(f"asked for ramen, got {to} ({to_kind})")
-    stops = stops_of(text)
+    # The new spot takes the old one's place: the same stop number.
+    n = state["hot"][0] if state["hot"] else (new[0] if new else 0)
     if not any(s[0] == n and s[1] == to for s in stops):
         fail(f"the new plan doesn't list {to} at stop {n}")
     state["stops"] = stops or state["stops"]
 
 
 def check_book(text: str) -> None:
-    if "booked" not in text:
+    if "Here's how to book it" not in text:
         fail("no booking reply")
     for n, name, _ in state["stops"]:
         line = next((ln for ln in text.splitlines() if f"**{name}**" in ln), None)
         if not line:
             fail(f"the booking doesn't mention stop {n}, {name}")
-        elif not ("](http" in line or "call them at" in line or "just show up" in line):
+        elif not ("](http" in line or PHONE.search(line) or line.endswith(": walk in")):
             fail(f"the booking doesn't say how to book {name}: {line}")
     bare = re.sub(r"\]\(https?://[^\s)]+\)", "]", text)
     if "http" in bare:
@@ -228,8 +233,12 @@ def check_formatting() -> None:
     assert f"[Reserve on Google]({url})" in text, text
     assert "http" not in re.sub(r"\]\(https?://[^\s)]+\)", "]", text), text
     line = swap_line({"stop": 2, "from": "Ferry Building", "fromKind": "Market", "to": "Marufuku Ramen", "toKind": "Ramen restaurant", "asked": "karaoke", "matched": False})
-    assert line.startswith('I couldn\'t find "karaoke" in the plan, so I swapped stop 2, **Ferry Building**'), line
-    assert swap_line({"stop": 3, "from": "Nan hot pot SF", "to": "HINODEYA Ramen", "matched": True}) == "Swapped stop 3, **Nan hot pot SF**, for **HINODEYA Ramen**."
+    assert line == 'Couldn\'t find "karaoke", so I swapped **Ferry Building** for **Marufuku Ramen**.', line
+    assert swap_line({"stop": 3, "from": "Nan hot pot SF", "to": "HINODEYA Ramen", "matched": True}) == "Swapped **Nan hot pot SF** for **HINODEYA Ramen**."
+    # A phone-only place comes with its number to call; a walk-in says so.
+    text = booking_text({"bookings": [{"name": "M Pot", "time": "6:26 PM", "how": "phone", "phone": "(415) 571-8076"}, {"name": "Randall Museum", "time": "1:00 PM", "how": "walk-in"}]}, False)
+    assert "- 6:26 PM **M Pot**: call (415) 571-8076" in text and PHONE.search(text), text
+    assert "- 1:00 PM **Randall Museum**: walk in" in text, text
     print("(formatting checks passed)", flush=True)
 
 

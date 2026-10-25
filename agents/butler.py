@@ -50,13 +50,12 @@ butler = Agent(
 chat = Protocol(spec=chat_protocol_spec)
 pay = Protocol(spec=payment_protocol_spec, role="seller")
 
-HELP = (
-    "Hi, I'm the Faves Agent. I plan hangouts that are fair for everyone.\n\n"
+TRY = (
     "Try: **plan a Saturday in SF for me and 3 friends, we live in the Mission, the Richmond and Oakland, "
     "we like pickleball and hot pot, under $40 each**\n\n"
-    "Then you can say **swap the hot pot for ramen**, **book it**, or **make a group chat**."
+    "Then say **swap the hot pot for ramen**, **book it** or **make a group chat**."
 )
-MODE = {"walk": "walk", "transit": "transit", "drive": "drive", "bike": "bike"}
+HELP = "Hi, I'm the Faves Agent. I plan days out that are fair for everyone.\n\n" + TRY
 
 
 def chat_text(text: str, card: dict[str, Any] | None = None, end: bool = False) -> ChatMessage:
@@ -74,12 +73,10 @@ def chat_text(text: str, card: dict[str, Any] | None = None, end: bool = False) 
 
 
 def swap_line(c: dict[str, Any]) -> str:
-    """Which stop changed, by number and name, and what it changed to."""
-    def named(name: str, kind: str | None) -> str:
-        return f"**{name}** ({kind})" if kind else f"**{name}**"
-    what = f"stop {c['stop']}, {named(c['from'], c.get('fromKind'))}, for {named(c['to'], c.get('toKind'))}."
+    """Which stop changed, by name, and what it changed to (the plan below has the details)."""
+    what = f"**{c['from']}** for **{c['to']}**."
     if c.get("matched") is False and c.get("asked"):
-        return f"I couldn't find \"{c['asked']}\" in the plan, so I swapped {what}"
+        return f"Couldn't find \"{c['asked']}\", so I swapped {what}"
     return f"Swapped {what}"
 
 
@@ -89,26 +86,20 @@ def plan_text(p: dict[str, Any], changed: dict[str, Any] | None = None) -> str:
         lines.append(swap_line(changed) + "\n")
     lines.append(f"### {p['title']}")
     lines.append(f"**{p['day']} · {p['start']} to {p['end']} · about ${p['costPerPerson']} each**")
-    if p.get("travel"):
-        def trip(t: dict[str, Any]) -> str:
-            where = f" from {t['from']}" if t.get("from") else ""
-            return f"{t['name']} {t['minutes']} min {MODE.get(t['mode'], t['mode'])}{where}"
-        trips = " · ".join(trip(t) for t in p["travel"])
-        lines.append(f"Getting to the first stop, {p['fairLine']}: {trips}")
+    if p.get("travel") and p.get("fairLine"):
+        # Fair for everyone: each person's trip to the first stop, in minutes.
+        trips = ", ".join(f"{t['name']} {t['minutes']}" for t in p["travel"])
+        lines.append(f"{p['fairLine'][0].upper()}{p['fairLine'][1:]} ({trips} min).")
     if p.get("unplacedFriends"):
         who = p["unplacedFriends"]
-        lines.append(f"_Tell me where {', '.join(who)} {'starts' if len(who) == 1 else 'start'} from and I'll keep it fair for them too._")
+        lines.append(f"_Where {'does' if len(who) == 1 else 'do'} {', '.join(who)} start? I'll keep it fair for them too._")
     lines.append("")
     for s in p["stops"]:
         score = f" · Locals Score {s['localsScore']}" if s.get("localsScore") is not None else ""
         about = ", ".join(x for x in [s.get("kind") or "", s.get("hood") or ""] if x)
         hood = f" ({about})" if about else ""
         lines.append(f"{s['n']}. **{s['time']} {s['name']}**{hood}{score} · {s['cost']}")
-        if s.get("leg") and s["n"] > 1:
-            lines.append(f"   _{s['leg']} from the stop before_")
-    if p.get("home"):
-        lines.append("\nGetting home: " + " · ".join(f"{h['name']} {h['minutes']} min" for h in p["home"]))
-    lines.append("\nSay **swap stop 2 for something cheaper**, **book it**, or **make a group chat**.")
+    lines.append("\nSay **swap stop 2 for something cheaper**, **book it** or **make a group chat**.")
     return "\n".join(lines)
 
 
@@ -166,19 +157,21 @@ def reserve_label(url: str) -> str:
 
 
 def booking_text(res: dict[str, Any], fee_due: bool) -> str:
-    lines = ["Here's how the day gets booked:"]
+    """One line per stop: a short reservation link, the number to call for phone-only places
+    (you call; the agent never phones anyone), or walk in."""
+    lines = ["Here's how to book it:"]
     for b in res["bookings"]:
         if b["how"] == "online":
             url = b["url"].replace("(", "%28").replace(")", "%29").replace(" ", "%20")  # can't end the link early
-            lines.append(f"- **{b['name']}** ({b['time']}): [{b.get('label') or reserve_label(b['url'])}]({url})")
+            lines.append(f"- {b['time']} **{b['name']}**: [{b.get('label') or reserve_label(b['url'])}]({url})")
         elif b["how"] == "phone":
-            lines.append(f"- **{b['name']}** ({b['time']}): books by phone only, call them at {b['phone']}")
+            lines.append(f"- {b['time']} **{b['name']}**: call {b['phone']}")
         else:
-            lines.append(f"- **{b['name']}** ({b['time']}): no booking needed, just show up")
+            lines.append(f"- {b['time']} **{b['name']}**: walk in")
     fee = res.get("fee")
     if fee and fee_due:
-        lines.append(f"\nFaves charges a {fee['amount']} {fee['currency']} booking fee for the day. The payment request is on its way.")
-    lines.append("\nWant a group chat for your friends? Say **make a group chat**.")
+        lines.append(f"\nThe booking fee is {fee['amount']} {fee['currency']} for the day. The payment request is next.")
+    lines.append("\nSay **make a group chat** to bring your friends in.")
     return "\n".join(lines)
 
 
@@ -198,8 +191,8 @@ async def handle(ctx: Context, sender: str, text: str) -> list[Any]:
         r = await ask(ctx, "scout", ScoutRequest(city=city, query=it.get("query") or text), ScoutReply)
         spots = r.spots if r and r.ok else (await api.scout(city, it.get("query") or text)).get("spots", [])
         if not spots:
-            return [chat_text("I couldn't find that in Faves yet, and live scouting isn't switched on. Try another word, or ask me to plan a day.")]
-        tag = " (fresh finds from a live scout)" if r and r.source == "apify" else ""
+            return [chat_text("I couldn't find that yet. Try other words, or ask me to plan a day.")]
+        tag = " (fresh from a live scout)" if r and r.source == "apify" else ""
         def spot(x: dict[str, Any]) -> str:
             bits = [f"**{x['name']}**"]
             if x.get("hood"):
@@ -212,10 +205,10 @@ async def handle(ctx: Context, sender: str, text: str) -> list[Any]:
                 bits.append("fresh find")
             return "- " + " · ".join(bits)
         lines = [f"Here's what I found{tag}:"] + [spot(x) for x in spots]
-        return [chat_text("\n".join(lines) + "\n\nWant me to plan a day around one of them?")]
+        return [chat_text("\n".join(lines) + "\n\nWant a day planned around one?")]
 
     if intent in {"swap", "book", "group"} and not plan:
-        return [chat_text("Let's plan the day first. " + HELP)]
+        return [chat_text("Let's plan the day first.\n\n" + TRY)]
 
     if intent == "swap":
         # The stop they named ("the hot pot"); the Planner finds it, or says it fell back.
@@ -251,9 +244,9 @@ async def handle(ctx: Context, sender: str, text: str) -> list[Any]:
         g = await api.group(plan["planId"], s.get("groupName") or "")
         save(ctx, sender, group=g)
         return [chat_text(
-            f"Your Faves group chat **{g['name']}** is ready, with the plan pinned and me in it.\n\n"
-            f"- Invite link: {g['web']}\n- In the app: {g['app']} (or code **{g['code']}**)\n\n"
-            "Everyone taps In, Maybe or Out on the ticket and sets where they start from, and I'll keep the first stop fair."
+            f"Your group chat **{g['name']}** is ready, with the plan pinned.\n\n"
+            f"- Invite link: {g['web']}\n- In the app: {g['app']} (code **{g['code']}**)\n\n"
+            "Send the link so everyone can tap In."
         )]
 
     # A new plan (or a re-plan with new details).
@@ -279,9 +272,9 @@ async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
         return
     try:
         replies = await handle(ctx, sender, text)
-    except Exception as e:
+    except Exception:
         ctx.logger.exception("couldn't handle a message")
-        replies = [chat_text(f"Sorry, something went wrong on my side ({e}). Try asking again in a moment.")]
+        replies = [chat_text("Sorry, that didn't work. Try again in a moment.")]
     for reply in replies:
         await ctx.send(sender, reply)
 
@@ -301,7 +294,7 @@ async def on_commit(ctx: Context, sender: str, msg: CommitPayment):
 
 @pay.on_message(RejectPayment)
 async def on_reject(ctx: Context, sender: str, msg: RejectPayment):
-    await ctx.send(sender, chat_text("No problem. The reservation links still work, and the group chat is free."))
+    await ctx.send(sender, chat_text("No problem. The links still work, and the group chat is free."))
 
 
 butler.include(chat, publish_manifest=True)
