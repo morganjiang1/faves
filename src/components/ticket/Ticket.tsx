@@ -1,13 +1,12 @@
 // Plans are tickets: every planned hangout or day is a paper ticket with a perforated
 // tear-off stub (the date and the start time), the stops listed with their times, and who's
-// in. The same ticket sits on Home, in a group chat and on top of the itinerary.
+// in. The same ticket sits on Home and in a group chat. In a chat it also carries the route
+// map and one fairness line ("everyone's within 25 min") that opens each person's trip.
 import { router } from "expo-router";
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { City } from "@/data/types";
 import { fairLine } from "@/lib/fair";
-import { formatLeg } from "@/lib/geo";
-import { openUrl } from "@/lib/links";
 import { planCost, type Plan } from "@/lib/planner";
 import { endsAt, formatClock, MONTHS, startsAt } from "@/lib/time";
 import { font, palette, shadow } from "@/theme/tokens";
@@ -47,12 +46,12 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
   const cost = city ? planCost(plan, city) : null;
   const shownStops = compact ? plan.stops.slice(0, 3) : plan.stops;
   const going = people.filter((p) => p.answer === "in");
-  const reserve = places.filter((p) => p?.reserveUrl);
   const fair = plan.fairness;
+  const [trips, setTrips] = useState(false);
   const open = onPress ?? (() => router.push(`/plan/${plan.id}`));
   return (
     <View testID={testID} style={[styles.ticket, shadow.card]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Open ${plan.title}`} onPress={open} style={styles.row}>
+      <Pressable testID={testID ? `${testID}-open` : undefined} accessibilityRole="button" accessibilityLabel={`Open ${plan.title}`} onPress={open} style={styles.row}>
         <View style={styles.body}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
             {label ? <Text style={styles.label}>{label.toUpperCase()}</Text> : null}
@@ -63,19 +62,13 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
             {plan.stops.length} {plan.stops.length === 1 ? "stop" : "stops"} · until {formatClock(endsAt(plan), { compact: true })}{cost ? ` · ${cost.perPerson ? `about $${cost.perPerson} each` : "free"}` : ""}
           </Text>
           <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-            <View style={{ flex: 1, gap: compact ? 6 : 8 }}>
+            <View style={{ flex: 1, gap: compact ? 6 : 7 }}>
               {shownStops.map((s, i) => {
                 const p = places[i];
                 return (
-                  <View key={s.key}>
-                    {!compact && i > 0 && s.leg ? <Text style={styles.leg}>↓ {formatLeg(s.leg)}</Text> : null}
-                    <View style={styles.stop}>
-                      <Text style={styles.time}>{formatClock(s.start, { compact: true })}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.stopName} numberOfLines={1}>{p?.name ?? s.slot.label}</Text>
-                        {!compact && p ? <Text style={styles.addr} numberOfLines={1}>{p.address ?? p.hood ?? ""}</Text> : null}
-                      </View>
-                    </View>
+                  <View key={s.key} style={styles.stop}>
+                    <Text style={styles.time}>{formatClock(s.start, { compact: true })}</Text>
+                    <Text style={[styles.stopName, { flex: 1 }]} numberOfLines={1}>{p?.name ?? s.slot.label}</Text>
                   </View>
                 );
               })}
@@ -88,36 +81,33 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
             </View>
           ) : null}
           {!compact && fair?.toFirst.length ? (
-            <View style={styles.fair} testID="ticket-fairness">
-              <Text style={styles.fairHead}>getting to {places[0]?.name ?? "the first stop"}: {fairLine(fair)}</Text>
-              <View style={styles.fairRow}>
-                {fair.toFirst.map((l) => (
-                  <View key={l.memberId} style={styles.fairChip}>
-                    <Avatar name={l.name} size={18} />
-                    <Text style={styles.fairText}>{l.name.split(/\s+/)[0]} {l.minutes} min {MODE_WORD[l.mode]}</Text>
-                  </View>
-                ))}
+            // One line; tap it for each person's trip to the first stop.
+            <Pressable testID="ticket-fairness" accessibilityRole="button" accessibilityState={{ expanded: trips }} accessibilityLabel={`${fairLine(fair)}. Show each person's trip`} onPress={() => setTrips((v) => !v)} style={styles.fair}>
+              <View style={styles.fairLine}>
+                <Icon name="people-outline" size={15} tint={palette.ink} />
+                <Text style={styles.fairHead}>{capitalize(fairLine(fair))}</Text>
+                <Icon name={trips ? "chevron-up" : "chevron-down"} size={14} tint={palette.inkMuted} />
               </View>
-            </View>
+              {trips ? (
+                <View style={styles.fairRow} testID="ticket-trips">
+                  {fair.toFirst.map((l) => (
+                    <View key={l.memberId} style={styles.fairChip}>
+                      <Avatar name={l.name} size={18} />
+                      <Text style={styles.fairText}>{l.name.split(/\s+/)[0]} {l.minutes} min {MODE_WORD[l.mode]}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </Pressable>
           ) : null}
-          {!compact && reserve.length ? (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-              {reserve.map((p) => (
-                <Pressable key={p!.id} accessibilityRole="link" onPress={() => openUrl(p!.reserveUrl)} style={styles.reserve}>
-                  <Icon name="calendar-outline" size={13} tint={palette.roseInk} />
-                  <Text style={styles.reserveText} numberOfLines={1}>Reserve {p!.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-          {people.length ? (
+          {going.length ? (
             <View style={styles.people}>
               <View style={{ flexDirection: "row" }}>
-                {(going.length ? going : people).slice(0, 5).map((p, i) => (
+                {going.slice(0, 5).map((p, i) => (
                   <View key={p.id} style={{ marginLeft: i ? -8 : 0 }}><Avatar name={p.name} size={24} /></View>
                 ))}
               </View>
-              <Text style={styles.peopleText}>{going.length ? `${going.length} going` : `${people.length} invited`}</Text>
+              <Text style={styles.peopleText} numberOfLines={1}>{inLine(going.map((p) => p.name.split(/\s+/)[0]))}</Text>
             </View>
           ) : null}
         </View>
@@ -135,6 +125,10 @@ export function Ticket({ plan, city, compact, people = [], sample, testID, onPre
   );
 }
 
+const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+// Who's in, by name: "Maya's in", "Maya and Jay are in", "Maya, Jay +2 are in".
+const inLine = (names: string[]) => (names.length === 1 ? `${names[0]}'s in` : names.length === 2 ? `${names[0]} and ${names[1]} are in` : `${names.slice(0, 2).join(", ")} +${names.length - 2} are in`);
+
 const styles = StyleSheet.create({
   ticket: { backgroundColor: palette.card, borderRadius: 16, borderWidth: 1, borderColor: palette.line, overflow: "hidden" },
   row: { flexDirection: "row", alignItems: "stretch" },
@@ -145,17 +139,14 @@ const styles = StyleSheet.create({
   stop: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
   time: { fontFamily: font.displaySemi, fontSize: 13, color: palette.roseInk, width: 52, marginTop: 1 },
   stopName: { fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.ink },
-  addr: { fontFamily: font.sans, fontSize: 12, color: palette.inkMuted, marginTop: 1 },
-  leg: { fontFamily: font.sans, fontSize: 11.5, color: palette.inkMuted, marginLeft: 60, marginBottom: 4 },
   more: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.inkSoft, marginLeft: 60 },
   sketch: { marginTop: 10 },
-  fair: { marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: palette.paper, gap: 6 },
-  fairHead: { fontFamily: font.sans, fontSize: 12.5, fontWeight: "700", color: palette.ink },
+  fair: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 10, backgroundColor: palette.paper, gap: 8 },
+  fairLine: { flexDirection: "row", alignItems: "center", gap: 6 },
+  fairHead: { flex: 1, fontFamily: font.sans, fontSize: 13.5, fontWeight: "700", color: palette.ink },
   fairRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   fairChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: palette.card, borderRadius: 999, paddingRight: 8, paddingLeft: 2, paddingVertical: 2, borderWidth: 1, borderColor: palette.line },
   fairText: { fontFamily: font.sans, fontSize: 12, color: palette.inkSoft },
-  reserve: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: palette.roseTint, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, maxWidth: "100%" },
-  reserveText: { fontFamily: font.sans, fontSize: 12, fontWeight: "700", color: palette.roseInk },
   people: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
   peopleText: { fontFamily: font.sans, fontSize: 13, fontWeight: "600", color: palette.inkSoft },
   stub: { width: 82, backgroundColor: palette.sunset, alignItems: "center", justifyContent: "center", paddingVertical: 14, gap: 1 },

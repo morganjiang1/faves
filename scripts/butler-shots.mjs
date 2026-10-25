@@ -25,9 +25,11 @@ const open = async (name, handle) => {
 const startFrom = async (page, hood) => {
   await page.getByTestId("chat-info").click();
   await page.getByTestId("group-info").waitFor();
+  await page.getByTestId("info-start").click();
   await page.getByTestId("info-hood-search").fill(hood);
   await page.locator('[data-testid^="hood-"]').first().click();
   await page.waitForTimeout(500);
+  await page.getByTestId("start-sheet-close").click();
   await page.getByTestId("info-back").click();
   await page.getByTestId("chat-screen").waitFor();
 };

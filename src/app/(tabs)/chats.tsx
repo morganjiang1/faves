@@ -33,14 +33,14 @@ export default function Chats() {
     setJoinError(null);
     const g = await chat.join(code);
     if (g) { setCode(""); setJoinOpen(false); router.push(`/chat/${g.id}`); }
-    else setJoinError(v.status === "live" ? "No group with that code. Check it and try again." : "Joining needs the connection. Try again in a moment.");
+    else setJoinError(v.status === "live" ? "No group with that code." : "Offline. Try again in a moment.");
   };
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8 }]} testID="chats-screen">
       <View style={styles.head}>
         <Text style={styles.title}>chats</Text>
-        <Pressable testID="chats-join" accessibilityRole="button" onPress={() => setJoinOpen((o) => !o)} style={styles.headButton}>
+        <Pressable testID="chats-join" accessibilityRole="button" accessibilityLabel="Join with a code" onPress={() => setJoinOpen((o) => !o)} style={styles.headButton}>
           <Icon name="qr-code-outline" size={18} tint={palette.ink} />
         </Pressable>
         <Pressable testID="chats-new" accessibilityRole="button" onPress={() => router.push("/chat/new")} style={[styles.headButton, styles.newButton]}>
@@ -56,7 +56,7 @@ export default function Chats() {
       ) : null}
       {joinError ? <Text style={styles.error}>{joinError}</Text> : null}
       {v.hydrated && v.status !== "live" ? (
-        <Text style={styles.status} testID="chats-local">{v.status === "connecting" ? "Connecting…" : "Only on this phone for now. Chats sync when the connection is back."}</Text>
+        <Text style={styles.status} testID="chats-local">{v.status === "connecting" ? "Connecting…" : "Offline. Chats sync when you're back."}</Text>
       ) : null}
       <FlatList
         data={groups}
@@ -64,7 +64,7 @@ export default function Chats() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, gap: 10, flexGrow: groups.length ? 0 : 1 }}
         ListEmptyComponent={
           <View style={{ flex: 1, justifyContent: "center" }}>
-            <EmptyState testID="chats-empty" icon="chatbubbles-outline" title="Plan it together" body="Make a group, add your friends, and plan hangouts right in the chat. Everyone sees the time, the place and who's in."
+            <EmptyState testID="chats-empty" icon="chatbubbles-outline" title="Plan it together" body="Make a group and the agent plans it with you, fair for everyone."
               cta="New group" onCta={() => router.push("/chat/new")} secondary="Try it with sample friends" onSecondary={async () => {
                 const g = await chat.createGroup({ name: "Weekend crew", emoji: "🌉", members: SAMPLE_FRIENDS, city });
                 router.push(`/chat/${g.id}`);
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.paper },
   head: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18, paddingBottom: 12 },
   title: { flex: 1, fontFamily: font.displayHeavy, fontSize: 34, color: palette.ink, letterSpacing: -0.8 },
-  headButton: { height: 38, minWidth: 38, borderRadius: 12, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 4, paddingHorizontal: 10 },
+  headButton: { height: 44, minWidth: 44, borderRadius: 12, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 4, paddingHorizontal: 10 },
   newButton: { backgroundColor: palette.roseInk, borderColor: palette.roseInk },
   newText: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.cream },
   join: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingBottom: 10 },

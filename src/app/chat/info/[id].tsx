@@ -1,6 +1,7 @@
-// Group info: who's in (add, remove), the invite link and its QR code, where you start from
-// for plans (a home neighborhood, or your live location rounded to the neighborhood, only
-// in this group), mute, and leave.
+// Group info: the group's sticker and name (tap the sticker for another emoji), who's in
+// (add, remove) with the invite link under them (code, copy, share, QR in a sheet), one row
+// for where you start from (a sheet: your live location rounded to the neighborhood, only in
+// this group, or a home neighborhood, and how you get around), the agent's name, mute, leave.
 import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
@@ -9,6 +10,7 @@ import { Platform, Pressable, ScrollView, Share, StyleSheet, Switch, Text, TextI
 import QRCode from "react-native-qrcode-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { chat, useChat } from "@/chat/store";
+import { Sheet } from "@/components/Sheet";
 import { Avatar, Chip, EmptyState, Icon, SampleTag, Toast } from "@/components/ui";
 import { hoodPoint, neighborhoodPoint } from "@/lib/fair";
 import type { Mode } from "@/lib/geo";
@@ -36,6 +38,9 @@ export default function GroupInfo() {
   const [hoodQuery, setHoodQuery] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [startOpen, setStartOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const me = v.me;
   const mine = me && group ? group.starts?.[me.id] : undefined;
   const live = v.live[groupId] ?? false;
@@ -114,12 +119,9 @@ export default function GroupInfo() {
         <View style={{ width: 26 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 18, gap: 22, paddingBottom: insets.bottom + 40 }} keyboardShouldPersistTaps="handled">
-        <View style={{ alignItems: "center", gap: 10 }}>
-          <View style={styles.sticker}><Text style={{ fontSize: 40 }}>{group.emoji}</Text></View>
-          <TextInput testID="info-name" value={name} onChangeText={setName} onBlur={saveName} onSubmitEditing={saveName} returnKeyType="done" style={styles.nameInput} maxLength={40} />
-          <View style={styles.emojis}>
-            {EMOJIS.map((e) => <Pressable key={e} accessibilityRole="button" onPress={() => chat.rename(groupId, group.name, e)} style={[styles.emoji, group.emoji === e && styles.emojiOn]}><Text style={{ fontSize: 18 }}>{e}</Text></Pressable>)}
-          </View>
+        <View style={{ alignItems: "center", gap: 8 }}>
+          <Pressable testID="info-emoji" accessibilityRole="button" accessibilityLabel="Change the group's emoji" onPress={() => setEmojiOpen(true)} style={styles.sticker}><Text style={{ fontSize: 40 }}>{group.emoji}</Text></Pressable>
+          <TextInput testID="info-name" value={name} onChangeText={setName} onBlur={saveName} onSubmitEditing={saveName} returnKeyType="done" style={styles.nameInput} maxLength={40} accessibilityLabel="Group name" />
         </View>
 
         <Section title={`${group.members.length} ${group.members.length === 1 ? "PERSON" : "PEOPLE"}`}>
@@ -130,10 +132,10 @@ export default function GroupInfo() {
                 <Avatar name={m.name} size={36} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.memberName}>{m.id === me.id ? `${m.name} (you)` : m.name}</Text>
-                  <Text style={styles.sub}>{start ? `starts from ${start.hood ?? "nearby"} · ${start.mode}` : `@${m.handle}`}</Text>
+                  <Text style={styles.sub}>{start ? `from ${start.hood ?? "nearby"} · ${start.mode}` : `@${m.handle}`}</Text>
                 </View>
                 {m.sample ? <SampleTag /> : null}
-                {m.id !== me.id ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${m.name}`} hitSlop={8} onPress={() => chat.removeMember(groupId, m.id)}><Icon name="remove-circle-outline" size={20} tint={palette.inkMuted} /></Pressable> : null}
+                {m.id !== me.id ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${m.name}`} hitSlop={10} onPress={() => chat.removeMember(groupId, m.id)}><Icon name="remove-circle-outline" size={22} tint={palette.inkMuted} /></Pressable> : null}
               </View>
             );
           })}
@@ -142,7 +144,27 @@ export default function GroupInfo() {
             <Pressable testID="info-add-go" accessibilityRole="button" onPress={addByHandle} style={styles.go}><Text style={styles.goText}>Add</Text></Pressable>
           </View>
           {hint ? <Text style={styles.sub}>{hint}</Text> : null}
+          <View style={styles.invite}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sub}>Invite code</Text>
+              <Text style={styles.code} testID="info-code">{group.inviteCode}</Text>
+            </View>
+            <Pressable testID="info-copy" accessibilityRole="button" accessibilityLabel="Copy the invite link" onPress={async () => { await Clipboard.setStringAsync(webLink); setToast("Link copied"); }} style={styles.round}><Icon name="copy-outline" size={18} tint={palette.ink} /></Pressable>
+            <Pressable testID="info-qr-open" accessibilityRole="button" accessibilityLabel="Show the QR code" onPress={() => setQrOpen(true)} style={styles.round}><Icon name="qr-code-outline" size={18} tint={palette.ink} /></Pressable>
+            <Pressable testID="info-share" accessibilityRole="button" accessibilityLabel="Share the invite" onPress={() => Share.share({ message: inviteText }).catch(() => {})} style={[styles.round, styles.roundDark]}><Icon name="share-outline" size={18} tint={palette.cream} /></Pressable>
+          </View>
           {Platform.OS !== "web" ? <Row icon="people-circle-outline" label="Invite from contacts" onPress={fromContacts} testID="info-contacts" /> : null}
+        </Section>
+
+        <Section title="FOR FAIR PLANS">
+          <Pressable testID="info-start" accessibilityRole="button" onPress={() => setStartOpen(true)} style={styles.liveRow}>
+            <Icon name="navigate-circle-outline" size={22} tint={palette.ink} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.memberName}>{mine?.hood ? `Starting from ${mine.hood}` : "Where do you start from?"}</Text>
+              <Text style={styles.sub}>{live ? "Your location, as your neighborhood" : mine?.hood ? `By ${MODES.find((x) => x.id === mode)?.label.toLowerCase() ?? mode}` : "Pick a neighborhood"}</Text>
+            </View>
+            <Icon name="chevron-forward" size={18} tint={palette.inkMuted} />
+          </Pressable>
         </Section>
 
         <Section title="THE GROUP'S AGENT">
@@ -150,53 +172,50 @@ export default function GroupInfo() {
             <View style={styles.butlerDisc}><Icon name="heart" size={18} tint={palette.cream} /></View>
             <View style={{ flex: 1, gap: 4 }}>
               <TextInput testID="info-butler-name" value={butler} onChangeText={setButler} onBlur={saveButler} onSubmitEditing={saveButler} returnKeyType="done" style={styles.butlerInput} maxLength={20} autoCorrect={false} accessibilityLabel="The agent's name" />
-              <Text style={styles.sub}>Plans, books, reminds and sums up. Ask with @{(butler.trim() || "Fave").split(/\s+/)[0].toLowerCase()}. It's an AI.</Text>
+              <Text style={styles.sub}>Ask with @{(butler.trim() || "Fave").split(/\s+/)[0].toLowerCase()}. It's an AI.</Text>
             </View>
           </View>
         </Section>
 
-        <Section title="INVITE LINK">
-          <View style={styles.invite}>
-            <View style={styles.qr} testID="info-qr"><QRCode value={appLink} size={128} color={palette.ink} backgroundColor={palette.card} /></View>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text style={styles.code} testID="info-code">{group.inviteCode}</Text>
-              <Text style={styles.sub} numberOfLines={3}>{webLink}</Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <Pressable testID="info-copy" accessibilityRole="button" onPress={async () => { await Clipboard.setStringAsync(webLink); setToast("Link copied"); }} style={styles.smallButton}><Icon name="copy-outline" size={15} tint={palette.ink} /><Text style={styles.smallText}>Copy</Text></Pressable>
-                <Pressable testID="info-share" accessibilityRole="button" onPress={() => Share.share({ message: inviteText }).catch(() => {})} style={styles.smallButton}><Icon name="share-outline" size={15} tint={palette.ink} /><Text style={styles.smallText}>Share</Text></Pressable>
-              </View>
-            </View>
-          </View>
-        </Section>
-
-        <Section title="WHERE YOU START FROM">
-          <Text style={styles.sub}>Plans in this group pick a first stop that's fair for everyone. Others only see your neighborhood and travel times, never where you are exactly.</Text>
-          <View style={styles.liveRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.memberName}>Use my location</Text>
-              <Text style={styles.sub}>{locating ? "Finding your neighborhood…" : live ? `On, as ${mine?.hood ?? "your neighborhood"}` : "Off. Only for this group."}</Text>
-            </View>
-            <Switch testID="info-live" value={live} onValueChange={toggleLive} trackColor={{ true: palette.rose, false: palette.line }} />
-          </View>
-          {!live ? (
-            <>
-              <Text style={styles.memberName}>{mine?.hood ? `Home neighborhood: ${mine.hood}` : "Pick your neighborhood"}</Text>
-              <TextInput testID="info-hood-search" value={hoodQuery} onChangeText={setHoodQuery} placeholder="Search neighborhoods" placeholderTextColor={palette.inkMuted} style={styles.input} />
-              <View style={styles.chips}>{hoods.map((h) => <Chip key={h} testID={`hood-${h}`} label={h} on={mine?.hood === h} onPress={() => setHood(h)} />)}</View>
-            </>
-          ) : null}
-          <Text style={[styles.memberName, { marginTop: 4 }]}>How you get around</Text>
-          <View style={styles.chips}>{MODES.map((m) => <Chip key={m.id} testID={`mode-${m.id}`} label={m.label} on={mode === m.id} onPress={() => setMode(m.id)} />)}</View>
-        </Section>
-
-        <Section title="SETTINGS">
+        <View style={{ gap: 4 }}>
           <View style={styles.liveRow}>
             <Text style={[styles.memberName, { flex: 1 }]}>Mute this chat</Text>
             <Switch testID="info-mute" value={Boolean(v.muted[groupId])} onValueChange={() => chat.toggleMute(groupId)} trackColor={{ true: palette.rose, false: palette.line }} />
           </View>
           <Row icon="exit-outline" label="Leave the group" danger testID="info-leave" onPress={async () => { await chat.leave(groupId); router.replace("/chats"); }} />
-        </Section>
+        </View>
       </ScrollView>
+      <Sheet open={startOpen} onClose={() => setStartOpen(false)} title="Where you start from" subtitle="Others only see your neighborhood" testID="start-sheet" background={palette.paper}>
+        <View style={{ paddingHorizontal: 16, gap: 12, paddingBottom: 8 }}>
+          <View style={styles.liveRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.memberName}>Use my location</Text>
+              <Text style={styles.sub}>{locating ? "Finding your neighborhood…" : live ? `On, as ${mine?.hood ?? "your neighborhood"}` : "Only for this group"}</Text>
+            </View>
+            <Switch testID="info-live" value={live} onValueChange={toggleLive} trackColor={{ true: palette.rose, false: palette.line }} />
+          </View>
+          {!live ? (
+            <>
+              <TextInput testID="info-hood-search" value={hoodQuery} onChangeText={setHoodQuery} placeholder={mine?.hood ? `Home: ${mine.hood}` : "Search neighborhoods"} placeholderTextColor={palette.inkMuted} style={[styles.input, { flex: 0 }]} />
+              <View style={styles.chips}>{hoods.map((h) => <Chip key={h} testID={`hood-${h}`} label={h} on={mine?.hood === h} onPress={() => setHood(h)} />)}</View>
+            </>
+          ) : null}
+          <Text style={[styles.section, { marginTop: 4 }]}>HOW YOU GET AROUND</Text>
+          <View style={styles.chips}>{MODES.map((m) => <Chip key={m.id} testID={`mode-${m.id}`} label={m.label} on={mode === m.id} onPress={() => setMode(m.id)} />)}</View>
+        </View>
+      </Sheet>
+      <Sheet open={qrOpen} onClose={() => setQrOpen(false)} title="Scan to join" subtitle={group.name} testID="qr-sheet">
+        <View style={{ alignItems: "center", gap: 12, paddingBottom: 12 }}>
+          <View style={styles.qr} testID="info-qr"><QRCode value={appLink} size={200} color={palette.ink} backgroundColor={palette.card} /></View>
+          <Text style={styles.code}>{group.inviteCode}</Text>
+          <Text style={styles.sub} numberOfLines={2}>{webLink}</Text>
+        </View>
+      </Sheet>
+      <Sheet open={emojiOpen} onClose={() => setEmojiOpen(false)} title="Pick an emoji" testID="emoji-sheet">
+        <View style={[styles.emojis, { paddingHorizontal: 16, paddingBottom: 12 }]}>
+          {EMOJIS.map((e) => <Pressable key={e} accessibilityRole="button" onPress={() => { chat.rename(groupId, group.name, e); setEmojiOpen(false); }} style={[styles.emoji, group.emoji === e && styles.emojiOn]}><Text style={{ fontSize: 24 }}>{e}</Text></Pressable>)}
+        </View>
+      </Sheet>
       <Toast text={toast} onHide={() => setToast(null)} top={insets.top + 50} />
     </View>
   );
@@ -224,7 +243,7 @@ const styles = StyleSheet.create({
   sticker: { width: 84, height: 84, borderRadius: 22, backgroundColor: palette.card, borderWidth: 2, borderStyle: "dashed", borderColor: palette.rose, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }] },
   nameInput: { fontFamily: font.display, fontSize: 24, color: palette.ink, textAlign: "center", minWidth: 200, paddingVertical: 4 },
   emojis: { flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center" },
-  emoji: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line },
+  emoji: { width: 48, height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line },
   emojiOn: { borderColor: palette.roseInk, borderWidth: 2 },
   section: { fontFamily: font.sans, fontSize: 11.5, fontWeight: "800", letterSpacing: 0.8, color: palette.inkMuted },
   member: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -234,11 +253,11 @@ const styles = StyleSheet.create({
   input: { flex: 1, height: 44, borderRadius: 12, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 14, fontFamily: font.sans, fontSize: 15, color: palette.ink },
   go: { height: 44, borderRadius: 12, backgroundColor: palette.ink, paddingHorizontal: 16, justifyContent: "center" },
   goText: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.cream },
-  invite: { flexDirection: "row", gap: 14, backgroundColor: palette.card, borderRadius: 16, borderWidth: 1, borderColor: palette.line, padding: 14, alignItems: "center" },
+  invite: { flexDirection: "row", gap: 8, backgroundColor: palette.card, borderRadius: 14, borderWidth: 1, borderColor: palette.line, paddingVertical: 10, paddingHorizontal: 14, alignItems: "center" },
+  round: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center", backgroundColor: palette.card },
+  roundDark: { backgroundColor: palette.ink, borderColor: palette.ink },
   qr: { padding: 6, borderRadius: 10, backgroundColor: palette.card },
-  code: { fontFamily: font.displayHeavy, fontSize: 26, color: palette.ink, letterSpacing: 3 },
-  smallButton: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 10, borderWidth: 1.5, borderColor: palette.ink, paddingHorizontal: 10, paddingVertical: 6 },
-  smallText: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.ink },
+  code: { fontFamily: font.displayHeavy, fontSize: 22, color: palette.ink, letterSpacing: 3 },
   liveRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: palette.card, borderRadius: 12, borderWidth: 1, borderColor: palette.line, padding: 12 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   rowButton: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },

@@ -330,3 +330,33 @@ test("a planned chat's ticket shows a real map: OpenStreetMap tiles under the ro
   await expect(page).toHaveURL(/\/plan\//);
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("the ticket keeps the details one tap away: each person's trip, plan options, and every quick ask under More", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text: "pickleball then hot pot saturday 1pm to 7pm", city: "san-francisco", friends: [{ name: "Ana", from: "Inner Richmond" }, { name: "Ben", from: "Mission" }] } })).json();
+  const group = await (await request.post("http://localhost:8787/api/group", { data: { planId: plan.planId } })).json();
+  await startOnboarded(page, `/join/${group.code}`, { name: "Ana", handle: `anad${run}` });
+  await expect(page.getByTestId("chat-screen")).toBeVisible({ timeout: 20_000 });
+  // One fairness line; tapping it shows each person's trip to the first stop.
+  const fair = page.getByTestId("ticket-fairness").first();
+  await expect(fair).toContainText(/Everyone's within \d+ min|The longest trip is \d+ min/);
+  await expect(page.getByTestId("ticket-trips")).toHaveCount(0);
+  await fair.click();
+  await expect(page.getByTestId("ticket-trips").first()).toContainText("Ana");
+  // The ticket shows In / Maybe / Out and Lock it in; swap and the full day sit under "...".
+  const ticket = page.locator('[data-testid^="ticket-"][data-testid$="-more"]').first();
+  await expect(page.locator('[data-testid^="ticket-"][data-testid$="-lock"]').first()).toBeVisible();
+  await ticket.click();
+  await expect(page.getByTestId("plan-options")).toBeVisible();
+  await page.locator('[data-testid^="ticket-"][data-testid$="-swap"]').filter({ visible: true }).first().click();
+  await expect(page.getByTestId("swap-stop-sheet")).toBeVisible();
+  await page.getByTestId("swap-stop-sheet-close").click();
+  // Three quick asks fit the moment; More lists everything the agent can do now.
+  await page.getByTestId("butler-more").click();
+  const asks = page.getByTestId("asks-sheet");
+  await expect(asks).toBeVisible();
+  for (const label of ["Plan something", "Find a spot", "Two options", "Book it"]) await expect(asks).toContainText(label);
+  await page.getByTestId("ask-book").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Here's how to book it", { timeout: 30_000 });
+  expect(problems, problems.join("\n")).toEqual([]);
+});

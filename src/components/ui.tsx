@@ -167,6 +167,20 @@ export function SectionHeader({ title, subtitle, onMore, testID, dark }: { title
   );
 }
 
+// A row in a "More" sheet: an icon disc, a label, an optional short line under it.
+export function MenuRow({ icon, label, sub, onPress, testID, tint = palette.ink, disabled }: { icon: IconName; label: string; sub?: string; onPress: () => void; testID?: string; tint?: string; disabled?: boolean }) {
+  return (
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={(s) => [styles.menuRow, disabled && { opacity: 0.45 }, pressed(s)]}>
+      <View style={styles.menuIcon}><Icon name={icon} size={19} tint={tint} /></View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.menuLabel, { color: tint }]}>{label}</Text>
+        {sub ? <Text style={styles.menuSub} numberOfLines={1}>{sub}</Text> : null}
+      </View>
+      <Icon name="chevron-forward" size={16} tint={palette.inkMuted} />
+    </Pressable>
+  );
+}
+
 export const Band = () => <View style={{ height: 10 }} />;
 
 export function CircleButton({ icon, onPress, label, size = 34, light, testID }: { icon: IconName; onPress: () => void; label: string; size?: number; light?: boolean; testID?: string }) {
@@ -306,6 +320,10 @@ export function SampleTag({ text = "Sample" }: { text?: string }) {
 }
 
 const styles = StyleSheet.create({
+  menuRow: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingHorizontal: 16, paddingVertical: 8 },
+  menuIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center" },
+  menuLabel: { fontFamily: font.sans, fontSize: 16, fontWeight: "600" },
+  menuSub: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 1 },
   primary: { height: 52, borderRadius: 16, backgroundColor: palette.roseInk, borderBottomWidth: 3, borderBottomColor: "#8F1C38", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 20 },
   primaryOff: { backgroundColor: palette.paperDeep, borderBottomColor: "#E2CDB8" },
   primaryLabel: { fontFamily: font.sans, color: palette.cream, fontSize: 17, fontWeight: "700" },

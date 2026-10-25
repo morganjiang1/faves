@@ -1,6 +1,7 @@
 // A group chat: messages, spots dropped in as postcards, plans as tickets everyone answers
 // In / Maybe / Out, the next locked-in hangout pinned under the header with a countdown,
-// a "plan" button in the composer and @faves for quick asks.
+// a "plan" button in the composer, and quick asks for the group's agent: the three that fit
+// the moment (no plan, a proposed plan, a locked plan), the rest under "More".
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
@@ -16,7 +17,7 @@ import { ChatTicket } from "@/components/chat/ChatTicket";
 import { Postcard } from "@/components/postcard/Postcard";
 import { Sheet } from "@/components/Sheet";
 import { Ticket } from "@/components/ticket/Ticket";
-import { Chip, EmptyState, Icon, PrimaryButton, UserDisc } from "@/components/ui";
+import { Chip, EmptyState, Icon, MenuRow, PrimaryButton, UserDisc, type IconName } from "@/components/ui";
 import type { City } from "@/data/types";
 import { findDay } from "@/lib/community";
 import { messagePieces } from "@/lib/linktext";
@@ -38,6 +39,7 @@ export default function ChatThread() {
   const interests = useStore((s) => s.profile.interests);
   const [text, setText] = useState("");
   const [planOpen, setPlanOpen] = useState(false);
+  const [asksOpen, setAsksOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   // Voice: the agent's replies read aloud, and voice notes typed out (Cartesia when set up).
@@ -87,6 +89,22 @@ export default function ChatThread() {
       try { await answer({ city, group, users: v.data.users, tickets: v.data.tickets, text: t }); } finally { setThinking(false); }
     }
   };
+
+  // Everything the agent can do from a tap. "start" fills the composer to finish the ask.
+  const start = (words: string) => { setText(`${at} ${words}`); inputRef.current?.focus(); };
+  const long = (messages?.length ?? 0) > 3;
+  const ASKS: { id: string; label: string; icon: IconName; sub: string; when: boolean; run: () => void }[] = [
+    { id: "plan", label: "Plan something", icon: "sparkles-outline", sub: "A fair plan for everyone", when: true, run: () => start("plan ") },
+    { id: "find", label: "Find a spot", icon: "search-outline", sub: "By vibe: \"cozy bookstore\"", when: true, run: () => start("find ") },
+    { id: "options", label: "Two options", icon: "thumbs-up-outline", sub: "Post two plans to vote on", when: true, run: () => start("give us options for ") },
+    { id: "book", label: "Book it", icon: "calendar-outline", sub: "How to book each stop", when: !!current, run: () => send(`${at} book it`) },
+    { id: "remind", label: "Remind us", icon: "alarm-outline", sub: "Night before, and when to leave", when: current?.status === "locked", run: () => send(`${at} remind us`) },
+    { id: "late", label: "Running late", icon: "time-outline", sub: "Moves the times and reminders", when: current?.status === "locked", run: () => start("running 15 min late") },
+    { id: "tldr", label: "tl;dr", icon: "reader-outline", sub: "Catch up on the chat", when: long, run: () => send(`${at} tl;dr`) },
+  ];
+  // The three that fit the moment.
+  const pick = current?.status === "locked" ? ["late", "remind", "book"] : current ? ["book", "tldr", "plan", "options"] : ["plan", "find", long ? "tldr" : "options"];
+  const shown = pick.map((id) => ASKS.find((a) => a.id === id)!).filter((a) => a.when).slice(0, 3);
 
   const listen = async () => {
     try {
@@ -140,7 +158,7 @@ export default function ChatThread() {
       {!live ? (
         <View style={styles.localNote} testID="chat-local-note">
           <Icon name="phone-portrait-outline" size={14} tint={palette.sunsetInk} />
-          <Text style={styles.localText}>Only on this phone for now. It syncs with everyone when the connection is back.</Text>
+          <Text style={styles.localText}>Only on this phone. Syncs when you're back online.</Text>
         </View>
       ) : null}
 
@@ -161,17 +179,16 @@ export default function ChatThread() {
       />
 
       {!text ? (
-        // Quick asks for the group's agent.
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.asks} contentContainerStyle={styles.asksRow} testID="butler-chips">
-          <View style={styles.asksLabel}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
-          <Chip testID="butler-plan" label="Plan something" onPress={() => { setText(`${at} plan `); inputRef.current?.focus(); }} />
-          <Chip testID="butler-find" label="Find a spot" onPress={() => { setText(`${at} find `); inputRef.current?.focus(); }} />
-          <Chip testID="butler-options" label="Two options to vote on" onPress={() => { setText(`${at} give us options for `); inputRef.current?.focus(); }} />
-          {current ? <Chip testID="butler-book" label="Book it" onPress={() => send(`${at} book it`)} /> : null}
-          {current?.status === "locked" ? <Chip testID="butler-remind" label="Remind us" onPress={() => send(`${at} remind us`)} /> : null}
-          {current?.status === "locked" ? <Chip testID="butler-late" label="Running late" onPress={() => { setText(`${at} running 15 min late`); inputRef.current?.focus(); }} /> : null}
-          {(messages?.length ?? 0) > 3 ? <Chip testID="butler-tldr" label="tl;dr" onPress={() => send(`${at} tl;dr`)} /> : null}
-        </ScrollView>
+        // Quick asks for the group's agent: the ones that fit right now, then "More".
+        <View style={styles.asks} testID="butler-chips">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={styles.asksRow}>
+            <View style={styles.asksLabel}><Icon name="heart" size={12} tint={palette.rose} /><Text style={styles.asksName}>{butler}</Text></View>
+            {shown.map((a) => <Chip key={a.id} testID={`butler-${a.id}`} label={a.label} onPress={a.run} />)}
+          </ScrollView>
+          <Pressable testID="butler-more" accessibilityRole="button" accessibilityLabel={`More things ${butler} can do`} onPress={() => setAsksOpen(true)} style={styles.asksMore}>
+            <Icon name="add" size={20} tint={palette.ink} />
+          </Pressable>
+        </View>
       ) : null}
       <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <Pressable testID="composer-plan" accessibilityRole="button" accessibilityLabel="Plan a hangout" onPress={() => setPlanOpen(true)} style={styles.planButton}>
@@ -204,6 +221,9 @@ export default function ChatThread() {
         )}
       </View>
 
+      <Sheet open={asksOpen} onClose={() => setAsksOpen(false)} title={`Ask ${butler}`} testID="asks-sheet">
+        {ASKS.filter((a) => a.when).map((a) => <MenuRow key={a.id} testID={`ask-${a.id}`} icon={a.icon} label={a.label} sub={a.sub} onPress={() => { setAsksOpen(false); a.run(); }} />)}
+      </Sheet>
       {city ? <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} defaultText={groupRequestText(group, v.data.users, interests)} canBalance={groupStarts(group, v.data.users).length >= 2}
         onMake={async (requestText, middle) => {
           const plan = planForGroup(city, group, v.data.users, requestText, { meetInMiddle: middle });
@@ -218,7 +238,7 @@ function Intro({ groupName, butler }: { groupName: string; butler: string }) {
   return (
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{groupName}</Text>
-      <Text style={styles.introBody}>Tap the ticket to plan a hangout for everyone, or ask {butler}: it plans, books, reminds and sums up.</Text>
+      <Text style={styles.introBody}>Ask {butler} to plan something.</Text>
     </View>
   );
 }
@@ -233,8 +253,8 @@ function Pinned({ ticket, city, groupSize }: { ticket: TicketT; city: City; grou
     <Pressable testID="chat-pinned" accessibilityRole="button" onPress={() => router.push(`/plan/${plan.id}`)} style={styles.pinned}>
       <View style={styles.pinnedStub}><Icon name="ticket" size={16} tint={palette.ink} /></View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.pinnedText} numberOfLines={1}>{day} {formatClock(startsAt(plan), { compact: true })} · {first?.name ?? plan.title} · {going} going{groupSize ? "" : ""}</Text>
-        <Text style={styles.pinnedSub}>{countdown(plan, city)} · tap for directions</Text>
+        <Text style={styles.pinnedText} numberOfLines={1}>{day} {formatClock(startsAt(plan), { compact: true })} · {plan.title || first?.name}</Text>
+        <Text style={styles.pinnedSub}>{countdown(plan, city)}{going ? ` · ${going} going` : ""}{groupSize ? "" : ""}</Text>
       </View>
       <Icon name="chevron-forward" size={16} tint={palette.inkMuted} />
     </Pressable>
@@ -278,8 +298,8 @@ function MessageRow({ m, mine, showName, city, tickets, render }: { m: Message; 
 }
 
 // Links and phone numbers in the agent's messages are tappable: a reservation link shows as
-// its short label ("Reserve on Google"), never the long URL, and a number ("books by phone
-// only, call them at (415) 555-0101") calls the place, so anyone can book it themselves.
+// its short label ("Reserve on Google"), never the long URL, and a number ("call (415)
+// 555-0101") calls the place, so anyone can book it themselves.
 function withLinks(text: string) {
   const pieces = messagePieces(text);
   if (pieces.length === 1 && pieces[0].kind === "text") return text;
@@ -324,7 +344,7 @@ function PlanSheet({ open, onClose, defaultText, canBalance, onMake }: { open: b
         <View style={styles.middleRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.middleTitle}>Meet in the middle</Text>
-            <Text style={styles.middleSub}>{canBalance ? "The first stop is fair to everyone's starting point." : "Works once two people set where they start (group info)."}</Text>
+            <Text style={styles.middleSub}>{canBalance ? "Fair to everyone's start" : "Needs two starting points"}</Text>
           </View>
           <Switch testID="plan-middle" value={middle && canBalance} disabled={!canBalance} onValueChange={setMiddle} trackColor={{ true: palette.rose, false: palette.line }} />
         </View>
@@ -367,10 +387,11 @@ const styles = StyleSheet.create({
   voice: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", marginRight: 10, borderWidth: 1, borderColor: palette.line },
   voiceOn: { backgroundColor: palette.roseInk, borderColor: palette.roseInk },
   // Never squeezed by a long chat: the message list shrinks, the chips keep their height.
-  asks: { flexGrow: 0, flexShrink: 0, backgroundColor: palette.paper },
-  asksRow: { paddingHorizontal: 10, paddingTop: 6, paddingBottom: 2, gap: 6, alignItems: "center" },
+  asks: { flexGrow: 0, flexShrink: 0, flexDirection: "row", alignItems: "center", paddingTop: 6, paddingBottom: 2, paddingRight: 10, backgroundColor: palette.paper },
+  asksRow: { paddingHorizontal: 10, gap: 6, alignItems: "center" },
   asksLabel: { flexDirection: "row", alignItems: "center", gap: 4, paddingRight: 2 },
   asksName: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.roseInk },
+  asksMore: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.paperDeep, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   composer: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: palette.line, backgroundColor: palette.paper },
   planButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: palette.sunset, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }] },
   input: { flex: 1, minHeight: 40, maxHeight: 120, borderRadius: 20, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontFamily: font.sans, fontSize: 16, color: palette.ink },

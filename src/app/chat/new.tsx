@@ -28,7 +28,7 @@ export default function NewGroup() {
     setLookup("Looking…");
     const m = await chat.findUser(h);
     if (m) { if (!people.some((p) => p.id === m.id)) setPeople((p) => [...p, m]); setHandle(""); setLookup(null); }
-    else setLookup(status === "live" ? `No one called @${h.replace(/^@/, "")} yet. Make the group, then send them the invite link.` : "Finding people needs the connection. Make the group and share its invite link instead.");
+    else setLookup(status === "live" ? `No @${h.replace(/^@/, "")} yet. Invite them with the link.` : "Offline. Invite people with the link instead.");
   };
   const toggleSamples = () => setPeople((p) => (p.some((m) => m.sample) ? p.filter((m) => !m.sample) : [...p, ...SAMPLE_FRIENDS]));
   const create = async () => {
@@ -51,15 +51,15 @@ export default function NewGroup() {
           <View style={styles.sticker}><Text style={{ fontSize: 34 }}>{emoji}</Text></View>
           <TextInput testID="group-name" value={name} onChangeText={setName} placeholder="Name it (Saturday crew)" placeholderTextColor={palette.inkMuted} style={styles.nameInput} maxLength={40} />
         </View>
-        <View style={styles.emojis}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojis} style={{ marginHorizontal: -18, flexGrow: 0 }}>
           {EMOJIS.map((e) => (
             <Pressable key={e} testID={`emoji-${e}`} accessibilityRole="button" accessibilityState={{ selected: emoji === e }} onPress={() => setEmoji(e)} style={[styles.emoji, emoji === e && styles.emojiOn]}>
               <Text style={{ fontSize: 22 }}>{e}</Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
         <View style={{ gap: 10 }}>
-          <Text style={styles.label}>ADD PEOPLE</Text>
+          <Text style={styles.label}>PEOPLE</Text>
           <View style={styles.addRow}>
             <TextInput testID="add-handle" value={handle} onChangeText={setHandle} placeholder="@username" placeholderTextColor={palette.inkMuted} autoCapitalize="none" autoCorrect={false} style={styles.handleInput} onSubmitEditing={find} returnKeyType="search" />
             <Pressable testID="add-handle-go" accessibilityRole="button" onPress={find} style={styles.addGo}><Text style={styles.addGoText}>Add</Text></Pressable>
@@ -75,9 +75,9 @@ export default function NewGroup() {
           ))}
           <Pressable testID="add-samples" accessibilityRole="button" onPress={toggleSamples} style={styles.samples}>
             <Icon name={people.some((m) => m.sample) ? "checkbox" : "square-outline"} size={20} tint={palette.ink} />
-            <Text style={styles.samplesText}>Add three sample friends to try it alone</Text>
+            <Text style={styles.samplesText}>Try it with 3 sample friends</Text>
           </Pressable>
-          <Text style={styles.hint}>You'll get an invite link and a QR code for everyone else once the group exists.</Text>
+          <Text style={styles.hint}>You'll get an invite link next.</Text>
         </View>
         <PrimaryButton testID="create-group" label="Make the group" icon="chatbubbles" loading={busy} onPress={create} />
       </ScrollView>
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   sticker: { width: 66, height: 66, borderRadius: 18, backgroundColor: palette.card, borderWidth: 2, borderStyle: "dashed", borderColor: palette.rose, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-6deg" }] },
   nameInput: { flex: 1, height: 52, borderRadius: 14, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 14, fontFamily: font.sans, fontSize: 18, fontWeight: "600", color: palette.ink },
-  emojis: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  emojis: { flexDirection: "row", gap: 8, paddingHorizontal: 18 },
   emoji: { width: 46, height: 46, borderRadius: 12, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   emojiOn: { borderColor: palette.roseInk, borderWidth: 2, backgroundColor: palette.roseTint },
   label: { fontFamily: font.sans, fontSize: 11.5, fontWeight: "800", letterSpacing: 0.8, color: palette.inkMuted },
@@ -103,6 +103,6 @@ const styles = StyleSheet.create({
   hint: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted },
   person: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: palette.card, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: palette.line },
   personName: { fontFamily: font.sans, fontSize: 15, fontWeight: "700", color: palette.ink },
-  samples: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 },
+  samples: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
   samplesText: { fontFamily: font.sans, fontSize: 14, color: palette.ink },
 });
