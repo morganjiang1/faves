@@ -1,9 +1,9 @@
-// Your rankings + Leaderboard. The tabs copy Beli's list tabs (beli_appstore_02: left-aligned,
-// active bold with a 2 pt underline). "Your rankings" copies Beli's ranked list (discovery/beli/
+// Your rankings + Leaderboard. The tabs are inspired by Beli's list tabs (beli_appstore_02: left-aligned,
+// active bold with a 2 pt underline). "Your rankings" is inspired by Beli's ranked list (discovery/beli/
 // beli_ranked_list_numbered_vid.jpg: progress card with a #EBE8EF track and a teal #487078
 // fill with milestone dots, rows "1. Name" bold, "$$ | Kind", hood, a grey status line, the
 // 39 pt score circle at the right; values from beli_appstore_05_recs_list_reserve.png). Scores
-// come from your own order inside each "How was it?" bucket. "Leaderboard" copies Beli's
+// come from your own order inside each "How was it?" bucket. "Leaderboard" is inspired by Beli's
 // leaderboard (beli_leaderboard_vid.jpg: Playfair title, #F0F0F5 segmented control, grey
 // caption, outlined dropdown chip, 54 pt rows with rank #848486, 30 pt avatar, grey handle,
 // bold count). Empty = Beli's "Your Been List" card; loading = Instagram skeleton;
@@ -45,7 +45,7 @@ export default function Rankings() {
         <Pressable testID="rankings-back" accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} onPress={back} style={{ width: 40 }}>
           <Icon name="chevron-back" size={28} tint={palette.ink} />
         </Pressable>
-        <Text style={styles.navTitle} accessibilityRole="header">RANKINGS</Text>
+        <Text style={styles.navTitle} accessibilityRole="header">your rankings</Text>
         <View style={{ width: 40, alignItems: "flex-end" }}>
           {rankings.length ? (
             <Pressable testID="rankings-share" accessibilityRole="button" accessibilityLabel="Share your rankings" hitSlop={8} onPress={() => setShare(true)}>
@@ -83,7 +83,7 @@ function Mine() {
   if (!rankings.length) {
     return (
       <ScrollView contentContainerStyle={{ paddingTop: 24, paddingBottom: 40 }}>
-        <EmptyState testID="rankings-empty" icon="trophy-outline" title={"Your \"Ranked\" list"} body="Here's where you keep your ranked list of spots you've been to. Start ranking your favorite and not so favorite spots!" cta="Rank a spot" onCta={() => router.push("/explore")} />
+        <EmptyState testID="rankings-empty" icon="trophy-outline" title="Nothing ranked yet" body="After a day out, rank the spots you went to. Your list becomes your taste, and Faves plans more like it." cta="Rank a spot" onCta={() => router.push("/explore")} />
       </ScrollView>
     );
   }
@@ -192,7 +192,7 @@ function Board() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.paper },
   nav: { height: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12 },
-  navTitle: { fontFamily: font.sans, fontSize: 14, fontWeight: "600", color: palette.ink, letterSpacing: 0.8 },
+  navTitle: { fontFamily: font.display, fontSize: 18, color: palette.ink },
   sortRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingTop: 14 },
   sortText: { fontFamily: font.sans, fontSize: 16, fontWeight: "500", color: color.brandDeep, letterSpacing: 0.4 },
   progress: { marginHorizontal: 12, marginTop: 12, borderWidth: 1, borderColor: palette.line, borderRadius: 8, paddingHorizontal: 32, paddingTop: 18, paddingBottom: 14 },

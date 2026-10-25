@@ -1,10 +1,8 @@
-// Onboarding copies Partiful's first run (ios_video_onboarding_*): a splash with a full-width
-// translucent "Get started" and a legal line, then one ask per screen on near-black #0B0B0F
-// with a purple aurora at the top, a centered bold title, a soft subtitle with an emoji,
-// 45 pt inputs and a 47 pt full-width button (white when enabled, grey when not).
-// The city list follows Beli's "Where are you eating most?" rows; interests use Corner's
-// "personalize your map / pick at least 3" photo tiles; the choice cards are Airbnb's
-// question-flow cards.
+// Onboarding in the Faves identity: a splash of three of the city's postcards fanned out on
+// cream paper with the rose wordmark, then one ask per screen (name, city, interests, who you go
+// out with, how you get around) on paper, with postcard-framed photo tiles and rose buttons.
+// One question per screen is inspired by Partiful's first run; picking at least 3 interests from
+// photo tiles is inspired by Corner.
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -18,7 +16,7 @@ import type { Who } from "@/lib/parser";
 import { seedWallet } from "@/lib/rewards";
 import { useCity } from "@/state/city";
 import { actions, getState, useStore } from "@/state/store";
-import { CATEGORIES, font, logo, palette, type CategoryId } from "@/theme/tokens";
+import { CATEGORIES, font, palette, type CategoryId } from "@/theme/tokens";
 
 const CREW: { id: Who; label: string; emoji: string }[] = [
   { id: "friends", label: "Friends", emoji: "👯" },
@@ -65,31 +63,38 @@ export default function Onboarding() {
   }, [city]);
 
   if (step === "splash") {
+    // Three postcards from the city, fanned out like a stack on a table.
+    const cards = (["views", "food", "courts"] as CategoryId[]).map((c, i) => ({ c, uri: tilePhoto[c], tilt: [-9, 4, -2][i], x: [-58, 52, 0][i], y: [18, 6, -14][i] }));
     return (
-      <View style={[styles.fill, { backgroundColor: logo.color }]} testID="onboarding-splash">
+      <View style={[styles.fill, { backgroundColor: palette.paper }]} testID="onboarding-splash">
         <SafeAreaView style={styles.splash}>
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 18 }}>
-            <Image source={require("../../assets/brand/mark.png")} style={{ width: 132, height: 132 }} contentFit="contain" />
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 14 }}>
+            <View style={styles.fan}>
+              {cards.map((k) => (
+                <View key={k.c} style={[styles.fanCard, { transform: [{ translateX: k.x }, { translateY: k.y }, { rotate: `${k.tilt}deg` }] }]}>
+                  <PlaceImage uri={k.uri} category={k.c} style={styles.fanPhoto} emojiSize={40} />
+                </View>
+              ))}
+              <View style={styles.fanStamp}><Image source={require("../../assets/brand/mark.png")} style={{ width: 40, height: 40 }} contentFit="contain" /></View>
+            </View>
             <Text style={styles.wordmark}>faves</Text>
-            <Text style={styles.splashLine}>The spots locals love. The whole day, planned.</Text>
+            <Text style={styles.splashLine}>The spots locals love. The whole day, planned with your friends.</Text>
           </View>
-          <Pressable testID="get-started" accessibilityRole="button" onPress={() => go("name")} style={styles.glassButton}>
-            <Text style={styles.glassLabel}>Get started</Text>
+          <Pressable testID="get-started" accessibilityRole="button" onPress={() => go("name")} style={styles.start}>
+            <Text style={styles.startLabel}>Get started</Text>
           </Pressable>
-          <Text style={styles.legal}>By tapping 'Get started', you agree to our <Text style={styles.legalBold}>Privacy Policy</Text> and <Text style={styles.legalBold}>Terms of Service</Text>.</Text>
+          <Text style={styles.legal}>By tapping Get started, you agree to our <Text style={styles.legalBold}>Privacy Policy</Text> and <Text style={styles.legalBold}>Terms of Service</Text>.</Text>
         </SafeAreaView>
       </View>
     );
   }
 
   return (
-    <View style={[styles.fill, { backgroundColor: "#0B0B0F" }]} testID={`onboarding-${step}`}>
-      <LinearGradient colors={["#2A1646", "#1B1430", "#0B0B0F"]} locations={[0, 0.5, 1]} style={styles.aurora} />
-      <LinearGradient colors={["rgba(42,52,65,0.55)", "rgba(42,52,65,0)"]} start={{ x: 0.5, y: 0 }} end={{ x: 0.2, y: 1 }} style={[styles.aurora, { opacity: 0.8 }]} />
+    <View style={[styles.fill, { backgroundColor: palette.paper }]} testID={`onboarding-${step}`}>
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
           <View style={styles.nav}>
-            <Pressable testID="onboarding-back" accessibilityLabel="Back" hitSlop={10} onPress={back}><Icon name="chevron-back" size={26} tint="#fff" /></Pressable>
+            <Pressable testID="onboarding-back" accessibilityLabel="Back" hitSlop={10} onPress={back}><Icon name="chevron-back" size={26} tint={palette.ink} /></Pressable>
             {step === "interests" || step === "crew" ? (
               <Pressable testID="onboarding-skip" hitSlop={10} onPress={() => go(step === "interests" ? "crew" : "moves")}><Text style={styles.skip}>Skip</Text></Pressable>
             ) : null}
@@ -99,7 +104,7 @@ export default function Onboarding() {
             <View style={styles.body}>
               <Header title="What's your name?" sub="So your friends know it's you 🫶" />
               <Text style={styles.fieldLabel}>First name</Text>
-              <TextInput testID="name-input" value={name} onChangeText={setName} placeholder="Beyoncé" placeholderTextColor={palette.inkMuted} autoFocus autoCapitalize="words" returnKeyType="next" onSubmitEditing={() => name.trim() && go("city")} style={styles.input} />
+              <TextInput testID="name-input" value={name} onChangeText={setName} placeholder="Your first name" placeholderTextColor={palette.inkMuted} autoFocus autoCapitalize="words" returnKeyType="next" onSubmitEditing={() => name.trim() && go("city")} style={styles.input} />
               <View style={{ flex: 1 }} />
               <NextButton enabled={Boolean(name.trim())} onPress={() => go("city")} />
             </View>
@@ -114,7 +119,7 @@ export default function Onboarding() {
                   return (
                     <Pressable key={c.slug} testID={`city-${c.slug}`} onPress={() => actions.updateProfile({ city: c.slug })} style={styles.cityRow}>
                       <Text style={[styles.cityText, on && { fontWeight: "700" }]}>{c.name}</Text>
-                      {on ? <Icon name="checkmark" size={22} tint="#fff" /> : null}
+                      {on ? <Icon name="checkmark-circle" size={22} tint={palette.roseInk} /> : null}
                     </Pressable>
                   );
                 })}
@@ -132,9 +137,9 @@ export default function Onboarding() {
                   return (
                     <Pressable key={c.id} testID={`interest-${c.id}`} accessibilityRole="checkbox" accessibilityState={{ checked: on }} onPress={() => setInterests((xs) => (on ? xs.filter((x) => x !== c.id) : [...xs, c.id]))} style={[styles.tile, on && styles.tileOn]}>
                       <PlaceImage uri={tilePhoto[c.id]} category={c.id} style={StyleSheet.absoluteFill} emojiSize={44} />
-                      <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.6)"]} locations={[0.45, 1]} style={StyleSheet.absoluteFill} />
+                      <LinearGradient colors={["rgba(30,21,48,0)", "rgba(30,21,48,0.62)"]} locations={[0.45, 1]} style={StyleSheet.absoluteFill} />
                       <Text style={styles.tileLabel}>{c.label.toLowerCase()}</Text>
-                      {on ? <View style={styles.tileCheck}><Icon name="checkmark" size={16} tint={palette.ink} /></View> : null}
+                      {on ? <View style={styles.tileCheck}><Icon name="heart" size={15} tint={palette.cream} /></View> : null}
                     </Pressable>
                   );
                 })}
@@ -181,8 +186,8 @@ function Header({ title, sub }: { title: string; sub: string }) {
 
 function NextButton({ enabled, onPress, label = "Next", testID = "onboarding-next" }: { enabled: boolean; onPress: () => void; label?: string; testID?: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ disabled: !enabled }} disabled={!enabled} onPress={onPress} style={[styles.next, { backgroundColor: enabled ? "#FEFCFF" : "#68686B" }]}>
-      <Text style={[styles.nextLabel, { color: enabled ? "#000001" : "#2B2B2D" }]}>{label}</Text>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ disabled: !enabled }} disabled={!enabled} onPress={onPress} style={[styles.next, { backgroundColor: enabled ? palette.roseInk : palette.paperDeep }]}>
+      <Text style={[styles.nextLabel, { color: enabled ? palette.cream : palette.inkMuted }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -198,31 +203,34 @@ function OptionCard({ label, emoji, on, onPress, testID }: { label: string; emoj
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  splash: { flex: 1, paddingHorizontal: 16, paddingBottom: 12 },
-  wordmark: { fontFamily: font.serif, fontSize: 52, color: "#fff", letterSpacing: -0.5 },
-  splashLine: { fontFamily: font.sans, fontSize: 17, color: "rgba(255,255,255,0.92)", textAlign: "center" },
-  glassButton: { height: 47, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.88)", alignItems: "center", justifyContent: "center" },
-  glassLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "500", color: palette.ink },
-  legal: { fontFamily: font.sans, fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 12, lineHeight: 18 },
-  legalBold: { fontWeight: "700", color: "#fff" },
-  aurora: { position: "absolute", top: 0, left: 0, right: 0, height: 300 },
+  splash: { flex: 1, paddingHorizontal: 20, paddingBottom: 12 },
+  fan: { width: 260, height: 230, alignItems: "center", justifyContent: "center", marginBottom: 6 },
+  fanCard: { position: "absolute", width: 150, height: 188, backgroundColor: palette.card, borderRadius: 10, padding: 7, paddingBottom: 26, shadowColor: palette.ink, shadowOpacity: 0.16, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4, borderWidth: 1, borderColor: palette.line },
+  fanPhoto: { flex: 1, borderRadius: 6, overflow: "hidden" },
+  fanStamp: { position: "absolute", right: 22, top: 8, width: 58, height: 58, borderRadius: 29, borderWidth: 2, borderStyle: "dashed", borderColor: palette.rose, backgroundColor: palette.roseTint, alignItems: "center", justifyContent: "center", transform: [{ rotate: "12deg" }] },
+  wordmark: { fontFamily: font.displayHeavy, fontSize: 60, color: palette.roseInk, letterSpacing: -1.5 },
+  splashLine: { fontFamily: font.sans, fontSize: 17, lineHeight: 23, color: palette.inkSoft, textAlign: "center", paddingHorizontal: 18 },
+  start: { height: 54, borderRadius: 16, backgroundColor: palette.roseInk, alignItems: "center", justifyContent: "center", borderBottomWidth: 3, borderBottomColor: "#8F1C38" },
+  startLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "800", color: palette.cream },
+  legal: { fontFamily: font.sans, fontSize: 13, color: palette.inkMuted, marginTop: 12, lineHeight: 18, textAlign: "center" },
+  legalBold: { fontWeight: "700", color: palette.inkSoft },
   nav: { height: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12 },
-  skip: { fontFamily: font.sans, color: "#fff", fontSize: 17, fontWeight: "600" },
-  body: { flex: 1, paddingHorizontal: 16, paddingBottom: 12, paddingTop: 20 },
-  title: { fontFamily: font.sans, fontSize: 24, fontWeight: "700", color: "#fff", textAlign: "center" },
-  sub: { fontFamily: font.sans, fontSize: 16, color: "#D2D3DE", textAlign: "center", marginTop: 8 },
-  fieldLabel: { fontFamily: font.sans, fontSize: 13, color: "#CFD0D3", marginBottom: 8 },
-  input: { height: 45, borderRadius: 3, borderWidth: 1, borderColor: "#707074", backgroundColor: "#111114", color: "#fff", fontSize: 20, paddingHorizontal: 12, fontFamily: font.sans },
-  cityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 15, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: "#2A2A30" },
-  cityText: { fontFamily: font.sans, fontSize: 17, color: "#fff" },
-  tiles: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingHorizontal: 16, paddingBottom: 16 },
-  tile: { width: "48%", aspectRatio: 0.82, borderRadius: 16, overflow: "hidden", justifyContent: "flex-end", padding: 12, borderWidth: 3, borderColor: "transparent" },
-  tileOn: { borderColor: palette.line },
-  tileLabel: { fontFamily: font.sans, fontSize: 20, fontWeight: "800", color: "#fff", lineHeight: 23 },
-  tileCheck: { position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: palette.card, alignItems: "center", justifyContent: "center" },
-  next: { height: 47, borderRadius: 3, alignItems: "center", justifyContent: "center", marginTop: 12 },
-  nextLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "600" },
-  option: { minHeight: 76, borderRadius: 16, borderWidth: 1, borderColor: "#707074", backgroundColor: "#111114", flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22 },
-  optionOn: { borderWidth: 1.5, borderColor: palette.line, backgroundColor: "#1C1C22" },
-  optionLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "500", color: "#fff", flex: 1, paddingRight: 12 },
+  skip: { fontFamily: font.sans, color: palette.roseInk, fontSize: 17, fontWeight: "700" },
+  body: { flex: 1, paddingHorizontal: 16, paddingBottom: 12, paddingTop: 12 },
+  title: { fontFamily: font.display, fontSize: 28, lineHeight: 33, color: palette.ink, textAlign: "center" },
+  sub: { fontFamily: font.sans, fontSize: 16, color: palette.inkSoft, textAlign: "center", marginTop: 8 },
+  fieldLabel: { fontFamily: font.sans, fontSize: 13, fontWeight: "700", color: palette.inkMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.6 },
+  input: { height: 54, borderRadius: 14, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.card, color: palette.ink, fontSize: 20, paddingHorizontal: 16, fontFamily: font.sans },
+  cityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 15, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: palette.line },
+  cityText: { fontFamily: font.sans, fontSize: 17, color: palette.ink },
+  tiles: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 16, paddingBottom: 16 },
+  tile: { width: "47.5%", aspectRatio: 0.82, borderRadius: 10, overflow: "hidden", justifyContent: "flex-end", padding: 12, borderWidth: 6, borderColor: palette.card, backgroundColor: palette.card, shadowColor: palette.ink, shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
+  tileOn: { borderColor: palette.rose },
+  tileLabel: { fontFamily: font.display, fontSize: 20, color: palette.cream, lineHeight: 23 },
+  tileCheck: { position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: 15, backgroundColor: palette.roseInk, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-8deg" }] },
+  next: { height: 54, borderRadius: 16, alignItems: "center", justifyContent: "center", marginTop: 12 },
+  nextLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "800" },
+  option: { minHeight: 76, borderRadius: 16, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22 },
+  optionOn: { borderWidth: 2, borderColor: palette.rose, backgroundColor: palette.roseTint },
+  optionLabel: { fontFamily: font.sans, fontSize: 18, fontWeight: "600", color: palette.ink, flex: 1, paddingRight: 12 },
 });
