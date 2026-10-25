@@ -4,6 +4,7 @@
 import { WorkflowManager } from "@convex-dev/workflow";
 import { v } from "convex/values";
 import { FAVES_ID } from "../src/chat/reduce.mjs";
+import { reserveLink } from "../src/lib/linktext";
 import { formatClock, offsetHours } from "../src/lib/time";
 import { components, internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
@@ -65,7 +66,8 @@ export const book = internalAction({
       const p = places.find((x) => x.placeId === s.placeId);
       const at = formatClock(s.start, { compact: true });
       if (!p) return `• ${at}: no booking needed`;
-      if (p.reserveUrl) return `• ${at} ${p.name}: reserve here ${p.reserveUrl}`;
+      // A short tappable label ("Reserve on Google"), never the long reservation URL.
+      if (p.reserveUrl) return `• ${at} ${p.name}: ${reserveLink(p.reserveUrl)}`;
       if (p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "")) return `• ${at} ${p.name}: books by phone only, call them at ${p.phone}`;
       return `• ${at} ${p.name}: walk in, nothing to book`;
     });

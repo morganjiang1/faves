@@ -139,6 +139,10 @@ test("rename the butler, then use its quick asks: plan, book it, remind us", asy
   await expect(lock).toBeVisible({ timeout: 30_000 });
   await page.getByTestId("butler-book").click();
   await expect(page.getByTestId("chat-messages")).toContainText("Here's how to book it", { timeout: 30_000 });
+  // Reservation links show as a short label, never the raw URL.
+  await expect(page.getByTestId("chat-messages")).not.toContainText("https://");
+  const links = page.getByTestId("msg-link");
+  for (const label of await links.allInnerTexts()) expect(label).toMatch(/^(Reserve on Google|Book on \w+|Book a table)$/);
   await lock.click();
   await expect(page.getByTestId("chat-messages")).toContainText("Locked in!", { timeout: 30_000 });
   await page.getByTestId("butler-remind").click();
@@ -268,5 +272,26 @@ test("a long chat keeps the butler's quick-ask chips full height", async ({ page
   await expect(page.getByTestId("chat-messages")).toContainText("message 24:");
   await expect(page.getByTestId("butler-tldr")).toBeVisible();
   expect((await chips.boundingBox())!.height).toBeGreaterThanOrEqual(full - 1);
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
+test("the butler's booking shows a reservation as a short tappable label, not the long URL", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  // A plan with a stop that takes reservations online.
+  let planId = "";
+  for (const text of ["sushi then drinks saturday 6pm to 11pm", "steak dinner saturday 6pm to 9pm, splurge", "dinner and drinks saturday 7pm to 11pm"]) {
+    const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text, city: "san-francisco" } })).json();
+    const booked = await (await request.post("http://localhost:8787/api/book", { data: { planId: plan.planId } })).json();
+    if (booked.bookings.some((b: { how: string }) => b.how === "online")) { planId = plan.planId; break; }
+  }
+  expect(planId, "no plan with an online reservation").not.toBe("");
+  const group = await (await request.post("http://localhost:8787/api/group", { data: { planId } })).json();
+  await startOnboarded(page, `/join/${group.code}`, { name: "Ana", handle: `anar${run}` });
+  await expect(page.getByTestId("chat-screen")).toBeVisible({ timeout: 20_000 });
+  await typeInto(page, "composer-input", "@fave book it");
+  await page.getByTestId("composer-send").click();
+  await expect(page.getByTestId("chat-messages")).toContainText("Here's how to book it", { timeout: 30_000 });
+  await expect(page.getByTestId("msg-link").first()).toHaveText("Reserve on Google");
+  await expect(page.getByTestId("chat-messages")).not.toContainText("https://");
   expect(problems, problems.join("\n")).toEqual([]);
 });

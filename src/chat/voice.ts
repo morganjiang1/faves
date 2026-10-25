@@ -3,6 +3,7 @@
 // (Cartesia Ink). Keys stay on the server; the app only calls /api/tts, /api/stt, /api/voice.
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import * as Speech from "expo-speech";
+import { plainText } from "@/lib/linktext";
 import { relayUrl } from "./transport";
 
 export function apiBase(): string | null {
@@ -31,7 +32,7 @@ let player: AudioPlayer | null = null;
 
 // Say it out loud: Cartesia's voice when the server has it, else the phone's.
 export async function say(text: string): Promise<"cartesia" | "device"> {
-  const clean = text.replace(/https?:\/\/\S+/g, "").replace(/[•*_#]/g, "").replace(/\s+/g, " ").trim().slice(0, 600);
+  const clean = plainText(text).replace(/https?:\/\/\S+/g, "").replace(/[•*_#]/g, "").replace(/\s+/g, " ").trim().slice(0, 600);
   if (!clean) return "device";
   const base = apiBase();
   const v = await voiceStatus();

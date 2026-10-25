@@ -169,7 +169,8 @@ def booking_text(res: dict[str, Any], fee_due: bool) -> str:
     lines = ["Here's how the day gets booked:"]
     for b in res["bookings"]:
         if b["how"] == "online":
-            lines.append(f"- **{b['name']}** ({b['time']}): [{b.get('label') or reserve_label(b['url'])}]({b['url']})")
+            url = b["url"].replace("(", "%28").replace(")", "%29").replace(" ", "%20")  # can't end the link early
+            lines.append(f"- **{b['name']}** ({b['time']}): [{b.get('label') or reserve_label(b['url'])}]({url})")
         elif b["how"] == "phone":
             lines.append(f"- **{b['name']}** ({b['time']}): books by phone only, call them at {b['phone']}")
         else:

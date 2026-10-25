@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { plainText } from "@/lib/linktext";
 import type { Plan } from "@/lib/planner";
 import { chat, SAMPLE_FRIENDS, unreadCount, useChat, type ChatView, type Group } from "@/chat/store";
 import { EmptyState, Icon, SampleTag } from "@/components/ui";
@@ -87,7 +88,7 @@ function Row({ g, index }: { g: Group; index: number }) {
   const last = [...list].reverse().find((m) => m.kind !== "note") ?? list[list.length - 1];
   const unread = v.muted[g.id] ? 0 : unreadCount(v, g.id);
   const locked = Object.values(v.data.tickets).filter((t) => t.groupId === g.id && t.status === "locked").map((t) => t.plan as Plan).sort((a, b) => a.dateISO.localeCompare(b.dateISO))[0];
-  const preview = !last ? "Say hi" : last.kind === "ticket" ? `${last.authorName.split(" ")[0]} planned something` : last.kind === "postcard" ? `${last.authorName.split(" ")[0]} sent a spot` : last.text ?? "";
+  const preview = !last ? "Say hi" : last.kind === "ticket" ? `${last.authorName.split(" ")[0]} planned something` : last.kind === "postcard" ? `${last.authorName.split(" ")[0]} sent a spot` : plainText(last.text ?? "");
   const hasSample = g.members.some((m) => m.sample);
   return (
     <Pressable testID={`chat-row-${index}`} accessibilityRole="button" onPress={() => router.push(`/chat/${g.id}`)} style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}>

@@ -9,6 +9,7 @@ import { metersBetween, bestLeg, formatLeg, type LatLng } from "@/lib/geo";
 import { isOpenAt } from "@/lib/hours";
 import { activitiesIn, parseRequest } from "@/lib/parser";
 import { parseReplan, replan, type Plan } from "@/lib/planner";
+import { reserveLink } from "@/lib/linktext";
 import { costOf, scoreOutOf10 } from "@/lib/score";
 import { cityClock, formatClock, startsAt } from "@/lib/time";
 import { getState } from "@/state/store";
@@ -67,7 +68,7 @@ export async function answer(input: { city: City; group: Group; users: Record<st
       const p = city.byId.get(s.placeId);
       if (!p) return null;
       const at = formatClock(s.start, { compact: true });
-      return p.reserveUrl ? `• ${at} ${p.name}: reserve here ${p.reserveUrl}` : p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "") ? `• ${at} ${p.name}: books by phone only, call them at ${p.phone}` : `• ${at} ${p.name}: walk in, nothing to book`;
+      return p.reserveUrl ? `• ${at} ${p.name}: ${reserveLink(p.reserveUrl)}` : p.phone && /restaurant|bar|food|class/i.test(p.kind ?? "") ? `• ${at} ${p.name}: books by phone only, call them at ${p.phone}` : `• ${at} ${p.name}: walk in, nothing to book`;
     }).filter(Boolean);
     await chat.sayAsFaves(group.id, { ticketId: ticket.id, text: `Here's the booking:\n${lines.join("\n")}` });
     return;

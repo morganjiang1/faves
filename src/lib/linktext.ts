@@ -14,7 +14,9 @@ export function reserveLabel(url: string): string {
 }
 
 // "[Reserve on Google](https://...)": the label the chat shows, with the link behind it.
-export const reserveLink = (url: string): string => `[${reserveLabel(url)}](${url})`;
+// Parentheses and spaces in the URL are escaped so they can't end the link early.
+export const linkSafe = (url: string): string => url.replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/ /g, "%20");
+export const reserveLink = (url: string): string => `[${reserveLabel(url)}](${linkSafe(url)})`;
 
 // A short name for a bare link: a reservation label, else the site's name ("pier39.com").
 export function shortLink(url: string): string {
