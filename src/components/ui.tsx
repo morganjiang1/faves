@@ -1,9 +1,10 @@
-// Shared building blocks. Each one names the reference it copies (docs/design_system.md).
+// Shared building blocks in the Faves "warm postcard" identity (docs/design_system.md):
+// cream paper, plum ink, rose stamps and stickers, Bricolage Grotesque headlines.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
-import { categoryInfo, color, font, radius, shadow } from "@/theme/tokens";
+import { categoryInfo, color, font, palette, radius, shadow } from "@/theme/tokens";
 
 export type IconName = ComponentProps<typeof Ionicons>["name"];
 export function Icon({ name, size = 22, tint = color.text, style }: { name: IconName; size?: number; tint?: string; style?: StyleProp<TextStyle> }) {
@@ -12,208 +13,214 @@ export function Icon({ name, size = 22, tint = color.text, style }: { name: Icon
 
 type Variant = "display" | "serif" | "serifSmall" | "h1" | "h2" | "title" | "body" | "bodyStrong" | "meta" | "label" | "caption" | "tab";
 const VARIANTS: Record<Variant, TextStyle> = {
-  display: { fontFamily: font.serif, fontSize: 32, lineHeight: 38, color: color.text },
-  serif: { fontFamily: font.serif, fontSize: 28, lineHeight: 34, color: color.text },
-  serifSmall: { fontFamily: font.serif, fontSize: 20, lineHeight: 26, color: color.text },
-  h1: { fontSize: 28, lineHeight: 34, fontWeight: "700", color: color.airbnbText },
-  h2: { fontSize: 24, lineHeight: 30, fontWeight: "700", color: "#000" }, // DoorDash section title
-  title: { fontSize: 16, lineHeight: 21, fontWeight: "700", color: "#000" }, // DoorDash store name
-  body: { fontSize: 16, lineHeight: 22, color: color.text },
-  bodyStrong: { fontSize: 16, lineHeight: 22, fontWeight: "600", color: color.text },
-  meta: { fontSize: 14, lineHeight: 19, color: color.textSub }, // DoorDash meta line
-  label: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: color.appleLabel, letterSpacing: 0.3 },
-  caption: { fontSize: 13, lineHeight: 17, color: color.textMuted },
-  tab: { fontSize: 11, lineHeight: 13, color: "#393939" },
+  display: { fontFamily: font.displayHeavy, fontSize: 34, lineHeight: 38, color: palette.ink, letterSpacing: -0.6 },
+  serif: { fontFamily: font.display, fontSize: 28, lineHeight: 32, color: palette.ink, letterSpacing: -0.4 },
+  serifSmall: { fontFamily: font.display, fontSize: 20, lineHeight: 24, color: palette.ink, letterSpacing: -0.2 },
+  h1: { fontFamily: font.displayHeavy, fontSize: 28, lineHeight: 32, color: palette.ink, letterSpacing: -0.5 },
+  h2: { fontFamily: font.display, fontSize: 22, lineHeight: 27, color: palette.ink, letterSpacing: -0.3 },
+  title: { fontSize: 16, lineHeight: 21, fontWeight: "700", color: palette.ink },
+  body: { fontSize: 16, lineHeight: 22, color: palette.ink },
+  bodyStrong: { fontSize: 16, lineHeight: 22, fontWeight: "600", color: palette.ink },
+  meta: { fontSize: 14, lineHeight: 19, color: palette.inkSoft },
+  label: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: palette.inkMuted, letterSpacing: 0.6 },
+  caption: { fontSize: 13, lineHeight: 17, color: palette.inkMuted },
+  tab: { fontSize: 11, lineHeight: 13, color: palette.inkMuted },
 };
+const DISPLAY = new Set<Variant>(["display", "serif", "serifSmall", "h1", "h2"]);
 
 export function T({ v = "body", style, children, numberOfLines, onPress, selectable, testID }: { v?: Variant; style?: StyleProp<TextStyle>; children: ReactNode; numberOfLines?: number; onPress?: () => void; selectable?: boolean; testID?: string }) {
   return (
-    <Text testID={testID} selectable={selectable} onPress={onPress} numberOfLines={numberOfLines} style={[{ fontFamily: font.sans }, VARIANTS[v], style]}>
+    <Text testID={testID} selectable={selectable} onPress={onPress} numberOfLines={numberOfLines} style={[DISPLAY.has(v) ? null : { fontFamily: font.sans }, VARIANTS[v], style]}>
       {children}
     </Text>
   );
 }
 
-const pressed = ({ pressed: p }: { pressed: boolean }) => (p ? { opacity: 0.75 } : null);
+const pressed = ({ pressed: p }: { pressed: boolean }) => (p ? { opacity: 0.8, transform: [{ translateY: 1 }] } : null);
 
-// Beli's empty-state CTA: full-width teal pill, 50 pt.
+// The main action: a rose sticker button with a pressed-paper lip under it.
 export function PrimaryButton({ label, onPress, disabled, icon, loading, style, testID }: { label: string; onPress: () => void; disabled?: boolean; icon?: IconName; loading?: boolean; style?: StyleProp<ViewStyle>; testID?: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled || loading} onPress={onPress} style={(s) => [styles.primary, disabled && { backgroundColor: "#A2B8BB" }, pressed(s), style]}>
-      {loading ? <ActivityIndicator color="#fff" /> : (
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled || loading} onPress={onPress} style={(s) => [styles.primary, disabled && styles.primaryOff, pressed(s), style]}>
+      {loading ? <ActivityIndicator color={palette.cream} /> : (
         <>
-          {icon ? <Icon name={icon} size={20} tint="#fff" /> : null}
-          <Text style={styles.primaryLabel}>{label}</Text>
+          {icon ? <Icon name={icon} size={20} tint={disabled ? palette.inkMuted : palette.cream} /> : null}
+          <Text style={[styles.primaryLabel, disabled && { color: palette.inkMuted }]}>{label}</Text>
         </>
       )}
     </Pressable>
   );
 }
 
-// Beli's list/map toggle, unselected half: white with a 2 pt teal outline.
-export function SecondaryButton({ label, onPress, icon, style, testID }: { label: string; onPress: () => void; icon?: IconName; style?: StyleProp<ViewStyle>; testID?: string }) {
+// The quieter action: white card stock with an ink outline.
+export function SecondaryButton({ label, onPress, icon, style, testID, compact }: { label: string; onPress: () => void; icon?: IconName; style?: StyleProp<ViewStyle>; testID?: string; compact?: boolean }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={(s) => [styles.secondary, pressed(s), style]}>
-      {icon ? <Icon name={icon} size={18} tint={color.brand} /> : null}
-      <Text style={styles.secondaryLabel}>{label}</Text>
+    <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={(s) => [styles.secondary, compact && { paddingHorizontal: 10, gap: 6 }, pressed(s), style]}>
+      {icon ? <Icon name={icon} size={compact ? 16 : 18} tint={palette.ink} /> : null}
+      <Text style={[styles.secondaryLabel, compact && { fontSize: 15 }]} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 }
 
-// Airbnb's "Clear all": underlined text.
-export function TextButton({ label, onPress, tint = color.airbnbText, testID }: { label: string; onPress: () => void; tint?: string; testID?: string }) {
+export function TextButton({ label, onPress, tint = palette.roseInk, testID }: { label: string; onPress: () => void; tint?: string; testID?: string }) {
   return (
     <Pressable testID={testID} accessibilityRole="button" onPress={onPress} hitSlop={8} style={pressed}>
-      <Text style={{ fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: tint, textDecorationLine: "underline" }}>{label}</Text>
+      <Text style={{ fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: tint }}>{label}</Text>
     </Pressable>
   );
 }
 
-// Google Maps action pills: 42 pt, full radius; tonal (#D2F7FF / #014F5B) or filled (#007B8B).
+// Small rounded action: rose-tinted, or filled rose with cream text.
 export function ActionPill({ label, icon, onPress, filled, testID, small }: { label: string; icon?: IconName; onPress: () => void; filled?: boolean; testID?: string; small?: boolean }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={(s) => [styles.pill, small && { height: 34, paddingHorizontal: 12 }, { backgroundColor: filled ? color.gmapsPrimary : color.tonal }, pressed(s)]}>
-      {icon ? <Icon name={icon} size={small ? 16 : 19} tint={filled ? "#fff" : color.tonalText} /> : null}
-      <Text style={[styles.pillLabel, small && { fontSize: 14 }, { color: filled ? "#fff" : color.tonalText }]}>{label}</Text>
+    <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={(s) => [styles.pill, small && { height: 34, paddingHorizontal: 12 }, { backgroundColor: filled ? palette.roseInk : palette.roseTint }, pressed(s)]}>
+      {icon ? <Icon name={icon} size={small ? 16 : 19} tint={filled ? palette.cream : palette.roseInk} /> : null}
+      <Text style={[styles.pillLabel, small && { fontSize: 14 }, { color: filled ? palette.cream : palette.roseInk }]}>{label}</Text>
     </Pressable>
   );
 }
 
-// Uber Eats reason chips: 38 pt, black when on, #F3F3F3 when off.
+// Choice chips: sand when off, plum ink when on.
 export function Chip({ label, on, onPress, icon, testID }: { label: string; on?: boolean; onPress?: () => void; icon?: string; testID?: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={(s) => [styles.chip, { backgroundColor: on ? color.chipOn : color.chipOff }, pressed(s)]}>
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={(s) => [styles.chip, { backgroundColor: on ? palette.ink : palette.paperDeep }, pressed(s)]}>
       {icon ? <Text style={{ fontSize: 15 }}>{icon}</Text> : null}
-      <Text style={[styles.chipLabel, { color: on ? "#fff" : "#000" }]}>{label}</Text>
+      <Text style={[styles.chipLabel, { color: on ? palette.cream : palette.ink }]}>{label}</Text>
     </Pressable>
   );
 }
 
-// DoorDash filter chips: white, 1 pt #E4E4E4 border, 34 pt, icon + label (+ chevron).
 export function FilterChip({ label, on, onPress, icon, chevron, testID }: { label: string; on?: boolean; onPress?: () => void; icon?: IconName; chevron?: boolean; testID?: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={(s) => [styles.filter, on && { backgroundColor: "#000", borderColor: "#000" }, pressed(s)]}>
-      {icon ? <Icon name={icon} size={16} tint={on ? "#fff" : "#000"} /> : null}
-      <Text style={[styles.filterLabel, on && { color: "#fff" }]}>{label}</Text>
-      {chevron ? <Icon name="chevron-down" size={14} tint={on ? "#fff" : "#000"} /> : null}
+    <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress} style={(s) => [styles.filter, on && { backgroundColor: palette.ink, borderColor: palette.ink }, pressed(s)]}>
+      {icon ? <Icon name={icon} size={16} tint={on ? palette.cream : palette.ink} /> : null}
+      <Text style={[styles.filterLabel, on && { color: palette.cream }]}>{label}</Text>
+      {chevron ? <Icon name="chevron-down" size={14} tint={on ? palette.cream : palette.ink} /> : null}
     </Pressable>
   );
 }
 
-// Beli's score circle: 40 pt white circle, 1 pt #D3D3D3 ring, green semibold number,
-// optional teal count badge overlapping the bottom right ("2k").
-export function ScoreBadge({ score, count, size = 40, tint = color.score, muted, testID }: { score: string; count?: string; size?: number; tint?: string; muted?: boolean; testID?: string }) {
+// The Locals Score as a postage stamp: a round sticker with a dashed rose ring and the score
+// in display type. `count` adds a tiny ink tab ("1.7k") the way a postmark adds a date.
+export function Stamp({ score, count, size = 44, muted, tilt = -8, testID, dark }: { score: string; count?: string; size?: number; muted?: boolean; tilt?: number; testID?: string; dark?: boolean }) {
+  const ring = muted ? palette.line : palette.rose;
   return (
-    <View testID={testID} style={{ width: size, height: size }}>
-      <View style={[styles.score, { width: size, height: size, borderRadius: size / 2 }]}>
-        <Text style={{ fontFamily: font.sans, fontSize: size * 0.37, fontWeight: "600", color: muted ? color.textMuted : tint }}>{score}</Text>
+    <View testID={testID} style={{ width: size, height: size, transform: [{ rotate: `${tilt}deg` }] }}>
+      <View style={[styles.stamp, { width: size, height: size, borderRadius: size / 2, borderColor: ring, backgroundColor: dark ? palette.plumRaised : palette.card }]}>
+        <View style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderRadius: size / 2, borderWidth: 1, borderColor: ring, opacity: 0.55 }} />
+        <Text style={{ fontFamily: font.displayHeavy, fontSize: size * 0.38, lineHeight: size * 0.46, color: muted ? palette.inkMuted : dark ? palette.roseOnPlum : palette.roseInk, letterSpacing: -0.5 }}>{score}</Text>
       </View>
       {count ? (
-        <View style={styles.scoreCount}>
-          <Text style={styles.scoreCountText}>{count}</Text>
-        </View>
+        <View style={styles.stampCount}><Text style={styles.stampCountText}>{count}</Text></View>
       ) : null}
     </View>
   );
 }
 
-// Beli profile avatar: circle with a 1 pt #D3D3D3 ring and initials.
+// Kept for older screens: the score badge is now the stamp.
+export function ScoreBadge({ score, count, size = 40, muted, testID }: { score: string; count?: string; size?: number; tint?: string; muted?: boolean; testID?: string }) {
+  return <Stamp score={score} count={count} size={size} muted={muted} tilt={0} testID={testID} />;
+}
+
+const DISC_COLORS = [palette.rose, palette.sunset, palette.lavender, "#4FA87A", palette.ink];
+const discColor = (name: string) => DISC_COLORS[[...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % DISC_COLORS.length];
+
+// A person: their photo, or their initials on a warm colored disc picked by name.
 export function Avatar({ name, size = 40, uri, tint }: { name: string; size?: number; uri?: string | null; tint?: string }) {
   const initials = name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "?";
+  const bg = tint ?? discColor(name);
+  const darkText = bg === palette.sunset || bg === palette.rose;
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 1, borderColor: color.border, backgroundColor: tint ?? "#F2F2F4", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      {uri ? <Image source={{ uri }} style={{ width: size, height: size }} contentFit="cover" /> : <Text style={{ fontFamily: font.sans, fontSize: size * 0.36, fontWeight: "600", color: tint ? "#fff" : "#8A8A8E" }}>{initials}</Text>}
+    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: palette.card, backgroundColor: bg, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      {uri ? <Image source={{ uri }} style={{ width: size, height: size }} contentFit="cover" /> : <Text style={{ fontFamily: font.displaySemi, fontSize: size * 0.38, color: darkText ? palette.ink : palette.cream }}>{initials}</Text>}
     </View>
   );
 }
 
-// A poster with no photo: TikTok's initial on a colored disc (video/tiktok/
-// yt_XDmV5t6Y-0Y_t061_comments_sheet_tabs_add_comment.png: 32 pt, white letter, teal #0299A8 or
-// green #2E6716), with the Faves pink as a third color. The color follows the username.
-const DISC_COLORS = ["#0299A8", "#2E6716", "#FF4F6D"];
+// A poster's little disc: the first letter of their username.
 export function UserDisc({ name, size = 32, ring }: { name: string; size?: number; ring?: boolean }) {
   const letter = (name.match(/[a-z0-9]/i)?.[0] ?? "?").toUpperCase();
-  const hash = [...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const bg = discColor(name);
+  const darkText = bg === palette.sunset || bg === palette.rose;
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: DISC_COLORS[hash % DISC_COLORS.length], alignItems: "center", justifyContent: "center", borderWidth: ring ? 1 : 0, borderColor: "#fff" }}>
-      <Text style={{ fontFamily: font.sans, fontSize: size * 0.5, lineHeight: size * 0.62, fontWeight: "500", color: "#fff" }}>{letter}</Text>
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: "center", justifyContent: "center", borderWidth: ring ? 1.5 : 0, borderColor: palette.card }}>
+      <Text style={{ fontFamily: font.displaySemi, fontSize: size * 0.52, lineHeight: size * 0.66, color: darkText ? palette.ink : palette.cream }}>{letter}</Text>
     </View>
   );
 }
 
-// DoorDash section header: 24 pt bold title + 33 pt grey circle with an arrow.
-export function SectionHeader({ title, subtitle, onMore, testID }: { title: string; subtitle?: string; onMore?: () => void; testID?: string }) {
+// Section header: a friendly lowercase headline with an optional "see all" link.
+export function SectionHeader({ title, subtitle, onMore, testID, dark }: { title: string; subtitle?: string; onMore?: () => void; testID?: string; dark?: boolean }) {
   return (
     <View style={styles.sectionHeader}>
       <View style={{ flex: 1 }}>
-        <T v="h2" numberOfLines={1}>{title}</T>
-        {subtitle ? <T v="meta" style={{ marginTop: 2 }}>{subtitle}</T> : null}
+        <T v="h2" numberOfLines={1} style={dark ? { color: palette.cream } : null}>{title}</T>
+        {subtitle ? <T v="meta" style={[{ marginTop: 2 }, dark && { color: palette.creamSoft }]}>{subtitle}</T> : null}
       </View>
       {onMore ? (
-        <Pressable testID={testID} accessibilityLabel={`See all ${title}`} onPress={onMore} style={(s) => [styles.arrow, pressed(s)]}>
-          <Icon name="arrow-forward" size={18} tint="#000" />
+        <Pressable testID={testID} accessibilityLabel={`See all ${title}`} onPress={onMore} hitSlop={8} style={(s) => [styles.more, pressed(s)]}>
+          <Text style={[styles.moreText, dark && { color: palette.roseOnPlum }]}>see all</Text>
+          <Icon name="arrow-forward" size={15} tint={dark ? palette.roseOnPlum : palette.roseInk} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-// DoorDash's 6 pt #F7F7F7 band between home sections.
-export const Band = () => <View style={{ height: 6, backgroundColor: color.sectionBand }} />;
+export const Band = () => <View style={{ height: 10 }} />;
 
-// Google Maps 34 pt grey circle buttons (share, close).
 export function CircleButton({ icon, onPress, label, size = 34, light, testID }: { icon: IconName; onPress: () => void; label: string; size?: number; light?: boolean; testID?: string }) {
   return (
-    <Pressable testID={testID} accessibilityLabel={label} accessibilityRole="button" hitSlop={6} onPress={onPress} style={(s) => [{ width: size, height: size, borderRadius: size / 2, backgroundColor: light ? "rgba(255,255,255,0.92)" : color.circleButton, alignItems: "center", justifyContent: "center" }, light && shadow.soft, pressed(s)]}>
-      <Icon name={icon} size={size * 0.52} tint={color.gmapsText} />
+    <Pressable testID={testID} accessibilityLabel={label} accessibilityRole="button" hitSlop={6} onPress={onPress} style={(s) => [{ width: size, height: size, borderRadius: size / 2, backgroundColor: light ? "rgba(255,248,241,0.94)" : palette.paperDeep, alignItems: "center", justifyContent: "center" }, light && shadow.soft, pressed(s)]}>
+      <Icon name={icon} size={size * 0.52} tint={palette.ink} />
     </Pressable>
   );
 }
 
-export const Grabber = () => <View style={{ alignSelf: "center", width: 42, height: 4, borderRadius: 2, backgroundColor: color.sheetGrabber, marginVertical: 8 }} />;
+export const Grabber = () => <View style={{ alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: "#D9C8B5", marginVertical: 8 }} />;
 
-// Airbnb Trips thumbnail treatment for spots without a photo: the category's object on #F5F2ED.
+// A spot's photo, or its category sticker on sand when there is none.
 export function PlaceImage({ uri, category, style, emojiSize = 30, testID }: { uri?: string | null; category: string; style: StyleProp<ViewStyle>; emojiSize?: number; testID?: string }) {
   const [failed, setFailed] = useState(false);
   if (!uri || failed) {
     return (
-      <View testID={testID} style={[{ backgroundColor: "#F5F2ED", alignItems: "center", justifyContent: "center", overflow: "hidden" }, style]}>
+      <View testID={testID} style={[{ backgroundColor: palette.paperDeep, alignItems: "center", justifyContent: "center", overflow: "hidden" }, style]}>
         <Text style={{ fontSize: emojiSize }}>{categoryInfo(category).emoji}</Text>
       </View>
     );
   }
   return (
-    <View testID={testID} style={[{ overflow: "hidden", backgroundColor: "#EEE" }, style]}>
+    <View testID={testID} style={[{ overflow: "hidden", backgroundColor: palette.paperDeep }, style]}>
       <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} onError={() => setFailed(true)} recyclingKey={uri} />
     </View>
   );
 }
 
-// Beli's empty-state card: teal line art on a sage blob, Playfair title, two short lines,
-// full-width teal pill. Our line art is the Ionicons outline glyph for the screen.
-export function EmptyState({ icon, title, body, cta, onCta, secondary, onSecondary, testID }: { icon: IconName; title: string; body: string; cta?: string; onCta?: () => void; secondary?: string; onSecondary?: () => void; testID?: string }) {
+// Empty: a blank postcard, tilted, with the screen's glyph as its stamp.
+export function EmptyState({ icon, title, body, cta, onCta, secondary, onSecondary, testID, dark }: { icon: IconName; title: string; body: string; cta?: string; onCta?: () => void; secondary?: string; onSecondary?: () => void; testID?: string; dark?: boolean }) {
   return (
     <View testID={testID} style={styles.empty}>
-      <View style={styles.blobWrap}>
-        <View style={styles.blob} />
-        <View style={styles.blobIcon}>
-          <Icon name={icon} size={64} tint={color.brand} />
+      <View style={[styles.blankCard, shadow.soft]}>
+        <View style={styles.blankLines}>
+          <View style={styles.blankLine} />
+          <View style={[styles.blankLine, { width: "70%" }]} />
+          <View style={[styles.blankLine, { width: "50%" }]} />
         </View>
+        <View style={styles.blankStamp}><Icon name={icon} size={30} tint={palette.roseInk} /></View>
       </View>
-      <T v="serif" style={{ textAlign: "center", marginTop: 18 }}>{title}</T>
-      <T v="body" style={{ textAlign: "center", color: color.emptyBody, marginTop: 10, fontSize: 17, lineHeight: 23 }}>{body}</T>
-      {cta && onCta ? <PrimaryButton label={cta} onPress={onCta} style={{ marginTop: 24, alignSelf: "stretch" }} /> : null}
-      {secondary && onSecondary ? <View style={{ marginTop: 14 }}><TextButton label={secondary} onPress={onSecondary} tint={color.brand} /></View> : null}
+      <T v="serif" style={[{ textAlign: "center", marginTop: 22 }, dark && { color: palette.cream }]}>{title}</T>
+      <T v="body" style={[{ textAlign: "center", color: dark ? palette.creamSoft : palette.inkSoft, marginTop: 8, fontSize: 16, lineHeight: 22 }]}>{body}</T>
+      {cta && onCta ? <PrimaryButton label={cta} onPress={onCta} style={{ marginTop: 22, alignSelf: "stretch" }} /> : null}
+      {secondary && onSecondary ? <View style={{ marginTop: 14 }}><TextButton label={secondary} onPress={onSecondary} tint={dark ? palette.roseOnPlum : palette.roseInk} /></View> : null}
     </View>
   );
 }
 
-// Error with a way out: TikTok's "No internet connection. Tap to retry." (refresh glyph,
-// one bold line, one grey helper line; the whole block is the tap target).
+// Error with a way out: a rose refresh disc, one line saying what to do, one helper line.
 export function ErrorState({ title, body, onRetry, testID }: { title?: string; body: string; onRetry?: () => void; testID?: string }) {
   const content = (
     <View style={styles.error}>
-      <Icon name="refresh" size={52} tint="#000" />
+      <View style={styles.errorDisc}><Icon name="refresh" size={30} tint={palette.roseInk} /></View>
       <Text style={styles.errorTitle}>{title ?? (onRetry ? "Couldn't load this. Tap to retry." : "Something went wrong.")}</Text>
       <Text style={styles.errorBody}>{body}</Text>
     </View>
@@ -221,18 +228,16 @@ export function ErrorState({ title, body, onRetry, testID }: { title?: string; b
   return onRetry ? <Pressable testID={testID ?? "error-state"} accessibilityRole="button" onPress={onRetry}>{content}</Pressable> : <View testID={testID ?? "error-state"}>{content}</View>;
 }
 
-// Offline: Spotify's full-width dark bar with one bold line, sitting right above the tab bar
-// (or at the bottom of screens without one).
 export function OfflineBanner() {
   return (
     <View testID="offline-banner" style={styles.offline}>
-      <Text style={{ fontFamily: font.sans, color: "#fff", fontSize: 14, fontWeight: "700" }}>You're offline. Showing saved spots.</Text>
+      <Icon name="cloud-offline-outline" size={16} tint={palette.cream} />
+      <Text style={{ fontFamily: font.sans, color: palette.cream, fontSize: 14, fontWeight: "700" }}>You're offline. Showing saved spots.</Text>
     </View>
   );
 }
 
-// Loading placeholders: Instagram's skeleton (#F8F8F8 circles, round-ended bars and blocks
-// on white, no spinner), with a gentle pulse.
+// Loading: sand shapes that breathe, no spinner.
 export function Skeleton({ style }: { style: StyleProp<ViewStyle> }) {
   const a = useRef(new Animated.Value(0.6)).current;
   useEffect(() => {
@@ -243,16 +248,15 @@ export function Skeleton({ style }: { style: StyleProp<ViewStyle> }) {
     loop.start();
     return () => loop.stop();
   }, [a]);
-  return <Animated.View style={[{ backgroundColor: "#F2F2F2", borderRadius: 8, opacity: a }, style]} />;
+  return <Animated.View style={[{ backgroundColor: palette.paperDeep, borderRadius: 10, opacity: a }, style]} />;
 }
 
-// Instagram's skeleton rows: 58 pt circle, two round-ended bars.
 export function SkeletonRows({ rows = 4, testID }: { rows?: number; testID?: string }) {
   return (
     <View testID={testID} style={{ padding: 16, gap: 22 }}>
       {Array.from({ length: rows }, (_, i) => (
         <View key={i} style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
-          <Skeleton style={{ width: 58, height: 58, borderRadius: 29 }} />
+          <Skeleton style={{ width: 58, height: 72, borderRadius: 10 }} />
           <View style={{ flex: 1, gap: 10 }}>
             <Skeleton style={{ width: "62%", height: 12, borderRadius: 6 }} />
             <Skeleton style={{ width: "84%", height: 10, borderRadius: 5 }} />
@@ -264,16 +268,15 @@ export function SkeletonRows({ rows = 4, testID }: { rows?: number; testID?: str
   );
 }
 
-// Instagram's map "Loading" pill.
 export function LoadingPill({ text = "Loading" }: { text?: string }) {
   return (
-    <View style={[{ alignSelf: "center", height: 36, borderRadius: 18, backgroundColor: "#fff", paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 6 }, shadow.soft]}>
-      <Text style={{ fontFamily: font.sans, fontSize: 16, fontWeight: "600", color: "#000" }}>· {text}</Text>
+    <View style={[{ alignSelf: "center", height: 38, borderRadius: 19, backgroundColor: palette.card, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 8 }, shadow.soft]}>
+      <ActivityIndicator size="small" color={palette.roseInk} />
+      <Text style={{ fontFamily: font.sans, fontSize: 15, fontWeight: "600", color: palette.ink }}>{text}</Text>
     </View>
   );
 }
 
-// Beli's "X ranked!" toast: near-black 47 pt bar, white text, top of the screen.
 export function Toast({ text, onHide, top = 60 }: { text: string | null; onHide: () => void; top?: number }) {
   useEffect(() => {
     if (!text) return;
@@ -283,48 +286,53 @@ export function Toast({ text, onHide, top = 60 }: { text: string | null; onHide:
   if (!text) return null;
   return (
     <View pointerEvents="none" style={[styles.toast, { top }]} testID="toast">
-      <Text style={{ fontFamily: font.sans, color: "#fff", fontSize: 15, fontWeight: "600" }} numberOfLines={2}>{text}</Text>
+      <Icon name="heart" size={16} tint={palette.rose} />
+      <Text style={{ fontFamily: font.sans, color: palette.cream, fontSize: 15, fontWeight: "600", flexShrink: 1 }} numberOfLines={2}>{text}</Text>
     </View>
   );
 }
 
 export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
-  return <View style={[{ height: StyleSheet.hairlineWidth * 2, backgroundColor: color.divider }, style]} />;
+  return <View style={[{ height: StyleSheet.hairlineWidth * 2, backgroundColor: palette.line }, style]} />;
 }
 
 // "Sample" label for placeholder people and test data, so nothing reads as real when it isn't.
 export function SampleTag({ text = "Sample" }: { text?: string }) {
   return (
     <View style={styles.sample}>
-      <Text style={{ fontFamily: font.sans, fontSize: 11, fontWeight: "700", color: "#6A6A6A", letterSpacing: 0.3 }}>{text.toUpperCase()}</Text>
+      <Text style={{ fontFamily: font.sans, fontSize: 10.5, fontWeight: "800", color: palette.sunsetInk, letterSpacing: 0.6 }}>{text.toUpperCase()}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  primary: { height: 50, borderRadius: radius.pill, backgroundColor: color.brand, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 20 },
-  primaryLabel: { fontFamily: font.sans, color: "#fff", fontSize: 18, fontWeight: "600" },
-  secondary: { height: 44, borderRadius: radius.pill, borderWidth: 2, borderColor: color.brand, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 18 },
-  secondaryLabel: { fontFamily: font.sans, color: color.brand, fontSize: 16, fontWeight: "600" },
-  pill: { height: 42, borderRadius: radius.pill, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16 },
-  pillLabel: { fontFamily: font.sans, fontSize: 16, fontWeight: "500" },
-  chip: { height: 38, borderRadius: radius.pill, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 6 },
-  chipLabel: { fontFamily: font.sans, fontSize: 16, fontWeight: "500" },
-  filter: { height: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: "#E4E4E4", backgroundColor: "#fff", paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6 },
-  filterLabel: { fontFamily: font.sans, fontSize: 15, color: "#000" },
-  score: { borderWidth: 1, borderColor: color.border, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  scoreCount: { position: "absolute", right: -5, bottom: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: color.brand, alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: "#fff" },
-  scoreCountText: { fontFamily: font.sans, color: "#fff", fontSize: 9, fontWeight: "700" },
-  sectionHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12, gap: 12 },
-  arrow: { width: 33, height: 33, borderRadius: 17, backgroundColor: color.arrowCircle, alignItems: "center", justifyContent: "center" },
-  empty: { backgroundColor: "#fff", borderRadius: 7, padding: 24, paddingTop: 12, alignItems: "center", marginHorizontal: 16 },
-  blobWrap: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
-  blob: { position: "absolute", width: "86%", height: 140, borderRadius: 70, backgroundColor: color.sage, transform: [{ rotate: "-6deg" }] },
-  blobIcon: { width: 112, height: 112, borderRadius: 56, borderWidth: 3, borderColor: color.brand, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  offline: { alignItems: "center", justifyContent: "center", backgroundColor: color.text, paddingVertical: 9, paddingHorizontal: 16 },
+  primary: { height: 52, borderRadius: 16, backgroundColor: palette.roseInk, borderBottomWidth: 3, borderBottomColor: "#8F1C38", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 20 },
+  primaryOff: { backgroundColor: palette.paperDeep, borderBottomColor: "#E2CDB8" },
+  primaryLabel: { fontFamily: font.sans, color: palette.cream, fontSize: 17, fontWeight: "700" },
+  secondary: { height: 46, borderRadius: 14, borderWidth: 1.5, borderColor: palette.ink, backgroundColor: palette.card, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 18 },
+  secondaryLabel: { fontFamily: font.sans, color: palette.ink, fontSize: 16, fontWeight: "700" },
+  pill: { height: 40, borderRadius: 14, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14 },
+  pillLabel: { fontFamily: font.sans, fontSize: 15, fontWeight: "700" },
+  chip: { height: 36, borderRadius: radius.pill, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", gap: 6 },
+  chipLabel: { fontFamily: font.sans, fontSize: 15, fontWeight: "600" },
+  filter: { height: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.card, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6 },
+  filterLabel: { fontFamily: font.sans, fontSize: 15, color: palette.ink, fontWeight: "500" },
+  stamp: { borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
+  stampCount: { position: "absolute", right: -6, bottom: -4, minWidth: 20, height: 16, borderRadius: 4, backgroundColor: palette.ink, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
+  stampCountText: { fontFamily: font.sans, color: palette.cream, fontSize: 9, fontWeight: "800" },
+  sectionHeader: { flexDirection: "row", alignItems: "flex-end", paddingHorizontal: 18, paddingTop: 22, paddingBottom: 12, gap: 12 },
+  more: { flexDirection: "row", alignItems: "center", gap: 3, paddingBottom: 3 },
+  moreText: { fontFamily: font.sans, fontSize: 14, fontWeight: "700", color: palette.roseInk },
+  empty: { padding: 24, paddingTop: 12, alignItems: "center", marginHorizontal: 8 },
+  blankCard: { width: 210, height: 140, borderRadius: 14, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, transform: [{ rotate: "-4deg" }], padding: 16, flexDirection: "row" },
+  blankLines: { flex: 1, justifyContent: "flex-end", gap: 9, paddingBottom: 8 },
+  blankLine: { height: 3, borderRadius: 2, backgroundColor: palette.paperDeep, width: "85%" },
+  blankStamp: { width: 54, height: 62, borderRadius: 6, borderWidth: 2, borderStyle: "dashed", borderColor: palette.rose, alignItems: "center", justifyContent: "center", backgroundColor: palette.roseTint },
+  offline: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: palette.ink, paddingVertical: 9, paddingHorizontal: 16 },
   error: { alignItems: "center", paddingHorizontal: 32, paddingVertical: 28, gap: 10 },
-  errorTitle: { fontFamily: font.sans, fontSize: 16, fontWeight: "700", color: "#000", textAlign: "center", marginTop: 8 },
-  errorBody: { fontFamily: font.sans, fontSize: 14, color: "#6B6B6B", textAlign: "center" },
-  toast: { position: "absolute", left: 16, right: 16, minHeight: 47, borderRadius: 11, backgroundColor: color.toast, justifyContent: "center", paddingHorizontal: 16, zIndex: 50 },
-  sample: { backgroundColor: "#F2F2F2", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start" },
+  errorDisc: { width: 64, height: 64, borderRadius: 32, backgroundColor: palette.roseTint, alignItems: "center", justifyContent: "center" },
+  errorTitle: { fontFamily: font.display, fontSize: 19, color: palette.ink, textAlign: "center", marginTop: 6 },
+  errorBody: { fontFamily: font.sans, fontSize: 14, color: palette.inkSoft, textAlign: "center" },
+  toast: { position: "absolute", left: 16, right: 16, minHeight: 48, borderRadius: 14, backgroundColor: palette.ink, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, zIndex: 50 },
+  sample: { backgroundColor: palette.sunsetTint, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start" },
 });

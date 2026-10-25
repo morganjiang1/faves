@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
     "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/ui": "~58.0.23",
     "@expo/vector-icons": "^15.0.2",
@@ -10,9 +11,11 @@
     "@react-native-community/netinfo": "12.0.1",
     "expo": "~58.0.19",
     "expo-asset": "~58.0.18",
+    "expo-calendar": "~58.0.6",
     "expo-camera": "~58.0.12",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.13",
+    "expo-contacts": "~58.0.9",
     "expo-device": "~58.0.5",
     "expo-file-system": "~58.0.11",
     "expo-font": "~58.0.10",
@@ -37,6 +40,7 @@
     "react-native": "0.88.0",
     "react-native-gesture-handler": "~3.3.0",
     "react-native-maps": "1.29.11",
+    "react-native-qrcode-svg": "^6.3.27",
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
@@ -53,7 +57,8 @@
     "@types/react": "~19.3.0",
     "jest": "~30.5.2",
     "jest-expo": "~58.0.12",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "ws": "^8.22.0"
   },
   "scripts": {
     "start": "expo start",
@@ -66,7 +71,9 @@
     "test:e2e": "playwright test",
     "data:build": "node data/scripts/build.mjs --city all",
     "data:export": "node data/scripts/export.mjs --city all",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "chat-server": "node server/chat-server.mjs",
+    "test:relay": "node --test server/test/relay.test.mjs"
   },
   "private": true,
   "description": "Faves: find the spots locals love and plan the whole day.",

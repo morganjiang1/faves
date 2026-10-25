@@ -1,5 +1,6 @@
-import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display/700Bold";
-import { PlayfairDisplay_800ExtraBold } from "@expo-google-fonts/playfair-display/800ExtraBold";
+import { BricolageGrotesque_600SemiBold } from "@expo-google-fonts/bricolage-grotesque/600SemiBold";
+import { BricolageGrotesque_700Bold } from "@expo-google-fonts/bricolage-grotesque/700Bold";
+import { BricolageGrotesque_800ExtraBold } from "@expo-google-fonts/bricolage-grotesque/800ExtraBold";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -10,11 +11,12 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { CityProvider } from "@/state/city";
 import { hydrate, useStore } from "@/state/store";
+import { palette } from "@/theme/tokens";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ PlayfairDisplay_700Bold, PlayfairDisplay_800ExtraBold });
+  const [fontsLoaded, fontError] = useFonts({ BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold });
   const hydrated = useStore((s) => s.hydrated);
 
   useEffect(() => { hydrate(); }, []);
@@ -38,13 +40,18 @@ export default function RootLayout() {
             <View style={styles.column}>
               <StatusBar style="dark" />
               {/* iOS full-screen modals keep their default slide: a custom animation there drops the safe-area insets. */}
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#fff" } }}>
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.paper } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ animation: "fade", gestureEnabled: false }} />
                 <Stack.Screen name="builder" options={{ presentation: "fullScreenModal" }} />
                 <Stack.Screen name="plan/[id]" />
                 <Stack.Screen name="place/[id]" />
-                <Stack.Screen name="explore" />
+                <Stack.Screen name="feed" />
+                <Stack.Screen name="saved" />
+                <Stack.Screen name="chat/[id]" />
+                <Stack.Screen name="chat/new" options={{ presentation: "modal" }} />
+                <Stack.Screen name="chat/info/[id]" />
+                <Stack.Screen name="join/[code]" />
                 <Stack.Screen name="search" options={{ animation: "fade" }} />
                 <Stack.Screen name="city" options={{ presentation: "modal" }} />
                 <Stack.Screen name="day/[id]" />
@@ -69,8 +76,8 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Platform.OS === "web" ? "#F2F2F2" : "#fff" },
+  root: { flex: 1, backgroundColor: Platform.OS === "web" ? palette.paperDeep : palette.paper },
   page: { flex: 1, alignItems: "center" },
   // On the web, the app sits in a phone-width column like a mobile site.
-  column: { flex: 1, width: "100%", maxWidth: Platform.OS === "web" ? 520 : undefined, backgroundColor: "#fff", overflow: "hidden" },
+  column: { flex: 1, width: "100%", maxWidth: Platform.OS === "web" ? 520 : undefined, backgroundColor: palette.paper, overflow: "hidden" },
 });

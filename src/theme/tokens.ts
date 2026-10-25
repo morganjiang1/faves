@@ -1,130 +1,169 @@
-// Design tokens. Every value comes from a measured reference in docs/design_references.md
-// (see docs/design_system.md for the source of each one). Beli wins where references disagree.
+// Design tokens: the Faves "warm postcard" identity (docs/design_system.md). Cream paper,
+// plum ink, the Heart Pin rose, a sunset orange and a gem lavender; Bricolage Grotesque for
+// display type and the system face for body text. Every text color here passes 4.5:1 on the
+// surface it is used on (checked in docs/design_system.md).
 import { Platform } from "react-native";
 import brand from "../../assets/brand/brand.json";
 
 // The logo's colors live in assets/brand/brand.json with the logo file itself.
 export const logo = { color: brand.color, glyph: brand.glyph } as const;
 
-export const color = {
-  bg: "#FFFFFF",
-  brand: "#134452", // Beli teal: primary buttons, tab "+", selected toggles
-  brandDeep: "#004F5E", // Beli stat values, links on light
-  score: "#009C61", // Beli score circle number
-  scoreList: "#329966", // Beli score circle in lists
-  text: "#222427",
-  textStrong: "#000000",
-  textMuted: "#989AA3",
-  textSub: "#606060", // DoorDash subdued text token
-  border: "#D3D3D3", // Beli score ring / avatar ring
-  hairline: "#E5E5E5",
-  divider: "#F4F5F8", // Beli feed divider
-  field: "#EBE8EC", // Beli search field fill
-  chipOff: "#F3F3F3", // Uber Eats unselected chip
-  chipOn: "#000000", // Uber Eats selected chip
-  chipBeliOff: "#9DB3B7", // Beli unselected filled chip
-  like: "#F90B0C", // Beli heart
-  gem: "#A571ED", // Corner vibe dot
-  gemText: "#868686", // Corner descriptor gray
-  open: "#188438", // Google Maps "Open"
-  closed: "#CE4E07", // Corner "closed"
-  rateGreat: "#8CC3A7",
-  rateOk: "#F6CB68",
-  rateBad: "#EFABAD",
-  sectionBand: "#F7F7F7", // DoorDash 6 pt band
-  arrowCircle: "#E7E7E7", // DoorDash section arrow button
-  tonal: "#D2F7FF", // Google Maps tonal pill fill
-  tonalText: "#014F5B",
-  gmapsPrimary: "#007B8B", // Google Maps filled "Directions"
-  sheetGrabber: "#C7C7C7",
-  circleButton: "#F2F2F2", // Google Maps share / close circles
-  gmapsText: "#1F1F1F",
-  gmapsSub: "#5E5E5E",
-  appleLabel: "#7C7C7E", // Apple Maps stat strip label
-  appleOrange: "#FC8C00",
-  appleGreen: "#20BF3E",
-  appleBlue: "#007AFF",
-  appleTile: "#E4E6E3",
-  wanderBlue: "#3F52E3", // Wanderlog links / "Directions"
-  wanderMuted: "#6C757D", // Wanderlog leg text
-  wanderDash: "#DEE2E6",
-  wanderPill: "#EBEDFC", // Wanderlog time pill fill
-  dayColor: "#7044AC", // Wanderlog purple day color (pins + route)
-  dayRoute: "#B29DD2",
-  walkDots: "#407090", // Citymapper walk leg dots
-  airbnbText: "#222222",
-  airbnbSub: "#6A6A6A",
-  airbnbRail: "#DDDDDD",
-  airbnbDot: "#EBEBEB",
-  airbnbBorder: "#C1C1C1",
-  airbnbBadgeA: "#E51F54",
-  airbnbBadgeB: "#E21C5F",
-  airbnbSecondary: "#F2F2F2",
-  cornerSearch: "#1A1A1A",
-  cornerBlue: "#1870FF",
-  cornerSearchHere: "#1C64FC",
-  cornerLand: "#ECECEC",
-  quoteBubble: "#F7FBFE",
-  quoteRing: "#B8D6F0",
-  reactionBorder: "#B7BABF",
-  orDisc: "#19444A",
-  toast: "#212123",
-  sage: "#DCE8E0", // Beli empty-state blob
-  emptyBody: "#454545",
-  strava: "#FC5200",
-  stravaBand: "#FD7A3B",
-  stravaCard: "#1A1A1A",
-  partifulPurple: "#7E00F7",
-  partifulDeep: "#2C0190",
-  partifulNight: "#010039",
-  partifulSide: "#F1F7F7",
-  pollText: "#666666",
-  messages: "#38E754",
-  whatsapp: "#32D852",
-  copyLink: "#171D1D",
-  shareSub: "#807D81",
-  shareLabel: "#656565",
-  askMapsBlue: "#3C7ED8",
-  askMapsTail: "#6C9FE2",
-  askMapsFade: "#CFE0F5",
-  askMapsGlow: "#D5E5FE",
-  askMapsStrokeA: "#94A7B3",
-  askMapsStrokeB: "#005FCB",
-  loadingRow: "#747676", // Wanderlog "Loading driving info..."
-  scrim: "rgba(0,0,0,0.33)",
-  wrapped: ["#DAB503", "#9691FF", "#FF4834", "#95C90D"] as const,
-  wrappedInk: "#272727",
-  wrappedPaper: "#EFEFEA",
-  dashTag: "#068089", // DoorDash promo tag teal
-  dashHeart: "#EA2F1E",
-  reorderPill: "#F1F1F1",
-  reorderText: "#181818",
+export const palette = {
+  paper: "#FFF8F1", // the page
+  card: "#FFFFFF", // postcard stock, tickets, sheets
+  paperDeep: "#F5E6D6", // sunken areas, chips, inputs
+  line: "#E9DCCD", // hairlines and card borders
+  ink: "#1E1530", // plum ink: text, dark buttons
+  inkSoft: "#55486A", // secondary text (7.9:1 on paper)
+  inkMuted: "#6E6280", // meta text (5.4:1 on paper)
+  rose: "#FF4F6D", // the Heart Pin: fills, stamps, hearts (ink text on it: 5.5:1)
+  roseInk: "#C92A4F", // rose as text and as a button fill with cream text (5.1:1)
+  roseTint: "#FFE3E8",
+  sunset: "#FF9A4D", // second accent: tickets, highlights (ink text on it: 8.3:1)
+  sunsetInk: "#B4501C", // "closed", warnings as text (4.9:1)
+  sunsetTint: "#FFE7D4",
+  lavender: "#8E6BE8", // hidden gems
+  lavInk: "#5A3FB0", // gem text (6.4:1 on its tint)
+  lavTint: "#EFE8FB",
+  open: "#2B7A4B", // "open now" (5.0:1)
+  // Dark mode: deep plum, never black.
+  plum: "#1A1226",
+  plumRaised: "#271B35",
+  plumLine: "#3A2C4A",
+  cream: "#FFF3E8", // text on plum (16.6:1)
+  creamSoft: "#CBBBD6", // secondary text on plum (10:1)
+  creamMuted: "#A898B8", // meta text on plum (6.8:1)
+  roseOnPlum: "#FF6F88",
+  openOnPlum: "#6FD69B",
+  sunsetOnPlum: "#FFAA6B",
 } as const;
 
-// Type scale from DoorDash's type tokens: 10, 12, 14, 16, 18, 20, 22, 24, 28, 32.
+// Older screens name colors after where they first came from; every name now points at the
+// palette above, so the whole app wears the same identity.
+export const color = {
+  bg: palette.paper,
+  brand: palette.roseInk,
+  brandDeep: palette.ink,
+  score: palette.roseInk,
+  scoreList: palette.roseInk,
+  text: palette.ink,
+  textStrong: palette.ink,
+  textMuted: palette.inkMuted,
+  textSub: palette.inkSoft,
+  border: palette.line,
+  hairline: palette.line,
+  divider: "#F1E4D5",
+  field: palette.paperDeep,
+  chipOff: palette.paperDeep,
+  chipOn: palette.ink,
+  chipBeliOff: "#D9C8B5",
+  like: palette.rose,
+  gem: palette.lavender,
+  gemText: palette.inkMuted,
+  open: palette.open,
+  closed: palette.sunsetInk,
+  rateGreat: "#8FC97A",
+  rateOk: "#F6CB68",
+  rateBad: "#F2A7B4",
+  sectionBand: palette.paperDeep,
+  arrowCircle: palette.paperDeep,
+  tonal: palette.roseTint,
+  tonalText: palette.roseInk,
+  gmapsPrimary: palette.roseInk,
+  sheetGrabber: "#D9C8B5",
+  circleButton: palette.paperDeep,
+  gmapsText: palette.ink,
+  gmapsSub: palette.inkSoft,
+  appleLabel: palette.inkMuted,
+  appleOrange: palette.sunset,
+  appleGreen: palette.open,
+  appleBlue: palette.lavInk,
+  appleTile: palette.paperDeep,
+  wanderBlue: palette.roseInk,
+  wanderMuted: palette.inkMuted,
+  wanderDash: palette.line,
+  wanderPill: palette.roseTint,
+  dayColor: palette.ink, // numbered pins
+  dayRoute: palette.rose, // route lines
+  walkDots: palette.inkMuted,
+  airbnbText: palette.ink,
+  airbnbSub: palette.inkSoft,
+  airbnbRail: palette.line,
+  airbnbDot: palette.paperDeep,
+  airbnbBorder: "#D9C8B5",
+  airbnbBadgeA: palette.rose,
+  airbnbBadgeB: palette.roseInk,
+  airbnbSecondary: palette.paperDeep,
+  cornerSearch: palette.ink,
+  cornerBlue: palette.roseInk,
+  cornerSearchHere: palette.ink,
+  cornerLand: "#EFE4D6",
+  quoteBubble: palette.card,
+  quoteRing: palette.roseTint,
+  reactionBorder: palette.line,
+  orDisc: palette.ink,
+  toast: palette.ink,
+  sage: palette.roseTint,
+  emptyBody: palette.inkSoft,
+  strava: palette.sunset,
+  stravaBand: "#FFB27A",
+  stravaCard: palette.plumRaised,
+  partifulPurple: palette.lavender,
+  partifulDeep: palette.plumRaised,
+  partifulNight: palette.plum,
+  partifulSide: palette.paperDeep,
+  pollText: palette.inkSoft,
+  messages: "#38E754",
+  whatsapp: "#32D852",
+  copyLink: palette.ink,
+  shareSub: palette.inkMuted,
+  shareLabel: palette.inkSoft,
+  askMapsBlue: palette.roseInk,
+  askMapsTail: palette.rose,
+  askMapsFade: palette.roseTint,
+  askMapsGlow: palette.sunsetTint,
+  askMapsStrokeA: palette.sunset,
+  askMapsStrokeB: palette.rose,
+  loadingRow: palette.inkMuted,
+  scrim: "rgba(30,21,48,0.38)",
+  wrapped: [palette.sunset, palette.lavender, palette.rose, "#8FC97A"] as const,
+  wrappedInk: palette.ink,
+  wrappedPaper: palette.paper,
+  dashTag: palette.roseInk,
+  dashHeart: palette.rose,
+  reorderPill: palette.paperDeep,
+  reorderText: palette.ink,
+} as const;
+
+// Display type is Bricolage Grotesque (friendly, a little quirky, made for big lowercase
+// headlines); body text is the system face (SF Pro on iPhone) for legibility at small sizes.
 export const font = {
-  serif: "PlayfairDisplay_700Bold",
-  serifBlack: "PlayfairDisplay_800ExtraBold",
+  display: "BricolageGrotesque_700Bold",
+  displayHeavy: "BricolageGrotesque_800ExtraBold",
+  displaySemi: "BricolageGrotesque_600SemiBold",
+  // Older screens call the display face "serif".
+  serif: "BricolageGrotesque_700Bold",
+  serifBlack: "BricolageGrotesque_800ExtraBold",
   sans: Platform.select({ web: "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Inter, system-ui, sans-serif", default: undefined }),
 } as const;
 
 export const size = { xs: 10, s: 12, m: 14, b: 16, l: 18, xl: 20, xxl: 22, h2: 24, h1: 28, d: 32 } as const;
 
-export const radius = { s: 4, m: 8, l: 12, xl: 16, xxl: 24, pill: 999 } as const;
+export const radius = { s: 4, m: 8, l: 12, xl: 16, xxl: 24, card: 18, pill: 999 } as const;
 
+// Paper casts a warm plum shadow, never grey.
 export const shadow = {
-  // DoorDash search pill / Corner cards: soft drop shadow.
   soft: Platform.select({
-    web: { boxShadow: "0 2px 8px rgba(0,0,0,0.12)" },
-    default: { shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+    web: { boxShadow: "0 2px 10px rgba(30,21,48,0.12)" },
+    default: { shadowColor: "#1E1530", shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   }) as object,
   card: Platform.select({
-    web: { boxShadow: "0 2px 12px rgba(0,0,0,0.08)" },
-    default: { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+    web: { boxShadow: "0 6px 18px rgba(30,21,48,0.14)" },
+    default: { shadowColor: "#1E1530", shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   }) as object,
 } as const;
 
-// Categories: emoji are Apple's own art (the same object-icon idea as Corner's category row).
+// Categories, each with an emoji as its little sticker.
 export const CATEGORIES = [
   { id: "courts", label: "Courts", short: "courts", emoji: "🎾" },
   { id: "food", label: "Food", short: "eat", emoji: "🍜" },
