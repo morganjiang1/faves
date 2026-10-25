@@ -9,7 +9,7 @@ import { answer, currentTicket, mentionsFaves } from "@/chat/agent";
 import { countdown } from "@/chat/calendar";
 import { groupRequestText, groupStarts, planForGroup } from "@/chat/plan";
 import { FAVES_ID, type Message, type Ticket as TicketT } from "@/chat/reduce.mjs";
-import { chat, useChat } from "@/chat/store";
+import { chat, present, serverButler, useChat } from "@/chat/store";
 import { ChatTicket } from "@/components/chat/ChatTicket";
 import { Postcard } from "@/components/postcard/Postcard";
 import { Sheet } from "@/components/Sheet";
@@ -37,6 +37,8 @@ export default function ChatThread() {
   const [thinking, setThinking] = useState(false);
 
   useEffect(() => { if (group) chat.markRead(groupId); }, [groupId, group, messages?.length]);
+  const [here, setHere] = useState<string[]>([]);
+  useEffect(() => present(groupId, setHere), [groupId]);
   const list = useMemo(() => [...(messages ?? [])].reverse(), [messages]);
   const tickets = useMemo(() => Object.values(v.data.tickets).filter((t) => t.groupId === groupId), [v.data.tickets, groupId]);
   const pinned = useMemo(() => tickets.filter((t) => t.status === "locked").sort((a, b) => ((a.plan as Plan).dateISO + String((a.plan as Plan).start).padStart(4, "0")).localeCompare((b.plan as Plan).dateISO + String((b.plan as Plan).start).padStart(4, "0")))[0] ?? null, [tickets]);
@@ -55,7 +57,8 @@ export default function ChatThread() {
     if (!t) return;
     setText("");
     await chat.sendText(groupId, t);
-    if (mentionsFaves(t) && city) {
+    // With Convex the group's butler answers from the server; otherwise this phone answers.
+    if (mentionsFaves(t) && city && !serverButler()) {
       setThinking(true);
       try { await answer({ city, group, users: v.data.users, tickets: v.data.tickets, text: t }); } finally { setThinking(false); }
     }
@@ -73,7 +76,7 @@ export default function ChatThread() {
           <View style={{ flex: 1 }}>
             <Text style={styles.title} numberOfLines={1} testID="chat-title">{group.name}</Text>
             <Text style={styles.sub} numberOfLines={1}>
-              {group.members.length} {group.members.length === 1 ? "person" : "people"} · <Text style={{ color: live ? palette.open : palette.sunsetInk }}>{live ? "live" : "only on this phone"}</Text>
+              {group.members.length} {group.members.length === 1 ? "person" : "people"} · <Text style={{ color: live ? palette.open : palette.sunsetInk }}>{live ? (here.length > 1 ? `${here.length} here now` : "live") : "only on this phone"}</Text>
             </Text>
           </View>
         </Pressable>
@@ -113,7 +116,7 @@ export default function ChatThread() {
           testID="composer-input"
           value={text}
           onChangeText={setText}
-          placeholder="Message, or ask @faves"
+          placeholder="Message, or ask @fave"
           placeholderTextColor={palette.inkMuted}
           style={styles.input}
           multiline

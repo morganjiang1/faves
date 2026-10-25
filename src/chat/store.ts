@@ -10,6 +10,7 @@ import type { Plan } from "@/lib/planner";
 import { actions, getState } from "@/state/store";
 import { LocalTransport } from "./local";
 import { applyEvent, emptyState, FAVES_ID, inviteCode, type ChatEvent, type ChatOp, type ChatState, type Group, type Member, type Message, type Rsvp, type Snapshot, type StartPoint, type Ticket } from "./reduce.mjs";
+import { ConvexTransport, convexUrl } from "./convex";
 import { RelayTransport } from "./relay";
 import { newId, relayUrl, type TransportStatus } from "./transport";
 
@@ -21,6 +22,7 @@ export interface ChatView {
   data: ChatState;
   status: TransportStatus; // live = shared through the relay; offline = only on this phone
   relay: string | null;
+  backend: "convex" | "relay" | "none"; // where chats are shared
   outbox: ChatOp[];
   read: Record<string, number>; // group id -> newest message time I've seen
   muted: Record<string, boolean>;
@@ -28,7 +30,7 @@ export interface ChatView {
   rev: number;
 }
 
-let view: ChatView = { hydrated: false, me: null, data: emptyState(), status: "connecting", relay: null, outbox: [], read: {}, muted: {}, live: {}, rev: 0 };
+let view: ChatView = { hydrated: false, me: null, data: emptyState(), status: "connecting", relay: null, backend: "none", outbox: [], read: {}, muted: {}, live: {}, rev: 0 };
 const listeners = new Set<() => void>();
 // Each change hands screens fresh maps (lists inside are copied on write by reduce.mjs).
 const emit = () => {
@@ -53,7 +55,8 @@ export function useChat<T>(select: (v: ChatView) => T): T {
 }
 export const chatView = () => view;
 
-let relay: RelayTransport | null = null;
+// The shared backend: Convex when EXPO_PUBLIC_CONVEX_URL is set, otherwise the WebSocket relay.
+let relay: RelayTransport | ConvexTransport | null = null;
 let local: LocalTransport | null = null;
 let starting: Promise<void> | null = null;
 
@@ -74,13 +77,14 @@ export function startChat(): Promise<void> {
     } catch { /* start fresh */ }
     view.data.me = me.id;
     view.data.users[me.id] = me;
-    view = { ...view, me, hydrated: true, relay: relayUrl() };
+    const cvx = convexUrl();
+    view = { ...view, me, hydrated: true, relay: cvx ?? relayUrl(), backend: cvx ? "convex" : relayUrl() ? "relay" : "none" };
     local = new LocalTransport(() => view.data);
     await local.connect(me, onEvent, () => {});
     emit();
     const url = view.relay;
     if (url) {
-      relay = new RelayTransport(url);
+      relay = cvx ? new ConvexTransport(cvx) : new RelayTransport(url);
       relay.setSnapshotHandler((snap) => { mergeSnapshot(snap); flushOutbox(); });
       await relay.connect(me, onEvent, (s) => { view = { ...view, status: s }; emit(); });
       RNAppState.addEventListener("change", (st) => { if (st === "active") relay?.wake(); });
@@ -111,7 +115,12 @@ function onEvent(e: ChatEvent) {
 
 function mergeSnapshot(snap: Snapshot) {
   for (const g of snap.groups) view.data.groups[g.id] = g;
-  for (const [gid, msgs] of Object.entries(snap.messages)) for (const m of msgs) applyEvent(view.data, { type: "message", message: m });
+  // The server's list wins; messages still on their way from this phone stay at the end.
+  for (const [gid, msgs] of Object.entries(snap.messages)) {
+    const have = new Set(msgs.map((m) => m.id));
+    const pending = (view.data.messages[gid] ?? []).filter((m) => m.pending && !have.has(m.id));
+    view.data.messages[gid] = [...msgs, ...pending];
+  }
   for (const t of Object.values(snap.tickets)) { view.data.tickets[t.id] = t; savePlanFrom(t); }
   for (const u of Object.values(snap.users)) view.data.users[u.id] = u;
   emit();
@@ -242,6 +251,15 @@ export const chat = {
   markRead,
 };
 
+// With Convex, each group's butler runs on the server; with the relay, @faves runs here.
+export const serverButler = () => view.backend === "convex" && view.status === "live";
+
+// Who's in a chat right now (Convex presence). Returns how to stop.
+export function present(groupId: string, onPeople: (ids: string[]) => void): () => void {
+  if (relay instanceof ConvexTransport) return relay.present(groupId, onPeople);
+  return () => {};
+}
+
 function markRead(groupId: string) {
   const list = view.data.messages[groupId] ?? [];
   const newest = list[list.length - 1]?.createdAt ?? Date.now();
@@ -259,7 +277,7 @@ export function unreadCount(v: ChatView, groupId: string): number {
 export async function resetChat() {
   relay?.close();
   relay = null; local = null; starting = null;
-  view = { hydrated: false, me: null, data: emptyState(), status: "connecting", relay: null, outbox: [], read: {}, muted: {}, live: {}, rev: 0 };
+  view = { hydrated: false, me: null, data: emptyState(), status: "connecting", relay: null, backend: "none", outbox: [], read: {}, muted: {}, live: {}, rev: 0 };
   await AsyncStorage.removeItem(KEY).catch(() => {});
   emit();
 }
