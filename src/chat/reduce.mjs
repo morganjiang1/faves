@@ -52,7 +52,7 @@ export function applyOp(state, op, ctx) {
       const group = { ...g, members, createdBy: ctx.actorId, createdAt: now, updatedAt: now };
       state.groups[g.id] = group;
       const events = [{ type: "group", group }];
-      events.push(note(state, g.id, `${firstName(actor)} made the group`, now, seed));
+      events.push(note(state, g.id, ctx.actorId === FAVES_ID ? "Fave made this group for the plan" : `${firstName(actor)} made the group`, now, seed));
       return { events, result: group };
     }
     case "updateGroup": {

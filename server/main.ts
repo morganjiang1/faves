@@ -12,6 +12,7 @@
 // swap, book and replan also take a whole plan (a group chat's ticket) instead of a planId.
 //   GET  /api/plan/:id
 import "./node-shim.cjs";
+import { existsSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { networkInterfaces } from "node:os";
 import { join } from "node:path";
@@ -23,14 +24,40 @@ import { activitiesIn, parseRequest } from "../src/lib/parser";
 import { alternativesFor, makePlan, planCost, replan, swapStop, type Plan } from "../src/lib/planner";
 import { costOf, scoreOutOf10 } from "../src/lib/score";
 import { formatClock } from "../src/lib/time";
-import { inviteCode } from "../src/chat/reduce.mjs";
+import { ConvexHttpClient } from "convex/browser";
+import { anyApi } from "convex/server";
+import { FAVES_ID, inviteCode, type ChatOp } from "../src/chat/reduce.mjs";
 import { createRelay } from "./relay.mjs";
+
+// .env and .env.local (never overriding what the shell already set).
+for (const f of [".env", ".env.local"]) {
+  const path = join(__dirname, "..", f);
+  if (!existsSync(path)) continue;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (m && m[2] && process.env[m[1]] == null) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+}
 
 const PORT = Number(process.env.CHAT_PORT || 8787);
 const relay = createRelay({ file: process.env.CHAT_FILE || join(__dirname, "data", "chat.json") });
 const lan = Object.values(networkInterfaces()).flat().find((n) => n && n.family === "IPv4" && !n.internal)?.address ?? "localhost";
 const WEB = (process.env.FAVES_WEB_URL || `http://${lan}:8090`).replace(/\/$/, "");
 const BUTLER = { id: "butler-fave", name: "Fave", handle: "fave" };
+const EXPO_PORT = process.env.EXPO_PORT || "8081";
+// Group chats live in Convex when it's configured (the app uses it then too), else in the relay.
+const CONVEX_URL = process.env.CONVEX_URL || process.env.EXPO_PUBLIC_CONVEX_URL || "";
+const convex = CONVEX_URL ? new ConvexHttpClient(CONVEX_URL) : null;
+async function chatApply(actorId: string, op: ChatOp): Promise<unknown> {
+  if (!convex) {
+    const out = relay.apply(actorId, op) as { error?: string; result?: unknown };
+    if (out?.error) throw new Error(out.error);
+    return out?.result;
+  }
+  const out = (await convex.mutation(anyApi.chat.apply, { actorId, op })) as { ok: boolean; error?: string; result?: unknown };
+  if (!out.ok) throw new Error(out.error ?? "chat failed");
+  return out.result;
+}
 
 // Places outside a city's own neighborhoods that friends often live in.
 const NEARBY: Record<string, Record<string, [number, number]>> = {
@@ -179,18 +206,22 @@ async function book(body: { planId?: string; plan?: Plan }) {
   return { planId: body.planId, bookings, fee: { amount: "0.5", currency: "FET", why: "Faves booking fee for the whole group's day" } };
 }
 
-function group(body: { planId: string; name?: string }) {
+// A group chat for a plan, with the butler in it and the plan pinned as a ticket. On Convex the
+// butler isn't a member (it's the group's butler); on the relay it joins as a member.
+async function group(body: { planId: string; name?: string }) {
   const st = plans.get(body.planId);
   if (!st) throw new Error("No plan with that id. Plan again first.");
-  relay.apply(BUTLER.id, { op: "hello", member: BUTLER });
+  const actor = convex ? FAVES_ID : BUTLER.id;
+  if (!convex) await chatApply(BUTLER.id, { op: "hello", member: BUTLER });
   const id = `g-${Date.now().toString(36)}`;
   const code = inviteCode();
-  const name = (body.name || st.plan.title).slice(0, 40);
-  relay.apply(BUTLER.id, { op: "createGroup", group: { id, name, emoji: "🎟️", city: st.city.slug, members: [BUTLER], inviteCode: code } });
+  const title = st.plan.title.length > 28 ? st.plan.title.replace(/ in [^,]+$/, "") : st.plan.title;
+  const name = (body.name || title).length > 40 ? (body.name || title).slice(0, 40).replace(/\s+\S*$/, "") : body.name || title;
+  await chatApply(actor, { op: "createGroup", group: { id, name, emoji: "🎟️", city: st.city.slug, members: convex ? [] : [BUTLER], inviteCode: code } } as ChatOp);
   const ticketId = `t-${Date.now().toString(36)}`;
-  relay.apply(BUTLER.id, { op: "postTicket", ticket: { id: ticketId, groupId: id, plan: st.plan, status: "proposed", createdBy: BUTLER.id, rsvps: {} }, message: { id: `m-${ticketId}`, groupId: id, authorId: BUTLER.id, authorName: BUTLER.name, kind: "ticket", ticketId } });
-  relay.apply(BUTLER.id, { op: "send", message: { id: `m-hi-${id}`, groupId: id, authorId: "faves", authorName: "Fave", kind: "agent", text: `Hi! I'm Fave, this group's butler. Here's the plan for ${st.plan.dayLabel}. Tap In, Maybe or Out, and set where you're starting from in group info so I can keep the first stop fair for everyone.` } });
-  return { groupId: id, name, code, web: `${WEB}/join/${code}`, app: `faves://join/${code}`, expoGo: `exp://${lan}:8081/--/join/${code}` };
+  await chatApply(actor, { op: "postTicket", ticket: { id: ticketId, groupId: id, plan: st.plan, status: "proposed", createdBy: actor, rsvps: {} }, message: { id: `m-${ticketId}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "ticket", ticketId } } as ChatOp);
+  await chatApply(actor, { op: "send", message: { id: `m-hi-${id}`, groupId: id, authorId: FAVES_ID, authorName: BUTLER.name, kind: "agent", text: `Hi! I'm Fave, this group's butler. Here's the plan for ${st.plan.dayLabel}. Tap In, Maybe or Out, and set where you're starting from in group info so I can keep the first stop fair for everyone.` } } as ChatOp);
+  return { groupId: id, name, code, web: `${WEB}/join/${code}`, app: `faves://join/${code}`, expoGo: `exp://${lan}:${EXPO_PORT}/--/join/${code}`, backend: convex ? "convex" : "relay" };
 }
 
 async function scout(body: { city?: string; query: string }) {
@@ -236,7 +267,7 @@ const http = createServer(async (req, res) => {
       if (url === "/api/swap") return send(res, 200, await swap(body as never));
       if (url === "/api/book") return send(res, 200, await book(body as never));
       if (url === "/api/replan") return send(res, 200, await replanApi(body as never));
-      if (url === "/api/group") return send(res, 200, group(body as never));
+      if (url === "/api/group") return send(res, 200, await group(body as never));
       if (url === "/api/scout") return send(res, 200, await scout(body as never));
     }
   } catch (e) {

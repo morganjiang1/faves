@@ -87,3 +87,18 @@ test("the group's butler plans in the chat, and locking the plan books it and se
   await expect(page.getByTestId("chat-pinned")).toBeVisible();
   expect(problems, problems.join("\n")).toEqual([]);
 });
+
+test("an agent's plan becomes a group chat: the invite link opens it with the ticket and the butler's hello", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  // What the Fetch.ai Butler does at the end of a chat in ASI:One.
+  const plan = await (await request.post("http://localhost:8787/api/plan", { data: { text: "pickleball then hot pot saturday 1pm to 7pm", city: "san-francisco", friends: [{ name: "Ana", from: "Inner Richmond" }, { name: "Ben", from: "Mission" }] } })).json();
+  const group = await (await request.post("http://localhost:8787/api/group", { data: { planId: plan.planId } })).json();
+  expect(group.code).toMatch(/^[A-Z0-9]{6}$/);
+  expect(group.web).toContain(`/join/${group.code}`);
+  await startOnboarded(page, `/join/${group.code}`, { name: "Ana", handle: `anaj${run}` });
+  await expect(page.getByTestId("chat-screen")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("chat-messages")).toContainText("I'm Fave, this group's butler");
+  await expect(page.locator('[data-testid^="ticket-"][data-testid$="-rsvp-in"]').first()).toBeVisible();
+  await expect(page.getByTestId("chat-messages")).toContainText("Ana joined with the invite link");
+  expect(problems, problems.join("\n")).toEqual([]);
+});
