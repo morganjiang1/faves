@@ -61,6 +61,22 @@ test("a spot's page: its postcard clips, the essentials, the postcard wall and t
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
+test("a spot's floating header gets a paper backdrop once the page scrolls", async ({ page }) => {
+  const problems = watchConsole(page);
+  await startOnboarded(page, `/place/${GOLDEN_GATE}`);
+  await expect(page.getByTestId("place-name")).toContainText("Golden Gate Bridge");
+  const top = page.getByTestId("place-top");
+  const bg = () => top.evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(await bg()).toBe("rgba(0, 0, 0, 0)");
+  await page.getByTestId("place-scroll").evaluate((el) => {
+    const scroller = [el, ...Array.from(el.querySelectorAll("*"))].find((x) => x.scrollHeight > x.clientHeight + 10 && getComputedStyle(x).overflowY !== "visible") ?? el;
+    scroller.scrollTop = 600;
+    scroller.dispatchEvent(new Event("scroll"));
+  });
+  await expect.poll(bg).toBe("rgba(255, 248, 241, 0.98)");
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
 test("a map pin opens the spot full screen", async ({ page }) => {
   const problems = watchConsole(page);
   await startOnboarded(page, "/explore");

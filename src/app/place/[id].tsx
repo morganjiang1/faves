@@ -4,6 +4,7 @@
 // spot's postcard wall, where the score comes from, and a sticky bar: Add to a plan, Send to
 // a chat.
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from "react-native";
@@ -46,6 +47,8 @@ export default function PlacePage() {
   const [week, setWeek] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [live, setLive] = useState<LivePlace | null>(null);
+  // Once the page scrolls, the floating buttons get a paper backdrop so text never shows between them.
+  const [scrolled, setScrolled] = useState(false);
 
   const place = city?.byId.get(placeId) ?? null;
   useEffect(() => { if (reserve === "1" && place?.reserveUrl) openUrl(place.reserveUrl); }, [reserve, place]);
@@ -87,7 +90,7 @@ export default function PlacePage() {
   return (
     <View style={styles.screen} testID="place-page">
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 58, paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="place-scroll" contentContainerStyle={{ paddingTop: insets.top + 58, paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false} scrollEventThrottle={16} onScroll={(e) => { const past = e.nativeEvent.contentOffset.y > 4; setScrolled((s) => (s === past ? s : past)); }}>
         {!online ? <OfflineBanner /> : null}
         {/* The postcard */}
         <View style={{ alignItems: "center" }}>
@@ -232,13 +235,15 @@ export default function PlacePage() {
       </ScrollView>
 
       {/* Top buttons over the paper */}
-      <View style={[styles.top, { paddingTop: insets.top + 6 }]}>
+      <View testID="place-top" style={[styles.top, scrolled && styles.topScrolled, { paddingTop: insets.top + 6 }]}>
         <Round testID="place-back" icon="chevron-back" label="Back" onPress={back} />
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Round testID="action-save" icon={saved ? "bookmark" : "bookmark-outline"} label={saved ? "Remove from Saved" : "Save"} onPress={toggleSave} tint={saved ? palette.roseInk : palette.ink} />
           <Round testID="action-share" icon="share-outline" label="Share" onPress={() => setShare(true)} />
           <Round testID="action-directions" icon="navigate-outline" label="Directions" onPress={directions} />
         </View>
+        {/* A soft fade under the paper, so the page slides away under the buttons. */}
+        {scrolled ? <LinearGradient pointerEvents="none" colors={["rgba(255,248,241,0.98)", "rgba(255,248,241,0)"]} style={styles.topFade} /> : null}
       </View>
 
       {/* The sticky bar */}
@@ -297,6 +302,9 @@ function Source({ label, value, sub, testID }: { label: string; value: string; s
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.paper },
   top: { position: "absolute", left: 0, right: 0, top: 0, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 14, paddingBottom: 6 },
+  // Paper (#FFF8F1), just short of opaque, once the page has scrolled; a soft fade below it.
+  topScrolled: { backgroundColor: "rgba(255,248,241,0.98)" },
+  topFade: { position: "absolute", left: 0, right: 0, bottom: -16, height: 16 },
   round: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   card: { backgroundColor: palette.card, borderRadius: 22, borderWidth: 1, borderColor: palette.line, padding: 8, transform: [{ rotate: "-1deg" }] },
   cardFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 6, paddingTop: 10, paddingBottom: 4 },
