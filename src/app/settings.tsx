@@ -145,6 +145,7 @@ export default function Settings() {
           </Pressable>
         </Section>
         <Text style={styles.version}>Faves 0.1.0</Text>
+        <Text style={styles.credits} testID="settings-powered-by">Powered by Convex (live chats, the butler, reminders), Fetch.ai (agents on Agentverse and ASI:One), Cartesia (voice and booking calls) and Apify (live local scouting). Maps © OpenStreetMap contributors.</Text>
       </ScrollView>
 
       <Sheet open={confirm} onClose={() => setConfirm(false)} title="Reset app data?" background={BG} testID="settings-reset-sheet">
@@ -191,6 +192,7 @@ function Row({ label, children, first, onPress, testID, wrap }: { label: string;
 }
 
 const styles = StyleSheet.create({
+  credits: { marginTop: 6, marginHorizontal: 32, textAlign: "center", fontSize: 12, lineHeight: 17, color: SUB },
   screen: { flex: 1, backgroundColor: BG },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   title: { fontFamily: font.sans, fontSize: 17, fontWeight: "600", color: "#000" },
