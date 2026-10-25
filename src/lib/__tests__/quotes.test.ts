@@ -33,3 +33,15 @@ test("real praise for the spot wins, cleaned of list bullets and markdown", () =
   const pizza = { name: "Golden Boy Pizza", kind: "Pizza restaurant", quotes: [{ text: "-   **Golden Boy Pizza:** North Beach institution serving thick, focaccia-style pizza." }] };
   expect(bestQuote(pizza)?.text).toBe("Golden Boy Pizza: North Beach institution serving thick, focaccia-style pizza.");
 });
+
+test("a local's take is never lukewarm, a knock on the spot, or a list of events", () => {
+  const no = (name: string, kind: string, text: string) => expect(bestQuote({ name, kind, quotes: [{ text }] })).toBeNull();
+  no("Palace of Fine Arts", "Event venue", "The Palace of Fine Arts is nice, but I don’t know if I’d consider it a must see.");
+  no("Salesforce Park", "Park", "Salesforce Park is 2 or 3 stories off street level and it's pretty but not a must-see or worth going out of the way for (IMO)");
+  no("Fort Funston", "Tourist attraction", "Fort Funston but stay away from the water");
+  no("Exploratorium", "Tourist attraction", "NightLife at Cal Academy of Sciences / After Dark at the Exploratorium");
+  no("Pier 39", "Tourist attraction", "Pier 39 is overrated and so crowded on weekends.");
+  // Praise still comes through, and a single slash in a name is fine.
+  expect(bestQuote({ name: "Sutro Baths", kind: "Hiking area", quotes: [{ text: "Lands End/Sutro Baths for more epic views." }] })?.text).toBe("Lands End/Sutro Baths for more epic views.");
+  expect(bestQuote({ name: "Conservatory of Flowers", kind: "Botanical garden", quotes: [{ text: "Fort Funston but stay away from the water" }, { text: "Conservatory of Flowers is my favorite rainy day activity!" }] })?.text).toMatch(/favorite rainy day/);
+});

@@ -85,17 +85,23 @@ const GENERIC = new Set(["the", "and", "park", "street", "cafe", "restaurant", "
 const TRIP = /\b(tourist(y)? stuff|touristy|itinerary|my trip|our trip|this trip|the trip|trip to|day \d+|first time (in|visiting|to)|we('| a)re doing|we want to|looking for|any (recs|recommendations|suggestions)|what should|planning|bus tour|hop on|layover|honeymoon|visiting (sf|san francisco|the city)|my list|top list|your list)\b/i;
 const LOVE = /\b(best|great|love[sd]?|favou?rite|amazing|awesome|underrated|gem|incredible|epic|perfect|spectacular|killer|delicious|iconic|institution|must)\b/i;
 const LIKE = /\b(good|nice|cool|fun|lovely|pretty|views?|solid|beautiful|gorgeous|stunning|charming|cozy|chill|worth|famous|tasty|recommend)\b/i;
-const TIP = /\b(check out|go|get|try|grab|walk|hike|bring|stay|skip|avoid|don'?t miss|order)\b/i;
-const TIP_FIRST = /^(also |definitely |just )?(check out|go|get|try|grab|walk|hike|bring|skip|avoid|don'?t miss|order)\b/i;
+const TIP = /\b(check out|go|get|try|grab|walk|hike|bring|don'?t miss|order)\b/i;
+const TIP_FIRST = /^(also |definitely |just )?(check out|go|get|try|grab|walk|hike|bring|don'?t miss|order)\b/i;
+// A local's take is a reason to go: never lukewarm, hedged or a knock on the spot.
+const LUKEWARM = /\b(not (a |really a |that much of a )?must|not worth|not really worth|overrated|over-rated|but i don'?t know|i don'?t know if|meh|skip|stay away|avoid|touristy|tourist trap|crowded|imo|imho|in my opinion|underwhelming|disappointing|mediocre|don'?t bother|not that (great|good|special))\b/i;
 
 // How good a local quote is as the take on this spot, or null to never show it. It has to be
 // about the spot (it names it or its kind), a real sentence (praise, a tip, or a full thought),
-// and never a trip plan, a question, a mid-sentence fragment, a list of other places, or a
-// mention of another platform. Praise counts most.
+// and never lukewarm or a knock ("not a must-see", "stay away", "IMO"), a trip plan, a question,
+// a mid-sentence fragment, a list (of places, or lines split by "/"), or a mention of another
+// platform. Praise counts most.
 export function quoteScore(text: string, place: { name: string; kind?: string | null }): number | null {
   const t = cleanQuote(text);
   const words = t.split(" ").filter((w) => /[a-z0-9]/i.test(w));
-  if (mentionsElsewhere(t) || TRIP.test(t) || /^(\.\.\.|…)/.test(t) || /\?\s*$/.test(t) || words.length < 6) return null;
+  const straight = t.replace(/[’‘]/g, "'");
+  if (mentionsElsewhere(t) || TRIP.test(straight) || LUKEWARM.test(straight) || /^(\.\.\.|…)/.test(t) || /\?\s*$/.test(t) || words.length < 6) return null;
+  // A line that's mostly a list ("NightLife at Cal Academy / After Dark at the Exploratorium").
+  if (/\s\/\s|\n/.test(text) || (t.match(/\//g) ?? []).length >= 2) return null;
   // A list of three or more places ("Alcatraz, Golden Gate Bridge, Painted Ladies, ...").
   const named = t.split(/[,;/()]|\band\b/).map((x) => x.trim()).filter((x) => /^[A-Z]/.test(x) && x.split(" ").length <= 4);
   if (named.length >= 3) return null;
