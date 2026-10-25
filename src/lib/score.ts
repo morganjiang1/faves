@@ -73,12 +73,48 @@ export function costOf(p: Place): Cost {
 // locals say, never where else they said it.
 export const mentionsElsewhere = (text: string): boolean => /\b(google|yelp|tripadvisor|reddit|tiktok)\b|\br\/[a-z]/i.test(text);
 
-// The local quote worth showing: a real sentence, not just the place's name.
-export function bestQuote<Q extends { text: string }>(place: { name: string; quotes: Q[] }): Q | null {
-  const name = place.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  return place.quotes.find((q) => {
-    if (mentionsElsewhere(q.text)) return false;
-    const t = q.text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    return t.length >= 24 && t !== name && t.split(" ").length >= 5;
-  }) ?? null;
+// A quote as people should read it: no list bullet, markdown or extra spaces.
+export const cleanQuote = (text: string): string => {
+  const t = text.replace(/\*\*|__/g, "").replace(/^\s*(?:\\?[-•*]+|\d+[.)])\s*/, "").replace(/\s+/g, " ").trim().replace(/^(and|also|plus) (?=[A-Z])/i, "");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+const fold = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const GENERIC = new Set(["the", "and", "park", "street", "cafe", "restaurant", "bar", "museum", "shop", "store", "house", "center", "san", "francisco", "new", "york", "los", "angeles"]);
+// Trip planning and tourist checklists, not a take on the spot itself.
+const TRIP = /\b(tourist(y)? stuff|touristy|itinerary|my trip|our trip|this trip|the trip|trip to|day \d+|first time (in|visiting|to)|we('| a)re doing|we want to|looking for|any (recs|recommendations|suggestions)|what should|planning|bus tour|hop on|layover|honeymoon|visiting (sf|san francisco|the city)|my list|top list|your list)\b/i;
+const LOVE = /\b(best|great|love[sd]?|favou?rite|amazing|awesome|underrated|gem|incredible|epic|perfect|spectacular|killer|delicious|iconic|institution|must)\b/i;
+const LIKE = /\b(good|nice|cool|fun|lovely|pretty|views?|solid|beautiful|gorgeous|stunning|charming|cozy|chill|worth|famous|tasty|recommend)\b/i;
+const TIP = /\b(check out|go|get|try|grab|walk|hike|bring|stay|skip|avoid|don'?t miss|order)\b/i;
+const TIP_FIRST = /^(also |definitely |just )?(check out|go|get|try|grab|walk|hike|bring|skip|avoid|don'?t miss|order)\b/i;
+
+// How good a local quote is as the take on this spot, or null to never show it. It has to be
+// about the spot (it names it or its kind), a real sentence (praise, a tip, or a full thought),
+// and never a trip plan, a question, a mid-sentence fragment, a list of other places, or a
+// mention of another platform. Praise counts most.
+export function quoteScore(text: string, place: { name: string; kind?: string | null }): number | null {
+  const t = cleanQuote(text);
+  const words = t.split(" ").filter((w) => /[a-z0-9]/i.test(w));
+  if (mentionsElsewhere(t) || TRIP.test(t) || /^(\.\.\.|…)/.test(t) || /\?\s*$/.test(t) || words.length < 6) return null;
+  // A list of three or more places ("Alcatraz, Golden Gate Bridge, Painted Ladies, ...").
+  const named = t.split(/[,;/()]|\band\b/).map((x) => x.trim()).filter((x) => /^[A-Z]/.test(x) && x.split(" ").length <= 4);
+  if (named.length >= 3) return null;
+  // About the spot: it names it (or its kind), and not only in an aside in parentheses.
+  const body = fold(t.replace(/\([^)]*\)/g, " "));
+  if (fold(place.name).replace(/[^a-z0-9]+/g, " ").trim() === body.replace(/[^a-z0-9]+/g, " ").trim()) return null;
+  const keys = [...fold(place.name).split(/[^a-z0-9]+/), ...fold(place.kind ?? "").split(/[^a-z0-9]+/)].filter((w) => w.length >= 4 && !GENERIC.has(w));
+  if (!keys.some((k) => body.includes(k))) return null;
+  const praise = LOVE.test(t) ? 3 : LIKE.test(t) ? 2 : 0;
+  if (!praise && !TIP.test(t) && words.length < 10) return null;
+  return praise + (TIP_FIRST.test(t) ? 1 : 0) + (t.length >= 30 && t.length <= 180 ? 1 : 0) - (t.length > 240 ? 1 : 0);
+}
+
+// The local quote worth showing: the best-scoring one about this spot, cleaned up, or none.
+export function bestQuote<Q extends { text: string }>(place: { name: string; kind?: string | null; quotes: Q[] }): Q | null {
+  let best: { q: Q; score: number } | null = null;
+  for (const q of place.quotes) {
+    const score = quoteScore(q.text, place);
+    if (score != null && (!best || score > best.score)) best = { q, score };
+  }
+  return best ? { ...best.q, text: cleanQuote(best.q.text) } : null;
 }

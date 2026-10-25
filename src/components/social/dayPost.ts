@@ -8,7 +8,7 @@ import type { Plan } from "@/lib/planner";
 import type { Who } from "@/lib/parser";
 import type { AppState, MyPost } from "@/state/store";
 import type { IconName } from "@/components/ui";
-import { mentionsElsewhere } from "@/lib/score";
+import { bestQuote as spotQuote, mentionsElsewhere } from "@/lib/score";
 
 export interface DayPost {
   id: string; // the /day/<id> route id
@@ -67,8 +67,8 @@ export function bestQuote(plan: Plan, city: City, preferred: { placeName: string
   if (preferred && clean(preferred.quote.text).length >= 40 && !mentionsElsewhere(preferred.quote.text)) return { placeName: preferred.placeName, quote: { ...preferred.quote, text: clean(preferred.quote.text) } };
   for (const s of plan.stops) {
     const p = city.byId.get(s.placeId);
-    const q = p?.quotes.find((x) => clean(x.text).length >= 40 && clean(x.text).length <= 260 && !mentionsElsewhere(x.text));
-    if (p && q) return { placeName: p.name, quote: { ...q, text: clean(q.text) } };
+    const q = p ? spotQuote(p) : null;
+    if (p && q && q.text.length >= 40 && q.text.length <= 260) return { placeName: p.name, quote: q };
   }
   return preferred && !mentionsElsewhere(preferred.quote.text) ? preferred : null;
 }
