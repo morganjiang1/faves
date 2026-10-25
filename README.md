@@ -101,6 +101,20 @@ charges a booking fee through the Payment Protocol and makes the group chat with
 
 Without Cartesia the speaker uses the phone's own voice and calls say they aren't set up yet.
 
+**Cartesia features used**
+
+- **Sonic text-to-speech** (`sonic-3`): the butler's replies read aloud in the group chat, so you can plan hands-free while you're out.
+- **Ink speech-to-text** (`ink-whisper`): voice notes in the chat become text the butler acts on ("we're running 15 minutes late").
+- **Voice Agents with phone calls**: the "Faves Booker" agent (made by `npm run cartesia:setup`) calls places that only book by phone, with turn-taking and interruptions, then the outcome is posted in the chat.
+- The API key stays on the Faves server (`server/cartesia.ts`); the app never sees it.
+
+**Known limitations**
+
+- English only for now.
+- Calls need a phone number on the Cartesia account, and in a demo they ring `FAVES_CALL_NUMBER` instead of the place unless `FAVES_CALL_REAL=1`.
+- The booking call is for reservations only: it never gives card details, and it says it's an AI at the start of every call.
+- Call audio isn't stored; only the outcome is posted in the chat.
+
 ### Live local scouting (Apify)
 
 `actors/faves-local-spots` is our Apify Actor: plain words ("cozy bookstore") to OpenStreetMap
