@@ -19,3 +19,5 @@ playwright-report/
 npm-debug.*
 docs/screens/
 server/data/
+__pycache__/
+*.pyc

@@ -283,14 +283,25 @@ function baseScore(p: Place, s: Slot, req: PlanRequest): number {
   return score;
 }
 
+const addressKey = (a: string | null) => (a ? a.toLowerCase().split(",")[0].replace(/\b(ste|suite|unit|#)\s*\S+/g, "").replace(/[^a-z0-9]/g, "") : "");
+
+export function sameOuting(a: Place, b: Place): boolean {
+  if (a.id === b.id) return true;
+  if (metersBetween(a, b) < 150) return true;
+  const ka = addressKey(a.address), kb = addressKey(b.address);
+  if (ka && ka === kb) return true;
+  const na = a.name.toLowerCase(), nb = b.name.toLowerCase();
+  return na.startsWith(nb) || nb.startsWith(na);
+}
+
 export function rankCandidates(s: Slot, prev: LatLng | null, time: number, st: PickState, limit = 6): Candidate[] {
   const { req } = st;
   const budget = req.budget;
   const strictKeywords = s.keywords.length > 0 && (s.mustDo || s.interest);
-  // One stop per spot: a court named after its park ("Randall Museum pickleball courts") is
-  // the same outing as the park itself.
-  const usedNames = [...st.used].map((id) => st.city.byId.get(id)?.name.toLowerCase()).filter(Boolean) as string[];
-  const sameSpot = (p: Place) => { const n = p.name.toLowerCase(); return usedNames.some((u) => n.startsWith(u) || u.startsWith(n)); };
+  // One stop per spot: never two stops at the same address or within 150 m of each other (a
+  // court named after its park is the same outing as the park).
+  const usedPlaces = [...st.used].map((id) => st.city.byId.get(id)).filter(Boolean) as Place[];
+  const sameSpot = (p: Place) => usedPlaces.some((u) => sameOuting(u, p));
   const pool = st.city.places.filter((p) => {
     if (st.used.has(p.id) || st.exclude.has(p.id) || p.temporarilyClosed || sameSpot(p)) return false;
     const catOk = s.categories.includes(p.category);
@@ -584,7 +595,7 @@ export function makePlan(req: PlanRequest, ctx: PlanContext): Plan {
     const [a, b] = constrained;
     let best: [Place, Place] | null = null, bestScore = -Infinity;
     for (const x of a.cands.slice(0, 8)) for (const y of b.cands.slice(0, 10)) {
-      if (x.place.id === y.place.id) continue;
+      if (sameOuting(x.place, y.place)) continue;
       const leg = bestLeg(x.place, y.place, mode);
       const score = x.score + y.score - leg.minutes * 1.5 - (center ? (metersBetween(center, x.place) + metersBetween(center, y.place)) / 400 : 0);
       if (score > bestScore) { bestScore = score; best = [x.place, y.place]; }
